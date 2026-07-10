@@ -1,15 +1,17 @@
-# Peachy — Data Scientist Portfolio
+# noteliasweb — Data Scientist Portfolio
 
-A single-page portfolio homepage for **Peachy**, a data scientist. The design is
-inspired by [dottxt.ai](https://dottxt.ai/): warm cream canvas, technical
-minimalism, monospace accents, numbered sections, and restrained, purposeful
-motion.
+**noteliasweb** is a single-page portfolio homepage for a data scientist. The
+design is inspired by [dottxt.ai](https://dottxt.ai/): warm cream canvas,
+technical minimalism, monospace accents, numbered sections, and restrained,
+purposeful motion.
 
 It is a **dependency-free static site** — three files, no build step, no
 framework. Open it in a browser and it works.
 
+**Live demo:** https://noteliascmd.github.io/noteliasweb/
+
 ```
-replica_site/
+noteliasweb/
 ├── index.html   # all page markup / content
 ├── styles.css   # design tokens + all styling and keyframes
 ├── script.js    # animation & interaction layer (vanilla JS)

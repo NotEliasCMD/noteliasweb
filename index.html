@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Peachy — Data Scientist</title>
+  <meta name="description" content="Peachy is a data scientist who turns messy data into decisions. Portfolio of machine learning, causal inference, and data storytelling work." />
+
+  <!-- Social preview -->
+  <meta property="og:title" content="Peachy — Data Scientist" />
+  <meta property="og:description" content="I turn messy data into decisions." />
+  <meta property="og:type" content="website" />
+
+  <!-- Fonts: Space Grotesk (display, ~PP Neue Montreal) + JetBrains Mono (~PP Neue Montreal Mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍑</text></svg>" />
+</head>
+<body>
+  <!-- ============================ NAV ============================ -->
+  <header class="nav" id="nav">
+    <div class="container nav__inner">
+      <a class="nav__brand" href="#top" aria-label="Peachy home">
+        <span class="nav__logo">🍑</span>
+        <span class="nav__name">peachy<span class="nav__dot">.</span></span>
+      </a>
+
+      <nav class="nav__links" aria-label="Primary">
+        <a href="#work">Work</a>
+        <a href="#skills">Skills</a>
+        <a href="#writing">Writing</a>
+        <a href="#about">About</a>
+      </nav>
+
+      <a class="btn btn--primary nav__cta" href="#contact">Get in touch</a>
+
+      <button class="nav__burger" id="burger" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <!-- Mobile drawer -->
+    <div class="nav__drawer" id="drawer" hidden>
+      <a href="#work">Work</a>
+      <a href="#skills">Skills</a>
+      <a href="#writing">Writing</a>
+      <a href="#about">About</a>
+      <a class="btn btn--primary" href="#contact">Get in touch</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ============================ HERO ============================ -->
+    <section class="hero">
+      <div class="container hero__grid">
+        <div class="hero__copy">
+          <p class="eyebrow" data-reveal>
+            <span class="eyebrow__tick"></span> Data Scientist · Available for select work
+          </p>
+          <h1 class="hero__title" data-reveal>
+            Your data has a story.
+            <br />
+            <span class="hl" data-target>I find it.</span>
+          </h1>
+          <p class="hero__lede" data-reveal>
+            I'm <strong>Peachy</strong> — a data scientist who turns noisy,
+            half-broken datasets into models people actually trust and decisions
+            teams actually ship. Rigorous where it counts, pragmatic everywhere else.
+          </p>
+          <div class="hero__actions" data-reveal>
+            <a class="btn btn--primary" href="#work">See selected work</a>
+            <a class="btn btn--ghost" href="#contact">Start a conversation →</a>
+          </div>
+        </div>
+
+        <!-- Terminal mockup with typing animation -->
+        <div class="terminal" data-reveal aria-hidden="true">
+          <div class="terminal__bar">
+            <span class="terminal__dot"></span>
+            <span class="terminal__dot"></span>
+            <span class="terminal__dot"></span>
+            <span class="terminal__file">peachy@analysis — python</span>
+          </div>
+          <pre class="terminal__body"><code id="typed"></code><span class="cursor" id="cursor">▍</span></pre>
+        </div>
+      </div>
+
+      <!-- ==================== MARQUEE / TOOL STRIP ==================== -->
+      <div class="marquee" aria-label="Tools and technologies">
+        <div class="marquee__track" id="marqueeTrack">
+          <!-- items injected/duplicated by script.js; base set below -->
+          <span class="marquee__item">Python</span>
+          <span class="marquee__item">PyTorch</span>
+          <span class="marquee__item">scikit-learn</span>
+          <span class="marquee__item">SQL</span>
+          <span class="marquee__item">Polars</span>
+          <span class="marquee__item">dbt</span>
+          <span class="marquee__item">Spark</span>
+          <span class="marquee__item">XGBoost</span>
+          <span class="marquee__item">Bayesian Inference</span>
+          <span class="marquee__item">Causal ML</span>
+          <span class="marquee__item">Airflow</span>
+          <span class="marquee__item">Snowflake</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 01 · ABOUT ============================ -->
+    <section class="section" id="about">
+      <div class="container section__grid">
+        <div class="section__label">
+          <span class="section__num">01</span>
+          <span class="section__kicker">About</span>
+        </div>
+        <div class="section__content">
+          <h2 class="section__title" data-reveal>
+            I make models behave like <span class="hl" data-target>software</span>,
+            not like magic.
+          </h2>
+          <p class="section__lede" data-reveal>
+            Six years turning ambiguous questions into measurable answers. I've
+            shipped fraud detection that cut losses by double digits, forecasting
+            that finance actually plans against, and experiment platforms that keep
+            product teams honest. My north star: work that is reproducible,
+            explainable, and boring in production.
+          </p>
+          <div class="stat-row" data-reveal>
+            <div class="stat">
+              <span class="stat__num" data-count="6">6</span>
+              <span class="stat__unit">yrs</span>
+              <span class="stat__label">in applied ML</span>
+            </div>
+            <div class="stat">
+              <span class="stat__num" data-count="40">40</span>
+              <span class="stat__unit">+</span>
+              <span class="stat__label">models in production</span>
+            </div>
+            <div class="stat">
+              <span class="stat__num" data-count="12">12</span>
+              <span class="stat__unit">M</span>
+              <span class="stat__label">rows on a quiet day</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 02 · WORK ============================ -->
+    <section class="section section--alt" id="work">
+      <div class="container section__grid">
+        <div class="section__label">
+          <span class="section__num">02</span>
+          <span class="section__kicker">Selected work</span>
+        </div>
+        <div class="section__content">
+          <h2 class="section__title" data-reveal>Things I'm proud to have shipped.</h2>
+
+          <div class="cards">
+            <article class="card" data-reveal>
+              <div class="card__top">
+                <span class="card__tag">Fraud · Real-time ML</span>
+                <span class="card__year">2025</span>
+              </div>
+              <h3 class="card__title">Sub-100ms fraud scoring</h3>
+              <p class="card__body">
+                Rebuilt a gradient-boosted scoring pipeline into a feature-store-backed
+                real-time service. Held precision while cutting analyst review volume
+                by 31%.
+              </p>
+              <ul class="card__meta">
+                <li>XGBoost</li><li>Feast</li><li>gRPC</li>
+              </ul>
+            </article>
+
+            <article class="card" data-reveal>
+              <div class="card__top">
+                <span class="card__tag">Forecasting · Bayesian</span>
+                <span class="card__year">2024</span>
+              </div>
+              <h3 class="card__title">Demand forecasting finance trusts</h3>
+              <p class="card__body">
+                Hierarchical Bayesian model with proper uncertainty intervals,
+                replacing a spreadsheet nobody could audit. MAPE down from 22% to 9%.
+              </p>
+              <ul class="card__meta">
+                <li>PyMC</li><li>Prophet</li><li>Polars</li>
+              </ul>
+            </article>
+
+            <article class="card" data-reveal>
+              <div class="card__top">
+                <span class="card__tag">Causal · Experimentation</span>
+                <span class="card__year">2024</span>
+              </div>
+              <h3 class="card__title">Self-serve A/B platform</h3>
+              <p class="card__body">
+                Designed a CUPED-accelerated experimentation layer and guardrail
+                metrics so PMs could ship tests without a statistician on call.
+              </p>
+              <ul class="card__meta">
+                <li>CUPED</li><li>dbt</li><li>Streamlit</li>
+              </ul>
+            </article>
+
+            <article class="card" data-reveal>
+              <div class="card__top">
+                <span class="card__tag">NLP · LLM</span>
+                <span class="card__year">2023</span>
+              </div>
+              <h3 class="card__title">Structured extraction from support tickets</h3>
+              <p class="card__body">
+                Constrained-decoding LLM pipeline that turns free-text tickets into
+                a validated schema — 98% field accuracy, zero malformed JSON.
+              </p>
+              <ul class="card__meta">
+                <li>Outlines</li><li>Pydantic</li><li>Airflow</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 03 · SKILLS ============================ -->
+    <section class="section" id="skills">
+      <div class="container section__grid">
+        <div class="section__label">
+          <span class="section__num">03</span>
+          <span class="section__kicker">Toolkit</span>
+        </div>
+        <div class="section__content">
+          <h2 class="section__title" data-reveal>The stack behind the story.</h2>
+          <div class="skills">
+            <div class="skills__group" data-reveal>
+              <h3 class="skills__head">Modeling</h3>
+              <ul class="skills__list">
+                <li>Gradient boosting &amp; tree ensembles</li>
+                <li>Deep learning (PyTorch)</li>
+                <li>Bayesian &amp; hierarchical models</li>
+                <li>Causal inference &amp; uplift</li>
+                <li>Time-series forecasting</li>
+              </ul>
+            </div>
+            <div class="skills__group" data-reveal>
+              <h3 class="skills__head">Engineering</h3>
+              <ul class="skills__list">
+                <li>Python, SQL, a little Rust</li>
+                <li>Polars / pandas / Spark</li>
+                <li>dbt, Airflow, feature stores</li>
+                <li>Docker, CI/CD, testing</li>
+                <li>Snowflake / BigQuery</li>
+              </ul>
+            </div>
+            <div class="skills__group" data-reveal>
+              <h3 class="skills__head">Craft</h3>
+              <ul class="skills__list">
+                <li>Experiment design &amp; stats</li>
+                <li>Model monitoring &amp; drift</li>
+                <li>Data storytelling &amp; viz</li>
+                <li>Stakeholder translation</li>
+                <li>Reproducible research</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 04 · WRITING ============================ -->
+    <section class="section section--alt" id="writing">
+      <div class="container section__grid">
+        <div class="section__label">
+          <span class="section__num">04</span>
+          <span class="section__kicker">Writing</span>
+        </div>
+        <div class="section__content">
+          <h2 class="section__title" data-reveal>Notes from the notebook.</h2>
+          <ul class="posts">
+            <li class="post" data-reveal>
+              <a href="#" class="post__link">
+                <span class="post__title">Your metric is lying to you (and how to notice)</span>
+                <span class="post__meta"><span class="post__date">Jun 2026</span><span class="post__arrow">→</span></span>
+              </a>
+            </li>
+            <li class="post" data-reveal>
+              <a href="#" class="post__link">
+                <span class="post__title">Confidence intervals for people who ship</span>
+                <span class="post__meta"><span class="post__date">Apr 2026</span><span class="post__arrow">→</span></span>
+              </a>
+            </li>
+            <li class="post" data-reveal>
+              <a href="#" class="post__link">
+                <span class="post__title">Feature stores: the unglamorous 10x</span>
+                <span class="post__meta"><span class="post__date">Feb 2026</span><span class="post__arrow">→</span></span>
+              </a>
+            </li>
+            <li class="post" data-reveal>
+              <a href="#" class="post__link">
+                <span class="post__title">Why I stopped trusting my own dashboards</span>
+                <span class="post__meta"><span class="post__date">Dec 2025</span><span class="post__arrow">→</span></span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 05 · PHILOSOPHY / CTA ============================ -->
+    <section class="section closer" id="contact">
+      <div class="container section__grid">
+        <div class="section__label">
+          <span class="section__num">05</span>
+          <span class="section__kicker">Let's talk</span>
+        </div>
+        <div class="section__content">
+          <h2 class="closer__title" data-reveal>
+            Good data science looks like
+            <span class="hl" data-target>fewer surprises.</span>
+          </h2>
+          <p class="section__lede" data-reveal>
+            If you have a question buried in your data — or a model that works in
+            the notebook but not in the world — I'd love to hear about it.
+          </p>
+          <div class="hero__actions" data-reveal>
+            <a class="btn btn--primary" href="mailto:hello@peachy.dev">hello@peachy.dev</a>
+            <a class="btn btn--ghost" href="#top">Back to top ↑</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================ FOOTER ============================ -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <span class="nav__logo">🍑</span>
+        <span class="nav__name">peachy<span class="nav__dot">.</span></span>
+        <p class="footer__tag">Turning messy data into decisions.</p>
+      </div>
+      <nav class="footer__cols" aria-label="Footer">
+        <div class="footer__col">
+          <span class="footer__head">Site</span>
+          <a href="#work">Work</a>
+          <a href="#skills">Skills</a>
+          <a href="#writing">Writing</a>
+          <a href="#about">About</a>
+        </div>
+        <div class="footer__col">
+          <span class="footer__head">Elsewhere</span>
+          <a href="#">GitHub</a>
+          <a href="#">LinkedIn</a>
+          <a href="#">Google Scholar</a>
+          <a href="#">X / Twitter</a>
+        </div>
+        <div class="footer__col">
+          <span class="footer__head">Contact</span>
+          <a href="mailto:hello@peachy.dev">hello@peachy.dev</a>
+        </div>
+      </nav>
+    </div>
+    <div class="container footer__base">
+      <span>© <span id="year">2026</span> Peachy. All the pixels reserved.</span>
+      <span class="footer__note">Built as a static site · inspired by dottxt.ai</span>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

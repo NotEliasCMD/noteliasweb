@@ -16,9 +16,16 @@
   const $ = (sel, ctx = document) => ctx.querySelector(sel);
   const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
-  /* ---------------------------------------------- 1 + 2. reveal + target */
+  /* ---------------------------------------------- 1 + 2. reveal + typewriter */
   const revealEls = $$("[data-reveal]");
   if ("IntersectionObserver" in window && !reduceMotion) {
+    // blank the highlight phrases up front so they type out from empty on reveal
+    // (text stays in the DOM as the no-JS / reduced-motion fallback otherwise)
+    $$("[data-type]").forEach((t) => {
+      t.dataset.text = t.textContent;
+      t.textContent = "";
+    });
+
     const io = new IntersectionObserver(
       (entries, obs) => {
         entries.forEach((entry) => {
@@ -26,13 +33,12 @@
           const el = entry.target;
           el.classList.add("is-in");
 
-          // fire amber highlight on any [data-target] inside this element
-          $$("[data-target]", el).forEach((t, i) => {
-            setTimeout(() => t.classList.add("is-hit"), 350 + i * 150);
+          // type out any [data-type] highlight spans inside this element
+          const typers = $$("[data-type]", el);
+          if (el.hasAttribute("data-type")) typers.unshift(el);
+          typers.forEach((t, i) => {
+            setTimeout(() => typeSpan(t), 350 + i * 150);
           });
-          if (el.hasAttribute("data-target")) {
-            setTimeout(() => el.classList.add("is-hit"), 350);
-          }
 
           // count-up any stats inside
           $$("[data-count]", el).forEach(countUp);
@@ -46,6 +52,22 @@
   } else {
     revealEls.forEach((el) => el.classList.add("is-in"));
     $$("[data-count]").forEach((el) => (el.textContent = el.dataset.count));
+  }
+
+  // type a highlight span's text one char at a time, trailing a blinking caret
+  function typeSpan(el) {
+    if (el.dataset.typed) return; // guard against double-fire
+    el.dataset.typed = "1";
+    const text = el.dataset.text ?? el.textContent;
+    el.textContent = "";
+    const caret = appendChunk(el, "hl__caret", "▍");
+    let i = 0;
+    (function typeChar() {
+      caret.insertAdjacentText("beforebegin", text[i]);
+      i++;
+      if (i < text.length) setTimeout(typeChar, 75 + Math.random() * 65);
+      else caret.remove();
+    })();
   }
 
   /* ---------------------------------------------- 3. stat count-up */

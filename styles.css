@@ -17,7 +17,6 @@
 
   --peach:      #E79CB6;   /* brand accent (Peachy!) */
   --peach-deep: #D97FA0;   /* accent hover / emphasis */
-  --amber:      rgba(251, 191, 36, 0.55); /* "target" highlight flash */
   --gold:       #BD932F;
 
   /* ---- Type ---- */
@@ -56,16 +55,12 @@ img { max-width: 100%; display: block; }
 
 .container { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
 
-/* ---- shared: highlight word + amber target flash ---- */
+/* ---- shared: highlight word + typewriter caret ---- */
 .hl { color: var(--peach-deep); position: relative; white-space: nowrap; }
-.hl[data-target].is-hit {
-  animation: target 1.6s var(--ease) forwards;
-  border-radius: 4px;
-}
-@keyframes target {
-  0%   { background-color: var(--amber); box-shadow: 0 0 0 4px var(--amber); }
-  60%  { background-color: var(--amber); box-shadow: 0 0 0 4px var(--amber); }
-  100% { background-color: transparent; box-shadow: 0 0 0 0 transparent; }
+.hl__caret {
+  color: currentColor;
+  font-weight: 400;
+  animation: blink 0.8s step-end infinite;
 }
 
 /* ---- shared: buttons ---- */

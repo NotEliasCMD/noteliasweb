@@ -79,11 +79,14 @@ Put `data-reveal` on any element that should fade + rise into view. `script.js`
 uses an `IntersectionObserver` to add `.is-in` (CSS handles the transition). It
 `unobserve`s after firing (one-shot). No config needed — just add the attribute.
 
-### b) `[data-target]` — amber highlight flash
-Put `data-target` on an inline `<span class="hl">…</span>` inside a revealed
-element. When that element reveals, the span flashes the amber background
-(`@keyframes target`). This is the dottxt "attention" accent — use it sparingly,
-~one per section, on the key phrase.
+### b) `[data-type]` — typewriter highlight
+Put `data-type` on an inline `<span class="hl">…</span>` inside a revealed
+element. On load, `script.js` blanks these spans (stashing the text in
+`dataset.text`) and, when the element reveals, types the phrase out
+character-by-character with a blinking pink caret (`.hl__caret`, reusing
+`@keyframes blink`) that vanishes when done. `.hl` keeps the pink color. Use
+sparingly, ~one per section, on the key phrase. Under reduced motion / no
+IntersectionObserver the text is left intact (no typing).
 
 ### c) `[data-count]` — stat count-up
 `<span class="stat__num" data-count="40">40</span>` animates 0→40 on reveal.

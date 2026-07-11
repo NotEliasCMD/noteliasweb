@@ -149,6 +149,19 @@ img { max-width: 100%; display: block; }
 .terminal__dot:nth-child(2) { background: #d4b25a; }
 .terminal__dot:nth-child(3) { background: #7fb08a; }
 .terminal__file { margin-left: 0.6rem; font-size: 0.72rem; color: #8a8272; }
+.terminal__tabs {
+  display: flex; gap: 2px; background: #24211a;
+  border-bottom: 1px solid #333025; padding: 0 0.5rem; overflow-x: auto;
+}
+.terminal__tab {
+  appearance: none; background: transparent; border: 0;
+  color: #8a8272; font-family: var(--font-mono); font-size: 0.72rem;
+  white-space: nowrap; padding: 0.5rem 0.7rem; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .2s var(--ease), border-color .2s var(--ease), background .2s var(--ease);
+}
+.terminal__tab:hover { color: #cfc8b8; }
+.terminal__tab.is-active { color: #ece7dc; background: #1c1a15; border-bottom-color: #E79CB6; }
 .terminal__body {
   margin: 0; padding: 1.2rem 1.3rem 1.5rem;
   font-size: 0.82rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
@@ -187,6 +200,7 @@ img { max-width: 100%; display: block; }
 .section { padding: clamp(4rem, 9vw, 7.5rem) 0; }
 .section--alt { background: var(--cream-alt); }
 .section__grid { display: grid; grid-template-columns: 200px 1fr; gap: clamp(1.5rem, 4vw, 3.5rem); }
+.section__content { min-width: 0; }   /* let the 1fr track clip the carousel instead of blowing out */
 .section__label { display: flex; flex-direction: column; gap: 0.3rem; position: sticky; top: 100px; align-self: start; }
 .section__num { font-family: var(--font-mono); font-size: 0.8rem; color: var(--peach-deep); }
 .section__kicker { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
@@ -198,7 +212,7 @@ img { max-width: 100%; display: block; }
 .stat { display: flex; flex-direction: column; }
 .stat__num { font-size: clamp(2.2rem, 4vw, 3rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
 .stat__unit { display: inline; color: var(--peach-deep); }
-.stat .stat__num, .stat .stat__unit { display: inline; }
+.stat .stat__num { display: inline; }   /* num + unit share a line; .stat__unit inline is set above */
 .stat__label { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; }
 
 /* ---- work cards ---- */
@@ -216,6 +230,58 @@ img { max-width: 100%; display: block; }
 .card__body { color: var(--ink-soft); font-size: 0.98rem; }
 .card__meta { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.2rem; }
 .card__meta li { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0.2rem 0.65rem; }
+
+/* ---- work carousel ---- */
+.carousel { margin-top: 2.6rem; }
+.cards--carousel {
+  display: grid;                              /* overrides the base .cards grid */
+  grid-template-columns: none;
+  grid-auto-flow: column;                     /* fill down each column, then across */
+  grid-template-rows: repeat(2, 1fr);         /* two stacked rows per column */
+  grid-auto-columns: clamp(210px, 32%, 260px);
+  gap: 1.1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: 0.25rem 0.25rem 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--peach) transparent;
+}
+.cards--carousel:focus-visible { outline: 2px solid var(--peach-deep); outline-offset: 3px; }
+.cards--carousel::-webkit-scrollbar { height: 6px; }
+.cards--carousel::-webkit-scrollbar-thumb { background: var(--peach); border-radius: 999px; }
+.cards--carousel .card {
+  scroll-snap-align: start;
+  padding: 1.1rem 1.15rem 1.2rem;          /* tighter than the default card for a shorter card */
+  /* opacity is driven by JS as cards clip past the track edges */
+  transition: opacity 0.45s var(--ease), transform 0.35s var(--ease), border-color 0.35s var(--ease), box-shadow 0.35s var(--ease);
+}
+.cards--carousel .card:active { cursor: grabbing; }
+/* compact internal spacing so the two rows sit shorter */
+.cards--carousel .card__top { margin-bottom: 0.7rem; }
+.cards--carousel .card__title { font-size: 1.12rem; margin-bottom: 0.4rem; }
+.cards--carousel .card__body { font-size: 0.9rem; }
+.cards--carousel .card__meta { margin-top: 0.8rem; }
+.cards--carousel .card__open { margin-top: 0.8rem; }
+
+.carousel__ctrl { display: flex; align-items: center; gap: 1rem; margin-top: 0.4rem; }
+.carousel__arrow {
+  width: 42px; height: 42px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--paper);
+  font-family: var(--font-mono); font-size: 1rem; color: var(--peach-deep); cursor: pointer;
+  transition: border-color 0.3s var(--ease), transform 0.3s var(--ease), opacity 0.3s var(--ease);
+}
+.carousel__arrow:hover:not(:disabled) { border-color: var(--peach); transform: translateY(-2px); }
+.carousel__arrow:disabled { opacity: 0.35; cursor: default; }
+.carousel__dots { display: flex; gap: 0.45rem; margin: 0 auto; flex-wrap: wrap; justify-content: center; }
+.carousel__dot {
+  /* content-box + padding keeps the visible dot 7px while the tap target is ~23px */
+  box-sizing: content-box;
+  width: 7px; height: 7px; border-radius: 999px; border: 0; padding: 8px;
+  background-color: var(--line); background-clip: content-box; cursor: pointer;
+  transition: background-color 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.carousel__dot.is-active { background-color: var(--peach-deep); transform: scale(1.35); }
 
 /* ---- skills ---- */
 .skills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 2.6rem; }
@@ -237,7 +303,31 @@ img { max-width: 100%; display: block; }
 .post__link:hover .post__arrow { transform: translateX(5px); }
 
 /* ---- closer ---- */
-.closer { background: var(--ink); color: var(--cream); }
+.closer { background: var(--ink); color: var(--cream); position: relative; overflow: hidden; }
+.closer .container { position: relative; z-index: 1; } /* content sits above the plasma backdrop */
+
+/* full-bleed ASCII plasma field behind the content */
+.closer__bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+/* ASCII.mount() adds `ascii-screen` (color:var(--ink)); scope our tint more
+   specifically so it wins. Muted cream at low opacity → a faint moving texture. */
+.closer__bg .ascii-screen,
+.closer__ascii {
+  position: absolute; inset: 0; margin: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); line-height: 1; white-space: pre;
+  color: #d7cfbd;
+  opacity: 0.32;
+}
+/* scrim: darken just behind the (left-anchored) heading + buttons so the copy
+   stays legible, while letting the plasma read boldly across the rest */
+.closer__bg::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 75% at 30% 50%,
+      var(--ink) 0%, color-mix(in srgb, var(--ink) 40%, transparent) 50%, transparent 82%),
+    linear-gradient(var(--ink), transparent 16%, transparent 84%, var(--ink));
+}
+
 .closer .section__num, .closer .section__kicker { color: color-mix(in srgb, var(--peach) 80%, var(--cream)); }
 .closer .section__kicker { color: #9c9484; }
 .closer__title { font-size: clamp(2rem, 5vw, 3.6rem); max-width: 16ch; }
@@ -263,9 +353,127 @@ img { max-width: 100%; display: block; }
   font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted);
 }
 
+/* ---- work card as a link/button ---- */
+.card--link { cursor: pointer; }
+.card--link:focus-visible { outline: 2px solid var(--peach-deep); outline-offset: 3px; }
+.card__open {
+  display: inline-block; margin-top: 1.2rem;
+  font-family: var(--font-mono); font-size: 0.78rem; color: var(--peach-deep);
+  opacity: 0; transform: translateX(-4px);
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.card--link:hover .card__open,
+.card--link:focus-visible .card__open { opacity: 1; transform: none; }
+
 /* ================================================================= REVEAL */
 [data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
 [data-reveal].is-in { opacity: 1; transform: none; }
+
+/* ================================================================= PROJECT PLANES */
+/* The main site shifts back like a plane as a detail view slides in over it. */
+/* base = the state we return to when a plane closes → slower "back" animation.
+   The is-planed state below keeps the faster duration for opening. */
+.stage { transition: transform 0.9s var(--ease), opacity 0.9s var(--ease); }
+body.is-planed { overflow: hidden; }
+body.is-planed .stage {
+  transform: translateX(-8%) scale(0.985); opacity: 0.35;
+  transition: transform 0.5s var(--ease), opacity 0.5s var(--ease);
+}
+
+.planes { position: absolute; }              /* just a container; planes are fixed */
+.plane {
+  position: fixed; inset: 0; z-index: 80;
+  background: var(--cream); color: var(--ink);
+  overflow-y: auto; overflow-x: hidden;
+  transform: translateX(100%); visibility: hidden;
+  /* closing (returning to this base state) slides out slower; the visibility
+     delay matches the duration so the plane stays visible for the full slide */
+  transition: transform 0.9s var(--ease), visibility 0s linear 0.9s;
+}
+.plane.is-open { transform: none; visibility: visible; transition: transform 0.5s var(--ease); }
+
+/* sticky top bar with back button */
+.plane__bar {
+  position: sticky; top: 0; z-index: 5;
+  backdrop-filter: saturate(1.4) blur(10px);
+  background: color-mix(in srgb, var(--cream) 82%, transparent);
+  border-bottom: 1px solid var(--line);
+}
+.plane__bar-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
+.plane__back { cursor: pointer; }
+.plane__crumb { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* two columns: pinned graphic | scrolling text */
+.plane__grid {
+  display: grid; grid-template-columns: 0.95fr 1.05fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  /* keep the trailing space modest so the pinned graphic/heading stay put to
+     the very bottom instead of unsticking early over a tall empty gap */
+  padding: clamp(2rem, 5vw, 4rem) var(--gutter) clamp(3rem, 7vw, 5rem);
+}
+.plane__media {
+  position: sticky; top: 92px; align-self: start;
+  /* nudge the graphic left toward the page edge and down so it reads as
+     vertically balanced against the tall text column (transform keeps the
+     sticky math intact) */
+  transform: translate(-1.75rem, 2.5rem);
+}
+/* let both columns shrink below their content's intrinsic width so the wide
+   ASCII <pre> and the long heading can't force horizontal overflow on mobile */
+.plane__media, .plane__content { min-width: 0; }
+
+/* animation sits directly on the page — no card, same background as the page.
+   Height is capped to the viewport (minus the pinned bar + breathing room) so
+   the graphic always fits on screen and lets go in step with the heading at the
+   very bottom, instead of over-scrolling up while the heading stays pinned. */
+.ascii-panel {
+  background: var(--cream);
+  overflow: hidden;
+  height: min(720px, calc(100vh - 220px));
+  height: min(720px, calc(100dvh - 220px));
+  display: flex; flex-direction: column;
+}
+.ascii-screen {
+  flex: 1; min-width: 0; max-width: 100%; margin: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); line-height: 1; white-space: pre;
+  color: var(--ink);
+  overflow: hidden;
+}
+
+/* text column: heading pins, only the body blocks scroll */
+.plane__head {
+  position: sticky; top: 68px; z-index: 4;
+  background: var(--cream);
+  padding: 1.4rem 0 1.6rem;
+}
+/* stack pills sit under the title inside the pinned header */
+.plane__head .plane__meta { margin-top: 1.15rem; }
+/* soft fade so scrolling text dissolves as it passes under the pinned heading */
+.plane__head::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 1rem;
+  background: linear-gradient(var(--cream), transparent);
+  pointer-events: none;
+}
+.plane__tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--peach-deep); text-transform: uppercase; letter-spacing: 0.06em; }
+.plane__title { font-size: clamp(2rem, 5vw, 3.4rem); margin: 0.7rem 0 0; max-width: 18ch; }
+/* the whole title lives inside .hl (which is nowrap for short inline phrases) —
+   let it wrap here so long titles don't overflow narrow screens */
+.plane__title .hl { white-space: normal; }
+.plane__block { margin-bottom: clamp(2.4rem, 6vw, 4rem); max-width: 56ch; }
+/* clear the header's fade so the first block's heading isn't dimmed at rest
+   (the head is the first child, so target the block right after it) */
+.plane__head + .plane__block { margin-top: 2.5rem; }
+.plane__block h2 { font-size: clamp(1.2rem, 2.4vw, 1.6rem); margin-bottom: 0.7rem; }
+.plane__block p { color: var(--ink-soft); font-size: 1.02rem; }
+.plane__list { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.plane__list li { position: relative; padding-left: 1.4rem; color: var(--ink-soft); }
+.plane__list li::before { content: "→"; position: absolute; left: 0; color: var(--peach-deep); }
+.plane__meta { margin-top: 0.5rem; }
+
+/* plane reveal (mirrors the global reveal, but plane-scoped) */
+.plane__block[data-plane-reveal] { opacity: 0; transform: translateY(24px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
+.plane__block.is-in { opacity: 1; transform: none; }
 
 /* ================================================================= RESPONSIVE */
 @media (max-width: 900px) {
@@ -274,14 +482,22 @@ img { max-width: 100%; display: block; }
   .section__grid { grid-template-columns: 1fr; }
   .section__label { position: static; flex-direction: row; gap: 0.8rem; align-items: center; }
   .cards { grid-template-columns: 1fr; }
+  .cards--carousel { grid-template-columns: none; }   /* stay a horizontal scroll row */
   .skills { grid-template-columns: 1fr; }
   .footer__inner { grid-template-columns: 1fr; }
+  .plane__grid { grid-template-columns: 1fr; }
+  .plane__media { position: static; transform: none; }
+  .plane__head { position: static; padding: 0 0 0.5rem; }
+  .plane__head::after { display: none; }
+  .ascii-panel { height: 320px; }
 }
 @media (max-width: 720px) {
   .nav__links, .nav__cta { display: none; }
   .nav__burger { display: flex; }
   .nav__drawer.is-open { display: flex; }
   .footer__cols { grid-template-columns: 1fr 1fr; }
+  .cards--carousel { grid-auto-columns: clamp(200px, 70%, 250px); }   /* next column peeks */
+  .hl { white-space: normal; }   /* allow highlight phrases to wrap on narrow screens */
 }
 
 /* ================================================================= A11Y */
@@ -290,4 +506,7 @@ img { max-width: 100%; display: block; }
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
   [data-reveal] { opacity: 1; transform: none; }
   .cursor { animation: none; }
+  .cards--carousel { scroll-behavior: auto; }
+  .plane__block[data-plane-reveal] { opacity: 1; transform: none; }
+  body.is-planed .stage { transform: none; opacity: 1; }
 }

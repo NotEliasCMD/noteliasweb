@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Peachy — Data Scientist</title>
-  <meta name="description" content="Peachy is a data scientist who turns messy data into decisions. Portfolio of machine learning, causal inference, and data storytelling work." />
+  <meta name="description" content="Elias is a data scientist who turns messy data into decisions. Portfolio of machine learning, causal inference, and data storytelling work." />
 
   <!-- Social preview -->
-  <meta property="og:title" content="Peachy — Data Scientist" />
+  <meta property="og:title" content="Elias Kelly — Data Scientist | AI Engineer | Machine Learning Engineer" />
   <meta property="og:description" content="I turn messy data into decisions." />
   <meta property="og:type" content="website" />
 
@@ -20,6 +20,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍑</text></svg>" />
 </head>
 <body>
+  <div class="stage" id="stage">
   <!-- ============================ NAV ============================ -->
   <header class="nav" id="nav">
     <div class="container nav__inner">
@@ -37,7 +38,7 @@
 
       <a class="btn btn--primary nav__cta" href="#contact">Get in touch</a>
 
-      <button class="nav__burger" id="burger" aria-label="Toggle menu" aria-expanded="false">
+      <button class="nav__burger" id="burger" aria-label="Toggle menu" aria-controls="drawer" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -57,7 +58,7 @@
       <div class="container hero__grid">
         <div class="hero__copy">
           <p class="eyebrow" data-reveal>
-            <span class="eyebrow__tick"></span> Data Scientist · Available for select work
+            <span class="eyebrow__tick"></span> Data Scientist | AI Engineer · Available for to hire
           </p>
           <h1 class="hero__title" data-reveal>
             Your data has a story.
@@ -65,7 +66,7 @@
             <span class="hl" data-type>I find it.</span>
           </h1>
           <p class="hero__lede" data-reveal>
-            I'm <strong>Peachy</strong> — a data scientist who turns noisy,
+            I'm <strong>Elias</strong> — a data scientist who turns noisy,
             half-broken datasets into models people actually trust and decisions
             teams actually ship. Rigorous where it counts, pragmatic everywhere else.
           </p>
@@ -81,7 +82,12 @@
             <span class="terminal__dot"></span>
             <span class="terminal__dot"></span>
             <span class="terminal__dot"></span>
-            <span class="terminal__file">peachy@analysis — python</span>
+            <span class="terminal__file">elias@analysis — python</span>
+          </div>
+          <div class="terminal__tabs">
+            <button type="button" class="terminal__tab is-active" data-tab="tv" tabindex="-1">tv_revenue.py</button>
+            <button type="button" class="terminal__tab" data-tab="forecast" tabindex="-1">forecast.py</button>
+            <button type="button" class="terminal__tab" data-tab="triage" tabindex="-1">triage.py</button>
           </div>
           <pre class="terminal__body"><code id="typed"></code><span class="cursor" id="cursor">▍</span></pre>
         </div>
@@ -120,7 +126,7 @@
             not like magic.
           </h2>
           <p class="section__lede" data-reveal>
-            Six years turning ambiguous questions into measurable answers. I've
+            Nine years turning ambiguous questions into measurable answers. I've
             shipped fraud detection that cut losses by double digits, forecasting
             that finance actually plans against, and experiment platforms that keep
             product teams honest. My north star: work that is reproducible,
@@ -157,67 +163,212 @@
         <div class="section__content">
           <h2 class="section__title" data-reveal>Things I'm proud to have shipped.</h2>
 
-          <div class="cards">
-            <article class="card" data-reveal>
-              <div class="card__top">
-                <span class="card__tag">Fraud · Real-time ML</span>
-                <span class="card__year">2025</span>
-              </div>
-              <h3 class="card__title">Sub-100ms fraud scoring</h3>
-              <p class="card__body">
-                Rebuilt a gradient-boosted scoring pipeline into a feature-store-backed
-                real-time service. Held precision while cutting analyst review volume
-                by 31%.
-              </p>
-              <ul class="card__meta">
-                <li>XGBoost</li><li>Feast</li><li>gRPC</li>
-              </ul>
-            </article>
+          <!-- Horizontal carousel: scroll/drag sideways or use the arrow buttons.
+               Wrapper reveals as a unit; cards themselves do NOT carry data-reveal
+               (off-screen cards would otherwise stay hidden until scrolled in). -->
+          <div class="carousel" data-reveal>
+            <div class="cards cards--carousel" id="workTrack" tabindex="0"
+                 role="region" aria-label="Selected work — scroll or use arrows">
+              <article class="card card--link" data-project="fraud" role="button" tabindex="0" aria-label="Open project: Sub-100ms fraud scoring">
+                <div class="card__top">
+                  <span class="card__tag">Fraud · Real-time ML</span>
+                  <span class="card__year">2025</span>
+                </div>
+                <h3 class="card__title">Sub-100ms fraud scoring</h3>
+                <p class="card__body">
+                  Rebuilt a gradient-boosted scoring pipeline into a feature-store-backed
+                  real-time service. Held precision while cutting analyst review volume
+                  by 31%.
+                </p>
+                <ul class="card__meta">
+                  <li>XGBoost</li><li>Feast</li><li>gRPC</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
 
-            <article class="card" data-reveal>
-              <div class="card__top">
-                <span class="card__tag">Forecasting · Bayesian</span>
-                <span class="card__year">2024</span>
-              </div>
-              <h3 class="card__title">Demand forecasting finance trusts</h3>
-              <p class="card__body">
-                Hierarchical Bayesian model with proper uncertainty intervals,
-                replacing a spreadsheet nobody could audit. MAPE down from 22% to 9%.
-              </p>
-              <ul class="card__meta">
-                <li>PyMC</li><li>Prophet</li><li>Polars</li>
-              </ul>
-            </article>
+              <article class="card card--link" data-project="forecast" role="button" tabindex="0" aria-label="Open project: Demand forecasting finance trusts">
+                <div class="card__top">
+                  <span class="card__tag">Forecasting · Bayesian</span>
+                  <span class="card__year">2024</span>
+                </div>
+                <h3 class="card__title">Demand forecasting finance trusts</h3>
+                <p class="card__body">
+                  Hierarchical Bayesian model with proper uncertainty intervals,
+                  replacing a spreadsheet nobody could audit. MAPE down from 22% to 9%.
+                </p>
+                <ul class="card__meta">
+                  <li>PyMC</li><li>Prophet</li><li>Polars</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
 
-            <article class="card" data-reveal>
-              <div class="card__top">
-                <span class="card__tag">Causal · Experimentation</span>
-                <span class="card__year">2024</span>
-              </div>
-              <h3 class="card__title">Self-serve A/B platform</h3>
-              <p class="card__body">
-                Designed a CUPED-accelerated experimentation layer and guardrail
-                metrics so PMs could ship tests without a statistician on call.
-              </p>
-              <ul class="card__meta">
-                <li>CUPED</li><li>dbt</li><li>Streamlit</li>
-              </ul>
-            </article>
+              <article class="card card--link" data-project="abtest" role="button" tabindex="0" aria-label="Open project: Self-serve A/B platform">
+                <div class="card__top">
+                  <span class="card__tag">Causal · Experimentation</span>
+                  <span class="card__year">2024</span>
+                </div>
+                <h3 class="card__title">Self-serve A/B platform</h3>
+                <p class="card__body">
+                  Designed a CUPED-accelerated experimentation layer and guardrail
+                  metrics so PMs could ship tests without a statistician on call.
+                </p>
+                <ul class="card__meta">
+                  <li>CUPED</li><li>dbt</li><li>Streamlit</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
 
-            <article class="card" data-reveal>
-              <div class="card__top">
-                <span class="card__tag">NLP · LLM</span>
-                <span class="card__year">2023</span>
-              </div>
-              <h3 class="card__title">Structured extraction from support tickets</h3>
-              <p class="card__body">
-                Constrained-decoding LLM pipeline that turns free-text tickets into
-                a validated schema — 98% field accuracy, zero malformed JSON.
-              </p>
-              <ul class="card__meta">
-                <li>Outlines</li><li>Pydantic</li><li>Airflow</li>
-              </ul>
-            </article>
+              <article class="card card--link" data-project="tickets" role="button" tabindex="0" aria-label="Open project: Structured extraction from support tickets">
+                <div class="card__top">
+                  <span class="card__tag">NLP · LLM</span>
+                  <span class="card__year">2023</span>
+                </div>
+                <h3 class="card__title">Structured extraction from support tickets</h3>
+                <p class="card__body">
+                  Constrained-decoding LLM pipeline that turns free-text tickets into
+                  a validated schema — 98% field accuracy, zero malformed JSON.
+                </p>
+                <ul class="card__meta">
+                  <li>Outlines</li><li>Pydantic</li><li>Airflow</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
+              <!-- ↓ mock placeholders — real copy to come; all share #plane-placeholder -->
+              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Churn propensity model">
+                <div class="card__top">
+                  <span class="card__tag">Retention · Classification</span>
+                  <span class="card__year">2023</span>
+                </div>
+                <h3 class="card__title">Churn propensity model</h3>
+                <p class="card__body">
+                  Placeholder — a survival-aware churn model that flags at-risk accounts
+                  weeks earlier, feeding a lifecycle-marketing playbook.
+                </p>
+                <ul class="card__meta">
+                  <li>LightGBM</li><li>SHAP</li><li>dbt</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
+              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Recommendation reranker">
+                <div class="card__top">
+                  <span class="card__tag">RecSys · Ranking</span>
+                  <span class="card__year">2022</span>
+                </div>
+                <h3 class="card__title">Recommendation reranker</h3>
+                <p class="card__body">
+                  Placeholder — a learning-to-rank layer on top of candidate retrieval
+                  that lifted click-through without hurting diversity.
+                </p>
+                <ul class="card__meta">
+                  <li>XGBoost</li><li>Faiss</li><li>Redis</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
+              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: IoT anomaly detection">
+                <div class="card__top">
+                  <span class="card__tag">Anomaly · Streaming</span>
+                  <span class="card__year">2022</span>
+                </div>
+                <h3 class="card__title">IoT anomaly detection</h3>
+                <p class="card__body">
+                  Placeholder — an unsupervised detector over sensor telemetry that
+                  catches equipment drift before it becomes downtime.
+                </p>
+                <ul class="card__meta">
+                  <li>Isolation Forest</li><li>Kafka</li><li>Flink</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
+              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Customer segmentation">
+                <div class="card__top">
+                  <span class="card__tag">Clustering · Marketing</span>
+                  <span class="card__year">2021</span>
+                </div>
+                <h3 class="card__title">Customer segmentation</h3>
+                <p class="card__body">
+                  Placeholder — a behavioral clustering of the customer base that gave
+                  growth a shared, data-backed vocabulary for personas.
+                </p>
+                <ul class="card__meta">
+                  <li>K-Means</li><li>UMAP</li><li>Polars</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
+              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Review topic modeling">
+                <div class="card__top">
+                  <span class="card__tag">NLP · Topics</span>
+                  <span class="card__year">2023</span>
+                </div>
+                <h3 class="card__title">Review topic modeling</h3>
+                <p class="card__body">
+                  Placeholder — an embedding-based topic pipeline that turns thousands of
+                  product reviews into a ranked list of what to fix.
+                </p>
+                <ul class="card__meta">
+                  <li>BERTopic</li><li>HDBSCAN</li><li>spaCy</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
+              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Price elasticity model">
+                <div class="card__top">
+                  <span class="card__tag">Causal · Pricing</span>
+                  <span class="card__year">2022</span>
+                </div>
+                <h3 class="card__title">Price elasticity model</h3>
+                <p class="card__body">
+                  Placeholder — a causal demand model that separates price effects from
+                  seasonality so pricing decisions rest on real elasticity.
+                </p>
+                <ul class="card__meta">
+                  <li>DoWhy</li><li>PyMC</li><li>Snowflake</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
+              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Visual QC classifier">
+                <div class="card__top">
+                  <span class="card__tag">Vision · Manufacturing</span>
+                  <span class="card__year">2021</span>
+                </div>
+                <h3 class="card__title">Visual QC classifier</h3>
+                <p class="card__body">
+                  Placeholder — a defect classifier on the production line that flags
+                  faulty units in real time and keeps a human in the loop.
+                </p>
+                <ul class="card__meta">
+                  <li>PyTorch</li><li>ONNX</li><li>OpenCV</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
+              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Streaming analytics dashboard">
+                <div class="card__top">
+                  <span class="card__tag">Analytics · Realtime</span>
+                  <span class="card__year">2023</span>
+                </div>
+                <h3 class="card__title">Streaming analytics dashboard</h3>
+                <p class="card__body">
+                  Placeholder — a live metrics layer over event streams that gives ops a
+                  second-by-second read on what the business is doing.
+                </p>
+                <ul class="card__meta">
+                  <li>Spark</li><li>Kafka</li><li>Streamlit</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+            </div>
+
+            <div class="carousel__ctrl">
+              <button class="carousel__arrow" id="workPrev" type="button" aria-label="Previous projects">←</button>
+              <div class="carousel__dots" id="workDots" aria-hidden="true"></div>
+              <button class="carousel__arrow" id="workNext" type="button" aria-label="More projects">→</button>
+            </div>
           </div>
         </div>
       </div>
@@ -309,6 +460,9 @@
 
     <!-- ============================ 05 · PHILOSOPHY / CTA ============================ -->
     <section class="section closer" id="contact">
+      <div class="closer__bg" aria-hidden="true">
+        <pre class="closer__ascii" data-anim-bg></pre>
+      </div>
       <div class="container section__grid">
         <div class="section__label">
           <span class="section__num">05</span>
@@ -366,7 +520,252 @@
       <span class="footer__note">Built as a static site · inspired by dottxt.ai</span>
     </div>
   </footer>
+  </div><!-- /.stage -->
 
+  <!-- ============================ PROJECT PLANES ============================ -->
+  <!-- Each card in #work opens one of these. Slides in from the right; graphic
+       column is sticky, text blocks reveal on scroll. Copy is placeholder. -->
+  <div class="planes" id="planes">
+
+    <!-- Fraud -->
+    <article class="plane" id="plane-fraud" data-anim="cube" aria-hidden="true" aria-labelledby="plane-fraud-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
+          <span class="plane__crumb">Selected work · 2025</span>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ascii-panel">
+            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Fraud · Real-time ML</p>
+            <h1 class="plane__title" id="plane-fraud-title"><span class="hl" data-plane-type>Sub-100ms fraud scoring</span></h1>
+            <ul class="card__meta plane__meta">
+              <li>XGBoost</li><li>Feast</li><li>gRPC</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The problem</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Approach</h2>
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What I built</h2>
+            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto.</p>
+            <ul class="plane__list">
+              <li>Feature-store-backed real-time scoring service</li>
+              <li>Gradient-boosted model with monotonic constraints</li>
+              <li>Shadow deployment and gradual traffic ramp</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Outcome</h2>
+            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Forecasting -->
+    <article class="plane" id="plane-forecast" data-anim="dna" aria-hidden="true" aria-labelledby="plane-forecast-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
+          <span class="plane__crumb">Selected work · 2024</span>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ascii-panel">
+            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Forecasting · Bayesian</p>
+            <h1 class="plane__title" id="plane-forecast-title"><span class="hl" data-plane-type>Demand forecasting finance trusts</span></h1>
+            <ul class="card__meta plane__meta">
+              <li>PyMC</li><li>Prophet</li><li>Polars</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The problem</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Approach</h2>
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What I built</h2>
+            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto.</p>
+            <ul class="plane__list">
+              <li>Hierarchical Bayesian model with partial pooling</li>
+              <li>Calibrated uncertainty intervals finance could plan against</li>
+              <li>Automated backtesting and drift monitoring</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Outcome</h2>
+            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- A/B platform -->
+    <article class="plane" id="plane-abtest" data-anim="cube" aria-hidden="true" aria-labelledby="plane-abtest-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
+          <span class="plane__crumb">Selected work · 2024</span>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ascii-panel">
+            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Causal · Experimentation</p>
+            <h1 class="plane__title" id="plane-abtest-title"><span class="hl" data-plane-type>Self-serve A/B platform</span></h1>
+            <ul class="card__meta plane__meta">
+              <li>CUPED</li><li>dbt</li><li>Streamlit</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The problem</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Approach</h2>
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What I built</h2>
+            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto.</p>
+            <ul class="plane__list">
+              <li>CUPED variance reduction baked into the pipeline</li>
+              <li>Guardrail metrics and automated significance checks</li>
+              <li>Self-serve UI so PMs ship tests without a statistician</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Outcome</h2>
+            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Ticket extraction -->
+    <article class="plane" id="plane-tickets" data-anim="dna" aria-hidden="true" aria-labelledby="plane-tickets-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
+          <span class="plane__crumb">Selected work · 2023</span>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ascii-panel">
+            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">NLP · LLM</p>
+            <h1 class="plane__title" id="plane-tickets-title"><span class="hl" data-plane-type>Structured extraction from support tickets</span></h1>
+            <ul class="card__meta plane__meta">
+              <li>Outlines</li><li>Pydantic</li><li>Airflow</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The problem</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Approach</h2>
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What I built</h2>
+            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto.</p>
+            <ul class="plane__list">
+              <li>Constrained decoding to a validated schema</li>
+              <li>Pydantic models as the single source of truth</li>
+              <li>Zero malformed JSON, 98% field accuracy</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Outcome</h2>
+            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Shared placeholder — every mock card (data-project="placeholder") opens this.
+         Its tag/title/crumb are populated from the clicked card in script.js. -->
+    <article class="plane" id="plane-placeholder" data-anim="cube" aria-hidden="true" aria-labelledby="plane-placeholder-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
+          <span class="plane__crumb">Selected work</span>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ascii-panel">
+            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Selected work</p>
+            <h1 class="plane__title" id="plane-placeholder-title"><span class="hl" data-plane-type>Project write-up</span></h1>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The problem</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Approach</h2>
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What I built</h2>
+            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto.</p>
+            <ul class="plane__list">
+              <li>Placeholder detail — real write-up to come</li>
+              <li>Reproducible pipeline with tests and monitoring</li>
+              <li>Shipped behind a gradual rollout</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Outcome</h2>
+            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+  </div><!-- /.planes -->
+
+  <script src="anim/ascii.js"></script>
+  <script src="anim/dna.js"></script>
+  <script src="anim/cube.js"></script>
+  <script src="anim/plasma.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

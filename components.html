@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Components — Peachy portfolio (dev gallery)</title>
+
+  <!--
+    LIVING COMPONENT GALLERY — dev/QA tool, NOT linked from the site.
+    Renders each component in isolation using the REAL styles.css + anim/ engine
+    so what you see here matches index.html. Companion to COMPONENTS.md (prose)
+    and CLAUDE.md (philosophy). Serve with `python3 -m http.server` and open
+    /components.html. Edit the source files, not this page, to change a component —
+    this page just mounts them.
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+
+  <!-- the REAL site stylesheet — single source of truth for component styling -->
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍑</text></svg>" />
+
+  <style>
+    /* --- gallery chrome only (gx- prefix so it never collides with site classes) --- */
+    .gx-wrap { max-width: 1080px; margin: 0 auto; padding: 3rem var(--gutter) 6rem; }
+    .gx-masthead { border-bottom: 2px solid var(--ink); padding-bottom: 1.5rem; margin-bottom: 2.5rem; }
+    .gx-masthead h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: -0.02em; }
+    .gx-masthead p { color: var(--ink-soft); max-width: 60ch; margin-top: 0.6rem; }
+    .gx-masthead code { font-family: var(--font-mono); font-size: 0.85em; background: var(--cream-alt); padding: 0.1em 0.4em; border-radius: 5px; }
+    .gx-toc { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.2rem; font-family: var(--font-mono); font-size: 0.8rem; }
+    .gx-toc a { color: var(--peach-deep); border: 1px solid var(--line); border-radius: 999px; padding: 0.25rem 0.7rem; }
+    .gx-toc a:hover { border-color: var(--peach); }
+
+    .gx-item { margin: 3.5rem 0; scroll-margin-top: 1rem; }
+    .gx-item__head { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 0.6rem; margin-bottom: 1.25rem; }
+    .gx-item__num { font-family: var(--font-mono); color: var(--peach-deep); font-size: 0.85rem; }
+    .gx-item__name { font-size: 1.35rem; font-weight: 600; }
+    .gx-src { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); margin-left: auto; }
+    .gx-note { color: var(--ink-soft); font-size: 0.92rem; max-width: 68ch; margin-bottom: 1rem; }
+    .gx-note strong { color: var(--ink); }
+
+    /* the framed viewport each component renders into */
+    .gx-stage { border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; background: var(--paper); position: relative; overflow: hidden; }
+    .gx-stage--cream { background: var(--cream); }
+    .gx-stage--alt { background: var(--cream-alt); }
+    .gx-stage--dark { background: #17150F; }
+    .gx-replay { position: absolute; top: 0.6rem; right: 0.6rem; z-index: 2; font-family: var(--font-mono); font-size: 0.7rem; border: 1px solid var(--line); background: var(--paper); color: var(--peach-deep); border-radius: 999px; padding: 0.25rem 0.7rem; cursor: pointer; }
+    .gx-replay:hover { border-color: var(--peach); }
+
+    /* keep the sticky nav from escaping its frame in the demo */
+    .gx-stage .nav { position: static; }
+    /* ascii demo panels */
+    .gx-ascii { display: flex; gap: 1.25rem; flex-wrap: wrap; justify-content: center; }
+    .gx-ascii pre { color: #d7cfbd; line-height: 1; margin: 0; }
+    .gx-ascii--cube pre { font-size: 7px; }
+    .gx-ascii--dna pre { font-size: 9px; }
+    .gx-plasma pre { color: #d7cfbd; line-height: 1; font-size: 6px; margin: 0; opacity: 0.9; }
+    .gx-revealbox { background: var(--cream-alt); border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem; font-family: var(--font-mono); font-size: 0.85rem; }
+    .gx-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .gx-grid2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="gx-wrap">
+
+  <header class="gx-masthead">
+    <h1>🍑 Component gallery</h1>
+    <p>
+      Every component rendered in isolation with the real <code>styles.css</code>
+      and <code>anim/</code> engine. This is a dev/QA harness — <strong>not part of
+      the shipped site</strong>. Prose lives in <code>COMPONENTS.md</code>; this is
+      the visual companion. Edit the source files to change a component.
+    </p>
+    <nav class="gx-toc">
+      <a href="#c-nav">Nav</a>
+      <a href="#c-hero">Hero</a>
+      <a href="#c-terminal">Terminal</a>
+      <a href="#c-marquee">Marquee</a>
+      <a href="#c-reveal">Reveal</a>
+      <a href="#c-type">Typewriter</a>
+      <a href="#c-stats">Stats</a>
+      <a href="#c-carousel">Carousel</a>
+      <a href="#c-posts">Skills/Writing</a>
+      <a href="#c-plasma">Plasma</a>
+      <a href="#c-ascii">ASCII (cube/dna)</a>
+    </nav>
+  </header>
+
+  <!-- 1. NAV -->
+  <section class="gx-item" id="c-nav">
+    <div class="gx-item__head">
+      <span class="gx-item__num">01</span><span class="gx-item__name">Nav + burger drawer</span>
+      <span class="gx-src">index.html ~25 · styles.css NAV · script.js #6</span>
+    </div>
+    <p class="gx-note">Sticky bar; below 720px the hamburger toggles the drawer. Tap the burger below (the drawer shows via the ≤720px rule, so <strong>narrow your window</strong> to see it swap). Escape closes it.</p>
+    <div class="gx-stage gx-stage--cream">
+      <header class="nav" id="gxNav">
+        <div class="container nav__inner">
+          <a class="nav__brand" href="#">
+            <span class="nav__logo">🍑</span><span class="nav__name">Peachy<span class="nav__dot">.</span></span>
+          </a>
+          <nav class="nav__links">
+            <a href="#">Work</a><a href="#">Skills</a><a href="#">Writing</a><a href="#">About</a>
+          </nav>
+          <span class="nav__cta"><a class="btn btn--primary" href="#">Get in touch</a></span>
+          <button class="nav__burger" id="gxBurger" aria-label="Toggle menu" aria-controls="gxDrawer" aria-expanded="false">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+        <div class="nav__drawer" id="gxDrawer" hidden>
+          <a href="#">Work</a><a href="#">Skills</a><a href="#">Writing</a><a href="#">About</a>
+          <a class="btn btn--primary" href="#">Get in touch</a>
+        </div>
+      </header>
+    </div>
+  </section>
+
+  <!-- 2. HERO -->
+  <section class="gx-item" id="c-hero">
+    <div class="gx-item__head">
+      <span class="gx-item__num">02</span><span class="gx-item__name">Hero</span>
+      <span class="gx-src">index.html ~57 · styles.css .hero*</span>
+    </div>
+    <p class="gx-note">Static copy; the phrase <strong>“I find it.”</strong> is a <code>[data-type]</code> typewriter highlight.</p>
+    <div class="gx-stage gx-stage--cream">
+      <button class="gx-replay" data-replay="hero">↻ replay</button>
+      <div class="hero__copy" data-gx-reveal-scope="hero">
+        <p class="eyebrow"><span class="eyebrow__tick"></span> Data Scientist · Available</p>
+        <h1 class="hero__title">Your data has a story.<br /><span class="hl" data-type>I find it.</span></h1>
+        <p class="hero__lede">I turn noisy, half-broken datasets into models people trust and decisions teams ship.</p>
+        <div class="hero__actions"><a class="btn btn--primary" href="#">See selected work</a><a class="btn btn--ghost" href="#">Start a conversation →</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. TERMINAL -->
+  <section class="gx-item" id="c-terminal">
+    <div class="gx-item__head">
+      <span class="gx-item__num">03</span><span class="gx-item__name">Terminal (tabbed)</span>
+      <span class="gx-src">index.html ~79 · styles.css .terminal* · script.js #5</span>
+    </div>
+    <p class="gx-note"><code>aria-hidden</code> decoration. Types one session here; the real site has three switchable tabs (edit the <code>TABS</code> array). <strong>Simplicity note:</strong> the site's cancellation/cache/lead-in machinery is heavy for decoration — see COMPONENTS.md §R1.</p>
+    <div class="gx-stage gx-stage--cream">
+      <button class="gx-replay" data-replay="term">↻ replay</button>
+      <div class="terminal" aria-hidden="true" style="max-width:520px">
+        <div class="terminal__bar"><span class="terminal__dot"></span><span class="terminal__dot"></span><span class="terminal__dot"></span><span class="terminal__file">elias@analysis — python</span></div>
+        <pre class="terminal__body"><code id="gxTyped"></code><span class="cursor">▍</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. MARQUEE -->
+  <section class="gx-item" id="c-marquee">
+    <div class="gx-item__head">
+      <span class="gx-item__num">04</span><span class="gx-item__name">Marquee</span>
+      <span class="gx-src">index.html ~96 · styles.css .marquee* · script.js #4</span>
+    </div>
+    <p class="gx-note">Item set is duplicated once in JS so a <code>-50%</code> translate loops seamlessly. Pauses on hover. Edit items in HTML only.</p>
+    <div class="gx-stage gx-stage--cream">
+      <div class="marquee" aria-label="Tools">
+        <div class="marquee__track" id="gxMarquee">
+          <span class="marquee__item">Python</span><span class="marquee__item">PyTorch</span><span class="marquee__item">scikit-learn</span><span class="marquee__item">SQL</span><span class="marquee__item">Polars</span><span class="marquee__item">dbt</span><span class="marquee__item">Spark</span><span class="marquee__item">XGBoost</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. REVEAL -->
+  <section class="gx-item" id="c-reveal">
+    <div class="gx-item__head">
+      <span class="gx-item__num">05</span><span class="gx-item__name">Scroll reveal</span>
+      <span class="gx-src"><code>[data-reveal]</code> · styles.css · script.js #1</span>
+    </div>
+    <p class="gx-note">Add <code>data-reveal</code> to fade+rise into view (one-shot IntersectionObserver adds <code>.is-in</code>). Hit replay to watch it again.</p>
+    <div class="gx-stage">
+      <button class="gx-replay" data-replay="reveal">↻ replay</button>
+      <div class="gx-grid2" id="gxRevealScope">
+        <div class="gx-revealbox" data-reveal>data-reveal · block A</div>
+        <div class="gx-revealbox" data-reveal>data-reveal · block B</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. TYPEWRITER -->
+  <section class="gx-item" id="c-type">
+    <div class="gx-item__head">
+      <span class="gx-item__num">06</span><span class="gx-item__name">Typewriter highlight</span>
+      <span class="gx-src"><code>[data-type]</code> · styles.css .hl* · script.js typeSpan()</span>
+    </div>
+    <p class="gx-note">Blanked on load, typed char-by-char behind a blinking caret when revealed. Use ~one per section on the key phrase.</p>
+    <div class="gx-stage gx-stage--cream">
+      <button class="gx-replay" data-replay="type">↻ replay</button>
+      <h2 class="section__title" style="margin:0" data-gx-reveal-scope="type">I make models behave like <span class="hl" data-type>software</span>, not magic.</h2>
+    </div>
+  </section>
+
+  <!-- 7. STATS -->
+  <section class="gx-item" id="c-stats">
+    <div class="gx-item__head">
+      <span class="gx-item__num">07</span><span class="gx-item__name">Count-up stats</span>
+      <span class="gx-src">index.html ~135 · styles.css .stat* · script.js #3</span>
+    </div>
+    <p class="gx-note"><code>data-count</code> animates 0→target. <strong>The visible text must equal <code>data-count</code></strong> (it is the JS-off fallback).</p>
+    <div class="gx-stage gx-stage--cream">
+      <button class="gx-replay" data-replay="stats">↻ replay</button>
+      <div class="stat-row" id="gxStats">
+        <div class="stat"><span class="stat__num" data-count="6">6</span><span class="stat__unit">yrs</span><span class="stat__label">in applied ML</span></div>
+        <div class="stat"><span class="stat__num" data-count="40">40</span><span class="stat__unit">+</span><span class="stat__label">models in production</span></div>
+        <div class="stat"><span class="stat__num" data-count="12">12</span><span class="stat__unit">M</span><span class="stat__label">rows on a quiet day</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. CAROUSEL -->
+  <section class="gx-item" id="c-carousel">
+    <div class="gx-item__head">
+      <span class="gx-item__num">08</span><span class="gx-item__name">Work carousel</span>
+      <span class="gx-src">index.html ~156 · styles.css .carousel* · script.js #7.5</span>
+    </div>
+    <p class="gx-note">2-row scroll-snap track. Native scroll works here; arrows page by a viewport. <strong>Simplicity note:</strong> the site layers arrows + looping + dots + a rAF opacity fade + mouse-drag on top of native scroll — see COMPONENTS.md §R3.</p>
+    <div class="gx-stage gx-stage--alt">
+      <div class="carousel">
+        <div class="cards cards--carousel" id="gxTrack" tabindex="0" role="region" aria-label="Selected work">
+          <article class="card"><div class="card__top"><span class="card__tag">Fraud · Real-time ML</span><span class="card__year">2025</span></div><h3 class="card__title">Sub-100ms fraud scoring</h3><p class="card__body">Feature-store-backed real-time service. Cut analyst review by 31%.</p><ul class="card__meta"><li>XGBoost</li><li>Feast</li><li>gRPC</li></ul></article>
+          <article class="card"><div class="card__top"><span class="card__tag">Forecasting · Bayesian</span><span class="card__year">2024</span></div><h3 class="card__title">Demand forecasting finance trusts</h3><p class="card__body">Hierarchical Bayesian model. MAPE 22% → 9%.</p><ul class="card__meta"><li>PyMC</li><li>Polars</li></ul></article>
+          <article class="card"><div class="card__top"><span class="card__tag">Causal · Experimentation</span><span class="card__year">2024</span></div><h3 class="card__title">Self-serve A/B platform</h3><p class="card__body">Guardrails, sequential testing, sane defaults.</p><ul class="card__meta"><li>Python</li><li>dbt</li></ul></article>
+          <article class="card"><div class="card__top"><span class="card__tag">NLP · Ops</span><span class="card__year">2023</span></div><h3 class="card__title">Ticket triage that learns</h3><p class="card__body">Routing model with human-in-the-loop feedback.</p><ul class="card__meta"><li>Transformers</li><li>Airflow</li></ul></article>
+        </div>
+        <div class="carousel__ctrl">
+          <button class="carousel__arrow" id="gxPrev" aria-label="Previous">←</button>
+          <button class="carousel__arrow" id="gxNext" aria-label="Next">→</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. SKILLS / WRITING -->
+  <section class="gx-item" id="c-posts">
+    <div class="gx-item__head">
+      <span class="gx-item__num">09</span><span class="gx-item__name">Skills · Writing · Footer</span>
+      <span class="gx-src">index.html ~377 · styles.css .skills/.posts/.footer</span>
+    </div>
+    <p class="gx-note">Static lists. Writing links + footer socials are placeholders (<code>href="#"</code>).</p>
+    <div class="gx-stage gx-stage--cream">
+      <div class="skills" style="margin:0">
+        <div><p class="skills__head">Modeling</p><ul class="skills__list"><li>Gradient boosting</li><li>Bayesian inference</li><li>Causal ML</li></ul></div>
+        <div><p class="skills__head">Engineering</p><ul class="skills__list"><li>Python / SQL</li><li>Feature stores</li><li>Airflow / dbt</li></ul></div>
+        <div><p class="skills__head">Craft</p><ul class="skills__list"><li>Experiment design</li><li>Data storytelling</li><li>Stakeholder translation</li></ul></div>
+      </div>
+      <div class="posts" style="margin-top:1.5rem">
+        <a class="post__link" href="#"><span class="post__title">Why your model is lying to you</span><span class="post__meta">Essay <span class="post__arrow">→</span></span></a>
+        <a class="post__link" href="#"><span class="post__title">Boring ML is good ML</span><span class="post__meta">Essay <span class="post__arrow">→</span></span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. PLASMA -->
+  <section class="gx-item" id="c-plasma">
+    <div class="gx-item__head">
+      <span class="gx-item__num">10</span><span class="gx-item__name">Closer plasma backdrop</span>
+      <span class="gx-src">index.html ~461 · styles.css .closer* · script.js #8 · anim/plasma.js</span>
+    </div>
+    <p class="gx-note">The ASCII <code>plasma</code> field runs behind the “Let's talk” closer. Sized to a char grid, animates on-screen, freezes under reduced motion. Tune in <code>plasma-preview.html</code>.</p>
+    <div class="gx-stage gx-stage--dark gx-plasma">
+      <pre id="gxPlasma" aria-hidden="true"></pre>
+    </div>
+  </section>
+
+  <!-- 11. ASCII -->
+  <section class="gx-item" id="c-ascii">
+    <div class="gx-item__head">
+      <span class="gx-item__num">11</span><span class="gx-item__name">ASCII engine — cube &amp; dna</span>
+      <span class="gx-src">anim/ascii.js (engine) + cube.js / dna.js · used by planes (script.js #9)</span>
+    </div>
+    <p class="gx-note">The project “planes” mount a rotating <code>cube</code> or <code>dna</code> via <code>ASCII.mount()</code>. Pure text into a <code>&lt;pre&gt;</code> — no WebGL. Register new ones in <code>anim/&lt;name&gt;.js</code>.</p>
+    <div class="gx-stage gx-stage--dark">
+      <div class="gx-ascii">
+        <div class="gx-ascii--cube"><pre id="gxCube" aria-hidden="true"></pre></div>
+        <div class="gx-ascii--dna"><pre id="gxDna" aria-hidden="true"></pre></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- real ASCII engine + plugins -->
+<script src="anim/ascii.js"></script>
+<script src="anim/dna.js"></script>
+<script src="anim/cube.js"></script>
+<script src="anim/plasma.js"></script>
+
+<!-- gallery driver: mounts/animates the components above (mirrors script.js logic) -->
+<script>
+(function () {
+  "use strict";
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  /* --- typewriter (mirrors script.js typeSpan, made replayable) --- */
+  function typeSpan(el) {
+    var text = el.dataset.text != null ? el.dataset.text : el.textContent;
+    el.dataset.text = text;
+    el.textContent = "";
+    var caret = document.createElement("span");
+    caret.className = "hl__caret"; caret.textContent = "▍";
+    el.appendChild(caret);
+    var i = 0;
+    (function step() {
+      caret.insertAdjacentText("beforebegin", text[i]); i++;
+      if (i < text.length) setTimeout(step, 75 + Math.random() * 65);
+      else caret.remove();
+    })();
+  }
+  function blankTypers(scope) { $$("[data-type]", scope).forEach(function (t) { if (t.dataset.text == null) t.dataset.text = t.textContent; t.textContent = ""; }); }
+
+  /* --- reveal: just show them (gallery is a QA surface, not a scroll page) --- */
+  function reveal(scope) { $$("[data-reveal]", scope).forEach(function (el) { el.classList.add("is-in"); }); }
+
+  /* --- count-up (mirrors script.js countUp) --- */
+  function countUp(el) {
+    var target = parseFloat(el.dataset.count); if (isNaN(target)) return;
+    var dur = 1100, start = null;
+    function step(ts) {
+      if (start === null) start = ts;
+      var p = Math.min((ts - start) / dur, 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toString();
+      if (p < 1) requestAnimationFrame(step); else el.textContent = target.toString();
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* --- terminal: type one short session --- */
+  var TERM = [
+    ["tok-comment", "# quick revenue read\n"],
+    ["tok-kw", "import "], ["tok-plain", "polars "], ["tok-kw", "as "], ["tok-plain", "pl\n"],
+    ["tok-plain", "df = pl.read_parquet("], ["tok-str", "\"sales.parquet\""], ["tok-plain", ")\n"],
+    ["tok-plain", "df.group_by("], ["tok-str", "\"region\""], ["tok-plain", ").agg(pl.col("], ["tok-str", "\"rev\""], ["tok-plain", ").sum())\n"],
+    ["tok-out", "shape: (4, 2)  region  rev\n"],
+    ["tok-out", "EMEA  1.24M   AMER  2.01M\n"]
+  ];
+  function runTerminal() {
+    var out = $("#gxTyped"); if (!out) return;
+    out.textContent = ""; var ci = 0;
+    (function chunk() {
+      if (ci >= TERM.length) return;
+      var cls = TERM[ci][0], text = TERM[ci][1];
+      var span = document.createElement("span"); if (cls) span.className = cls; out.appendChild(span);
+      var fast = cls === "tok-out" || cls === "tok-comment";
+      if (fast) { span.textContent = text; ci++; setTimeout(chunk, 120); return; }
+      var i = 0;
+      (function ch() { span.textContent += text[i]; i++; if (i < text.length) setTimeout(ch, 22); else { ci++; chunk(); } })();
+    })();
+  }
+
+  /* --- ASCII mounts (real engine) --- */
+  function mountAscii(id, animId, opts) {
+    var el = $(id); if (!el || !window.ASCII || !ASCII.byId(animId)) return null;
+    try { return ASCII.mount(el, animId, opts || {}); } catch (e) { if (el) el.textContent = "[" + animId + " unavailable]"; return null; }
+  }
+
+  /* ============ boot ============ */
+  document.addEventListener("DOMContentLoaded", function () {
+    // nav burger
+    var burger = $("#gxBurger"), drawer = $("#gxDrawer");
+    if (burger && drawer) {
+      var toggle = function (open) {
+        var willOpen = open == null ? drawer.hidden : open;
+        drawer.hidden = !willOpen;
+        drawer.classList.toggle("is-open", willOpen);
+        burger.classList.toggle("is-open", willOpen);
+        burger.setAttribute("aria-expanded", String(willOpen));
+      };
+      burger.addEventListener("click", function () { toggle(); });
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !drawer.hidden) { toggle(false); burger.focus(); } });
+    }
+
+    // hero + type highlight
+    blankTypers($("#c-hero")); reveal($("#c-hero")); $$("[data-type]", $("#c-hero")).forEach(function (t) { setTimeout(function () { typeSpan(t); }, 350); });
+    blankTypers($("#c-type")); $$("[data-type]", $("#c-type")).forEach(function (t) { setTimeout(function () { typeSpan(t); }, 350); });
+
+    // terminal
+    runTerminal();
+
+    // marquee
+    var track = $("#gxMarquee");
+    if (track) { track.innerHTML += track.innerHTML; requestAnimationFrame(function () { track.style.setProperty("--dur", Math.max(12, track.scrollWidth / 2 / 90) + "s"); }); }
+
+    // reveal demo
+    reveal($("#gxRevealScope"));
+
+    // stats
+    $$("#gxStats [data-count]").forEach(countUp);
+
+    // carousel arrows (native scroll paging)
+    var ct = $("#gxTrack");
+    if (ct) {
+      $("#gxNext").addEventListener("click", function () { ct.scrollBy({ left: ct.clientWidth * 0.8, behavior: "smooth" }); });
+      $("#gxPrev").addEventListener("click", function () { ct.scrollBy({ left: -ct.clientWidth * 0.8, behavior: "smooth" }); });
+    }
+
+    // ascii — plasma sized to the frame, cube/dna at spec defaults
+    var pl = $("#gxPlasma");
+    if (pl && window.ASCII) { var w = pl.parentElement.clientWidth; mountAscii("#gxPlasma", "plasma", { cols: Math.min(120, Math.floor(w / 3.6)), rows: 34, fps: 30 }); }
+    mountAscii("#gxCube", "cube", { fps: 30 });
+    mountAscii("#gxDna", "dna", { fps: 30 });
+
+    // replay buttons
+    $$(".gx-replay").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var k = btn.dataset.replay;
+        if (k === "hero" || k === "type") { var scope = btn.closest(".gx-stage"); blankTypers(scope); $$("[data-type]", scope).forEach(function (t) { setTimeout(function () { typeSpan(t); }, 150); }); }
+        if (k === "term") runTerminal();
+        if (k === "reveal") { var s = $("#gxRevealScope"); $$("[data-reveal]", s).forEach(function (el) { el.classList.remove("is-in"); }); requestAnimationFrame(function () { setTimeout(function () { reveal(s); }, 60); }); }
+        if (k === "stats") $$("#gxStats [data-count]").forEach(countUp);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

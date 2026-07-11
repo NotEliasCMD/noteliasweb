@@ -32,6 +32,27 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* ---------------------------------------------------------------- dark theme
+   Same token names, inverted lightness, warm (not cold-gray) so the "peachy"
+   grain survives; the peach accents stay put. Applied when
+   <html data-theme="dark"> is set (JS toggle + the anti-FOUC script in <head>).
+   Because backgrounds/text/borders/gradients all flow through these tokens —
+   and the ASCII animations inherit --ink via .ascii-screen — the whole page,
+   including every animation, recolors from this one block. Landmine fixes for
+   the few hardcoded colors (closer, card shadow) live next to their rules. */
+[data-theme="dark"] {
+  --cream:      #17150F;   /* base background (was the ink near-black) */
+  --cream-alt:  #1E1B14;   /* alternating section background */
+  --paper:      #23201A;   /* raised surfaces (cards) */
+  --ink:        #F1ECE0;   /* primary text — also drives .ascii-screen */
+  --ink-soft:   #C9C2B3;   /* body text */
+  --muted:      #9A9384;   /* labels, meta */
+  --line:       #332F26;   /* hairline borders */
+
+  --peach:      #E79CB6;   /* brand accent — reads well on dark, kept as-is */
+  --peach-deep: #EDA9C1;   /* accent / emphasis — lightened for dark contrast */
+}
+
 /* ---------------------------------------------------------------- reset */
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
@@ -114,6 +135,34 @@ img { max-width: 100%; display: block; }
 .nav__drawer { display: none; flex-direction: column; gap: 0.25rem; padding: 1rem var(--gutter) 1.5rem; border-bottom: 1px solid var(--line); background: var(--cream); }
 .nav__drawer a { font-family: var(--font-mono); padding: 0.6rem 0; color: var(--ink-soft); }
 .nav__drawer .btn { margin-top: 0.5rem; justify-content: center; }
+
+/* ---- theme toggle (sun/moon) ---- */
+/* Icon-only in the top bar; a labelled row in the mobile drawer. Only one of
+   the sun/moon glyphs (and one drawer label) shows per theme, via display. */
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; margin-left: 0.35rem; flex: none;
+  background: none; border: 1px solid transparent; border-radius: 999px;
+  color: var(--ink-soft); font-size: 1.05rem; line-height: 1; cursor: pointer;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.theme-toggle:hover { color: var(--ink); border-color: var(--line); }
+.theme-toggle__moon { display: none; }
+.theme-toggle__sun  { display: inline; }
+[data-theme="dark"] .theme-toggle__sun  { display: none; }
+[data-theme="dark"] .theme-toggle__moon { display: inline; }
+
+/* drawer variant: left-aligned icon + swapping text label, like a drawer link */
+.theme-toggle__label { display: none; }
+.theme-toggle--drawer {
+  width: auto; height: auto; justify-content: flex-start; gap: 0.6rem;
+  margin: 0; padding: 0.6rem 0; border: 0; border-radius: 0;
+  font-family: var(--font-mono); font-size: 0.95rem; color: var(--ink-soft);
+}
+.theme-toggle--drawer .theme-toggle__label--to-dark  { display: inline; }
+.theme-toggle--drawer .theme-toggle__label--to-light { display: none; }
+[data-theme="dark"] .theme-toggle--drawer .theme-toggle__label--to-dark  { display: none; }
+[data-theme="dark"] .theme-toggle--drawer .theme-toggle__label--to-light { display: inline; }
 
 /* ================================================================= HERO */
 .hero { padding: clamp(3rem, 8vw, 6rem) 0 0; }
@@ -223,6 +272,7 @@ img { max-width: 100%; display: block; }
   transition: transform 0.35s var(--ease), border-color 0.35s var(--ease), box-shadow 0.35s var(--ease);
 }
 .card:hover { transform: translateY(-4px); border-color: var(--peach); box-shadow: 0 24px 40px -28px rgba(23,21,15,0.35); }
+[data-theme="dark"] .card:hover { box-shadow: 0 24px 40px -28px rgba(0,0,0,0.75); }
 .card__top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.1rem; }
 .card__tag { font-family: var(--font-mono); font-size: 0.72rem; color: var(--peach-deep); text-transform: uppercase; letter-spacing: 0.06em; }
 .card__year { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
@@ -305,6 +355,12 @@ img { max-width: 100%; display: block; }
 /* ---- closer ---- */
 .closer { background: var(--ink); color: var(--cream); position: relative; overflow: hidden; }
 .closer .container { position: relative; z-index: 1; } /* content sits above the plasma backdrop */
+/* In dark mode the closer stays a dark band (its identity on the light site)
+   instead of inverting with the page: re-pin its LOCAL ink/cream so the bg +
+   gradient scrims stay dark and the copy stays light. Its hardcoded tints
+   (#d7cfbd / #9c9484 / #c9c2b3 / #3a372e below) already suit a dark band, and
+   the plasma inherits the dark-tuned #d7cfbd tint — so nothing else changes. */
+[data-theme="dark"] .closer { --ink: #100E09; --cream: #F1ECE0; }
 
 /* full-bleed ASCII plasma field behind the content */
 .closer__bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
@@ -412,10 +468,13 @@ body.is-planed .stage {
   padding: clamp(2rem, 5vw, 4rem) var(--gutter) clamp(3rem, 7vw, 5rem);
 }
 .plane__media {
-  position: sticky; top: 92px; align-self: start;
+  /* `top` matches the media's natural resting offset (bar 69px + grid top
+     padding) — same as .plane__head — so the graphic pins exactly where it
+     starts and never slides up before sticking. */
+  position: sticky; top: calc(69px + clamp(2rem, 5vw, 4rem)); align-self: start;
   /* nudge the graphic left toward the page edge and down so it reads as
-     vertically balanced against the tall text column (transform keeps the
-     sticky math intact) */
+     vertically balanced against the tall text column (transform is purely
+     visual — it doesn't affect the sticky math) */
   transform: translate(-1.75rem, 2.5rem);
 }
 /* let both columns shrink below their content's intrinsic width so the wide
@@ -441,14 +500,25 @@ body.is-planed .stage {
   overflow: hidden;
 }
 
-/* text column: heading pins, only the body blocks scroll */
+/* text column: heading pins, only the body blocks scroll.
+   `top` matches the head's natural resting offset — bar (69px incl. border) +
+   the grid's top padding — so it pins exactly where it starts and never
+   visibly slides up before sticking. */
 .plane__head {
-  position: sticky; top: 68px; z-index: 4;
+  position: sticky; top: calc(69px + clamp(2rem, 5vw, 4rem)); z-index: 4;
   background: var(--cream);
   padding: 1.4rem 0 1.6rem;
 }
 /* stack pills sit under the title inside the pinned header */
 .plane__head .plane__meta { margin-top: 1.15rem; }
+/* the head pins below a gap (the grid's top padding); fill that gap with the
+   page colour so body text scrolling up doesn't peek between bar and heading */
+.plane__head::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 100%;
+  height: calc(clamp(2rem, 5vw, 4rem) + 2px);
+  background: var(--cream);
+  pointer-events: none;
+}
 /* soft fade so scrolling text dissolves as it passes under the pinned heading */
 .plane__head::after {
   content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 1rem;

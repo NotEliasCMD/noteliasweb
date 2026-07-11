@@ -18,6 +18,14 @@
 
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍑</text></svg>" />
+
+  <!-- Theme: apply the saved choice before first paint to avoid a light→dark
+       flash for returning dark-mode visitors. Default (no saved value) = light.
+       The toggle handler lives in script.js. -->
+  <script>
+    try { if (localStorage.getItem("theme") === "dark")
+      document.documentElement.dataset.theme = "dark"; } catch (e) {}
+  </script>
 </head>
 <body>
   <div class="stage" id="stage">
@@ -36,6 +44,11 @@
         <a href="#about">About</a>
       </nav>
 
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+        <span class="theme-toggle__sun" aria-hidden="true">☀</span>
+        <span class="theme-toggle__moon" aria-hidden="true">☾</span>
+      </button>
+
       <a class="btn btn--primary nav__cta" href="#contact">Get in touch</a>
 
       <button class="nav__burger" id="burger" aria-label="Toggle menu" aria-controls="drawer" aria-expanded="false">
@@ -48,6 +61,12 @@
       <a href="#skills">Skills</a>
       <a href="#writing">Writing</a>
       <a href="#about">About</a>
+      <button class="theme-toggle theme-toggle--drawer" id="themeToggleDrawer" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+        <span class="theme-toggle__sun" aria-hidden="true">☀</span>
+        <span class="theme-toggle__moon" aria-hidden="true">☾</span>
+        <span class="theme-toggle__label theme-toggle__label--to-dark">Dark mode</span>
+        <span class="theme-toggle__label theme-toggle__label--to-light">Light mode</span>
+      </button>
       <a class="btn btn--primary" href="#contact">Get in touch</a>
     </div>
   </header>
@@ -528,7 +547,7 @@
   <div class="planes" id="planes">
 
     <!-- Fraud -->
-    <article class="plane" id="plane-fraud" data-anim="cube" aria-hidden="true" aria-labelledby="plane-fraud-title" hidden>
+    <article class="plane" id="plane-fraud" data-anim="neuralnet" aria-hidden="true" aria-labelledby="plane-fraud-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
           <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
@@ -575,7 +594,7 @@
     </article>
 
     <!-- Forecasting -->
-    <article class="plane" id="plane-forecast" data-anim="dna" aria-hidden="true" aria-labelledby="plane-forecast-title" hidden>
+    <article class="plane" id="plane-forecast" data-anim="candlestick" aria-hidden="true" aria-labelledby="plane-forecast-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
           <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
@@ -622,7 +641,7 @@
     </article>
 
     <!-- A/B platform -->
-    <article class="plane" id="plane-abtest" data-anim="cube" aria-hidden="true" aria-labelledby="plane-abtest-title" hidden>
+    <article class="plane" id="plane-abtest" data-anim="barchart" aria-hidden="true" aria-labelledby="plane-abtest-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
           <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
@@ -669,7 +688,7 @@
     </article>
 
     <!-- Ticket extraction -->
-    <article class="plane" id="plane-tickets" data-anim="dna" aria-hidden="true" aria-labelledby="plane-tickets-title" hidden>
+    <article class="plane" id="plane-tickets" data-anim="attention" aria-hidden="true" aria-labelledby="plane-tickets-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
           <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
@@ -717,7 +736,7 @@
 
     <!-- Shared placeholder — every mock card (data-project="placeholder") opens this.
          Its tag/title/crumb are populated from the clicked card in script.js. -->
-    <article class="plane" id="plane-placeholder" data-anim="cube" aria-hidden="true" aria-labelledby="plane-placeholder-title" hidden>
+    <article class="plane" id="plane-placeholder" data-anim="topology" aria-hidden="true" aria-labelledby="plane-placeholder-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
           <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
@@ -763,8 +782,11 @@
   </div><!-- /.planes -->
 
   <script src="anim/ascii.js"></script>
-  <script src="anim/dna.js"></script>
-  <script src="anim/cube.js"></script>
+  <script src="anim/neuralnet.js"></script>
+  <script src="anim/candlestick.js"></script>
+  <script src="anim/barchart.js"></script>
+  <script src="anim/attention.js"></script>
+  <script src="anim/topology.js"></script>
   <script src="anim/plasma.js"></script>
   <script src="script.js"></script>
 </body>

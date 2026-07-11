@@ -51,11 +51,13 @@
 
     /* keep the sticky nav from escaping its frame in the demo */
     .gx-stage .nav { position: static; }
-    /* ascii demo panels */
-    .gx-ascii { display: flex; gap: 1.25rem; flex-wrap: wrap; justify-content: center; }
-    .gx-ascii pre { color: #d7cfbd; line-height: 1; margin: 0; }
-    .gx-ascii--cube pre { font-size: 7px; }
-    .gx-ascii--dna pre { font-size: 9px; }
+    /* ascii demo panels — a self-building grid, one tile per registered anim */
+    .gx-anim-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem; }
+    .gx-anim-tile { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+    .gx-anim-tile pre { color: #d7cfbd; line-height: 1; font-size: 6px; margin: 0; }
+    .gx-anim-cap { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); text-align: center; }
+    .gx-anim-cap b { color: #d7cfbd; font-weight: 500; }
+    .gx-anim-cap .gx-anim-tag { color: var(--peach-deep); }
     .gx-plasma pre { color: #d7cfbd; line-height: 1; font-size: 6px; margin: 0; opacity: 0.9; }
     .gx-revealbox { background: var(--cream-alt); border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem; font-family: var(--font-mono); font-size: 0.85rem; }
     .gx-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -84,7 +86,7 @@
       <a href="#c-carousel">Carousel</a>
       <a href="#c-posts">Skills/Writing</a>
       <a href="#c-plasma">Plasma</a>
-      <a href="#c-ascii">ASCII (cube/dna)</a>
+      <a href="#c-ascii">ASCII library</a>
     </nav>
   </header>
 
@@ -271,24 +273,38 @@
   <!-- 11. ASCII -->
   <section class="gx-item" id="c-ascii">
     <div class="gx-item__head">
-      <span class="gx-item__num">11</span><span class="gx-item__name">ASCII engine — cube &amp; dna</span>
-      <span class="gx-src">anim/ascii.js (engine) + cube.js / dna.js · used by planes (script.js #9)</span>
+      <span class="gx-item__num">11</span><span class="gx-item__name">ASCII animation library</span>
+      <span class="gx-src">anim/ascii.js (engine) + one plugin per anim/&lt;name&gt;.js</span>
     </div>
-    <p class="gx-note">The project “planes” mount a rotating <code>cube</code> or <code>dna</code> via <code>ASCII.mount()</code>. Pure text into a <code>&lt;pre&gt;</code> — no WebGL. Register new ones in <code>anim/&lt;name&gt;.js</code>.</p>
+    <p class="gx-note">Every animation registered with <code>ASCII.register()</code>, mounted live via <code>ASCII.mount()</code> — pure text into a <code>&lt;pre&gt;</code>, no WebGL. The five tagged <strong>· plane</strong> below are what the project “planes” mount today (see <code>data-anim</code> in <code>index.html</code>); the rest are library spares (unwired + the legacy <code>cube</code>/<code>dna</code>) ready to drop into a plane or the closer. This grid builds itself from the registry, so a new <code>anim/&lt;name&gt;.js</code> (plus its <code>&lt;script&gt;</code> tag) shows up here automatically.</p>
     <div class="gx-stage gx-stage--dark">
-      <div class="gx-ascii">
-        <div class="gx-ascii--cube"><pre id="gxCube" aria-hidden="true"></pre></div>
-        <div class="gx-ascii--dna"><pre id="gxDna" aria-hidden="true"></pre></div>
-      </div>
+      <div class="gx-anim-grid" id="gxAnimGrid" aria-hidden="true"></div>
     </div>
   </section>
 
 </div>
 
-<!-- real ASCII engine + plugins -->
+<!-- real ASCII engine + plugins.
+     The whole registered library loads here so the gallery can showcase every
+     animation, not just the ones the shipped site currently mounts. The five
+     the project "planes" use (neuralnet / candlestick / barchart / attention /
+     topology) come first, then the unwired data-science spares, then the two
+     legacy shapes (cube / dna), then the closer plasma. -->
 <script src="anim/ascii.js"></script>
-<script src="anim/dna.js"></script>
+<script src="anim/neuralnet.js"></script>
+<script src="anim/candlestick.js"></script>
+<script src="anim/barchart.js"></script>
+<script src="anim/attention.js"></script>
+<script src="anim/topology.js"></script>
+<script src="anim/actuarial.js"></script>
+<script src="anim/riskcurve.js"></script>
+<script src="anim/losscurve.js"></script>
+<script src="anim/scatterplot.js"></script>
+<script src="anim/thermometer.js"></script>
+<script src="anim/equalizer.js"></script>
+<script src="anim/motherboard.js"></script>
 <script src="anim/cube.js"></script>
+<script src="anim/dna.js"></script>
 <script src="anim/plasma.js"></script>
 
 <!-- gallery driver: mounts/animates the components above (mirrors script.js logic) -->
@@ -400,11 +416,34 @@
       $("#gxPrev").addEventListener("click", function () { ct.scrollBy({ left: -ct.clientWidth * 0.8, behavior: "smooth" }); });
     }
 
-    // ascii — plasma sized to the frame, cube/dna at spec defaults
+    // ascii — plasma sized to the frame (its own §10 section)
     var pl = $("#gxPlasma");
     if (pl && window.ASCII) { var w = pl.parentElement.clientWidth; mountAscii("#gxPlasma", "plasma", { cols: Math.min(120, Math.floor(w / 3.6)), rows: 34, fps: 30 }); }
-    mountAscii("#gxCube", "cube", { fps: 30 });
-    mountAscii("#gxDna", "dna", { fps: 30 });
+
+    // ascii library grid (§11): one live tile per registered animation, built
+    // from ASCII.animations so new plugins appear with no edit here. `plasma`
+    // has its own section above, so it's skipped. The five the planes use are
+    // tagged "plane"; everything else is a library spare.
+    var grid = $("#gxAnimGrid");
+    if (grid && window.ASCII) {
+      var PLANE_ANIMS = { neuralnet: 1, candlestick: 1, barchart: 1, attention: 1, topology: 1 };
+      ASCII.animations.forEach(function (spec) {
+        if (spec.id === "plasma") return;
+        var tile = document.createElement("div");
+        tile.className = "gx-anim-tile";
+        var pre = document.createElement("pre");
+        pre.setAttribute("aria-hidden", "true");
+        var cap = document.createElement("div");
+        cap.className = "gx-anim-cap";
+        var tag = PLANE_ANIMS[spec.id] ? ' <span class="gx-anim-tag">· plane</span>' : "";
+        cap.innerHTML = "<b>" + spec.title + "</b> · " + spec.id + tag;
+        tile.appendChild(pre);
+        tile.appendChild(cap);
+        grid.appendChild(tile);
+        try { ASCII.mount(pre, spec.id, { fps: Math.min(spec.fps, 24) }); }
+        catch (e) { pre.textContent = "[" + spec.id + " unavailable]"; }
+      });
+    }
 
     // replay buttons
     $$(".gx-replay").forEach(function (btn) {

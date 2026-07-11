@@ -36,7 +36,7 @@ Ground truth of the reference design (extracted from dottxt.ai's compiled CSS):
 | `index.html` | All content & DOM structure, section order, copy | Inline styles/scripts (keep it clean) |
 | `styles.css` | Design tokens (`:root`), all layout, all `@keyframes` | JS-only concerns |
 | `script.js`  | Behavior: reveal, typewriter, count-up, marquee, terminal, nav, year, carousel, closer plasma, project planes | Styling (add a class, style it in CSS) |
-| `anim/*.js`  | ASCII animation engine (`ascii.js`) + plugins (`plasma/dna/cube.js`); live, loaded by `index.html` | Site behavior (goes in `script.js`) |
+| `anim/*.js`  | ASCII animation engine (`ascii.js`) + one plugin per animation (plane anims, `plasma`, and library spares — see `COMPONENTS.md` §12); loaded by `index.html` | Site behavior (goes in `script.js`) |
 | `COMPONENTS.md` | Per-component reference + simplicity/mobile review | — |
 | `plasma-preview.html` | **Dev-only** scratch harness to tune the closer plasma; **not linked from the site** and duplicates its knobs | Anything the shipped site depends on |
 
@@ -144,8 +144,15 @@ in CSS zeroes durations). Don't ship motion that can't be turned off.
 
 - Split projects into a dedicated `/work/<slug>.html` or a JSON-driven list.
 - Real blog: turn the Writing list into generated pages or an RSS feed.
-- Add a light/dark toggle (tokens already centralized — add a `[data-theme]`
-  block that overrides `:root`).
+- ~~Add a light/dark toggle~~ **Done.** Dark palette lives in the
+  `[data-theme="dark"]` block right after `:root` in `styles.css` (same token
+  names, inverted lightness, peach kept). A sun/moon button (`#themeToggle` in
+  the nav, `#themeToggleDrawer` in the drawer) flips `<html data-theme>`; the
+  choice persists in `localStorage` and an inline `<head>` script applies it
+  pre-paint (no FOUC). Default is light. See `COMPONENTS.md` §13. The ASCII
+  animations recolor for free (they inherit `--ink`). If you add a color, prefer
+  a token so it flips automatically; hardcoded colors need a `[data-theme="dark"]`
+  override (the closer re-pins its local `--ink`/`--cream` to stay a dark band).
 - Contact form (needs a backend or a form service; currently a `mailto:`).
 - Swap Space Grotesk/JetBrains Mono for licensed PP Neue Montreal if acquired.
 - Self-host fonts for full offline support.
@@ -162,8 +169,9 @@ python3 -m http.server 8099   # serve
 - Terminal types out; tabs switch; cursor blinks.
 - Marquee scrolls seamlessly (no jump at loop point) and pauses on hover.
 - Work carousel: arrows page, dots track position, scroll-snaps.
-- Click a work card → project plane slides in (cube/dna ASCII mounts, title
-  types, blocks reveal); Back button + Escape close it, focus returns to the card.
+- Click a work card → project plane slides in (its data-science ASCII animation
+  mounts — neuralnet/candlestick/barchart/attention/topology, title types, blocks
+  reveal); Back button + Escape close it, focus returns to the card.
 - Closer "Let's talk" plasma animates on-screen and freezes under reduced motion.
 - Resize to <720px: burger opens/closes, Escape closes it, layout is single-column.
 - Toggle "Reduce motion" in OS settings: page renders fully static, no jank.

@@ -7,6 +7,7 @@
      4. Seamless marquee (duplicate track for -50% loop)
      5. Terminal typing effect
      6. Nav: scrolled state + mobile drawer
+     6.5 Theme toggle (dark mode) + localStorage persistence
      7. Footer year
    All motion respects prefers-reduced-motion.
    ========================================================================= */
@@ -282,6 +283,29 @@
     });
   }
 
+  /* ---------------------------------------------- 6.5 theme toggle */
+  // Dark mode is a CSS-token flip: setting <html data-theme="dark"> swaps the
+  // palette in styles.css (the ASCII animations inherit --ink, so they recolor
+  // for free). We only persist the choice and keep the buttons' state in sync.
+  // The initial theme is applied pre-paint by the inline script in <head>;
+  // default (no saved value) is light. No prefers-color-scheme listener — the
+  // stored choice is the only source of truth after first load.
+  const root = document.documentElement;
+  const themeBtns = $$(".theme-toggle");
+  if (themeBtns.length) {
+    const isDark = () => root.dataset.theme === "dark";
+    const syncBtns = () =>
+      themeBtns.forEach((b) => b.setAttribute("aria-pressed", String(isDark())));
+    const setTheme = (dark) => {
+      if (dark) root.dataset.theme = "dark";
+      else delete root.dataset.theme;
+      try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
+      syncBtns();
+    };
+    syncBtns();
+    themeBtns.forEach((b) => b.addEventListener("click", () => setTheme(!isDark())));
+  }
+
   /* ---------------------------------------------- 7. footer year */
   const yearEl = $("#year");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
@@ -447,6 +471,13 @@
     let activePlane = null;
     let lastCard = null;
 
+    // Every plane mounts its animation on ONE shared grid (not the animation's
+    // native cols/rows) so fontFor computes the same font size and the centered
+    // block lands at the same size and position on every plane. All plane
+    // animations are parametric on (cols, rows), so this only reshapes them
+    // slightly. Change here to retune all planes at once.
+    const PLANE_GRID = { cols: 62, rows: 26 };
+
     // size a <pre> so cols*rows of monospace fill its box
     function fontFor(pre, cols, rows) {
       const boxW = pre.clientWidth, boxH = pre.clientHeight;
@@ -463,8 +494,12 @@
       const spec = ASCII.byId(animId);
       if (!pre || !spec) return null;
       pre.style.fontFamily = "var(--font-mono)"; // keep the site's mono, not the engine's default
-      fontFor(pre, spec.cols, spec.rows);
-      anims[plane.id] = ASCII.mount(pre, animId, { autostart: false });
+      fontFor(pre, PLANE_GRID.cols, PLANE_GRID.rows);
+      anims[plane.id] = ASCII.mount(pre, animId, {
+        autostart: false,
+        cols: PLANE_GRID.cols,
+        rows: PLANE_GRID.rows,
+      });
       return anims[plane.id];
     }
 

@@ -39,6 +39,7 @@ Line ranges below are approximate anchors as of this writing.
 | [Closer + plasma backdrop](#10-closer--plasma-backdrop) | ~461–486 | `.closer*` ~303–335 | `8. closer plasma backdrop` |
 | [Project "planes"](#11-project-planes) | ~525–763 | `.stage/.plane/.ascii` ~370–474 | `9. project planes` |
 | [ASCII engine](#12-ascii-engine-anim) | — | — | `anim/*.js` |
+| [Theme toggle (dark mode)](#13-theme-toggle-dark-mode) | `#themeToggle*` + `<head>` script | `[data-theme="dark"]`, `.theme-toggle*` | `6.5 theme toggle` |
 
 ---
 
@@ -169,28 +170,84 @@ Line ranges below are approximate anchors as of this writing.
   ~370–474 (+ responsive ~486–490, reduced-motion ~507–508) · **JS** banner
   `9. project planes`.
 - Clicking a `.card--link` (or Enter/Space) slides the main `.stage` back and the
-  matching plane in (`body.is-planed`). Each plane lazily mounts a `cube` or `dna`
-  ASCII animation (`data-anim`) into its `.ascii-screen`, types its title
-  (reusing `typeSpan`), and reveals `[data-plane-reveal]` blocks via its own
-  scoped observer. Back button + Escape close it; focus returns to the
-  originating card. The shared placeholder plane borrows the clicked card's
-  title/tag/year. On ≤900px the pinned media/head columns un-stick.
+  matching plane in (`body.is-planed`). Each plane lazily mounts its own
+  data-science ASCII animation (`data-anim`) into its `.ascii-screen` — fraud →
+  `neuralnet`, forecast → `candlestick`, abtest → `barchart`, tickets →
+  `attention`, placeholder → `topology` — types its title (reusing `typeSpan`),
+  and reveals `[data-plane-reveal]` blocks via its own scoped observer. Back
+  button + Escape close it; focus returns to the originating card. The shared
+  placeholder plane borrows the clicked card's title/tag/year. On ≤900px the
+  pinned media/head columns un-stick.
+- **Shared grid:** every plane mounts onto one `PLANE_GRID = {cols:62, rows:26}`
+  (in `script.js` §9), not each animation's native size, so `fontFor` picks the
+  same font size and the graphic lands identically on every plane. The library
+  animations are all parametric on `(cols, rows)`, so this just reshapes them a
+  little — retune all planes at once by editing `PLANE_GRID`.
 - **Gotcha / over-engineering:** largest single feature; **all body copy is lorem
   ipsum** — a full interaction shell around placeholder content (see review §R2).
 
 ## 12. ASCII engine (`anim/`)
 
-- **Files:** `anim/ascii.js` (254 ln, the engine) + `anim/plasma.js` (29),
-  `anim/dna.js` (40), `anim/cube.js` (47). Loaded at the bottom of `index.html`.
-  **Live production code**, consumed by §10 (plasma) and §11 (cube/dna).
+- **Files:** `anim/ascii.js` (254 ln, the engine) + one plugin per animation.
+  Loaded at the bottom of `index.html` (engine + the 5 plane anims + `plasma`)
+  and, for the full library, `components.html`. The engine is **live production
+  code**; the plugins split into three tiers:
+  - **Plane anims** (site, §11): `neuralnet`, `candlestick`, `barchart`,
+    `attention`, `topology`.
+  - **Closer:** `plasma` (§10).
+  - **Library spares** (registered + gallery-shown but not mounted by the site,
+    ready to drop into a plane/closer): `actuarial`, `riskcurve`, `losscurve`,
+    `scatterplot`, `thermometer`, `equalizer`, `motherboard`, plus the legacy
+    `cube` / `dna`. These are **intentionally kept** as a palette, not dead code.
+    The gallery (`components.html` §11) builds its ASCII grid from
+    `ASCII.animations`, so they surface there automatically; the shipped site
+    never loads them.
 - `ascii.js` exposes `window.ASCII`: a `Screen` class (char buffer + `Float32Array`
   z-buffer, `set/get/plot/shade/text/line`), a `register(spec)` registry, a
-  `mount(el, id, opts)` rAF player returning `{start, stop, resize, running}`, and
+  `mount(el, id, opts)` rAF player returning `{start, stop, resize, running}`,
+  `animations` (registry snapshot, drives the gallery grid), `byId(id)`, and
   `util` (`clamp/lerp/hash/noise2`). Pure text into a `<pre>` — no WebGL/canvas.
-- **Add an animation:** `ASCII.register({ id, cols, rows, fps, frame(screen, t){…} })`
-  in a new `anim/<name>.js`, add a `<script>` for it, reference by `data-anim` /
-  `data-anim-bg`. The three existing animations are thin, idiomatic plugins —
-  right-sized, don't refactor.
+- **Add an animation:** `ASCII.register({ id, title, description, cols, rows, fps,
+  create(cols, rows) { return function frame(screen, t, frameCount) { … }; } })`
+  in a new `anim/<name>.js` (note: `create` returns the per-frame fn — it is
+  *not* a bare `frame` key), add a `<script>` for it in `index.html` and/or
+  `components.html`, and reference it by `data-anim` / `data-anim-bg` (or let the
+  gallery pick it up). The plugins are thin, idiomatic, and parametric on
+  `(cols, rows)` — right-sized, don't refactor.
+
+---
+
+## 13. Theme toggle (dark mode)
+
+- **HTML** — `#themeToggle` (icon-only, in `.nav__inner` before the CTA) +
+  `#themeToggleDrawer` (icon + swapping text label, in the mobile drawer); an
+  anti-FOUC `<script>` in `<head>` (right after the stylesheet link). **CSS**
+  `[data-theme="dark"]` block after `:root`, `.theme-toggle*` rules after the
+  drawer styles, plus scoped overrides at `.card:hover` and `.closer`.
+  **JS** banner `6.5 theme toggle`.
+- **Mechanism:** dark mode is a pure CSS-token flip. `[data-theme="dark"]`
+  redefines the palette tokens (same names, inverted lightness, peach kept), so
+  everything token-driven — backgrounds, text, borders, nav/closer gradients via
+  `color-mix`, and the ASCII animations (they inherit `--ink` on `.ascii-screen`)
+  — recolors from one block with **no per-component or JS work**.
+- **Behavior** (`setTheme(dark)`): sets/removes `<html data-theme="dark">`, writes
+  `localStorage["theme"]`, and syncs `aria-pressed` on both buttons. The `<head>`
+  script reads `localStorage` and applies the theme **before first paint** so
+  returning dark-mode visitors don't flash light. **Default is light** (no saved
+  value → light); there is intentionally no `prefers-color-scheme` listener.
+- **Icon swap** is CSS-only: `.theme-toggle__sun` shows in light, `__moon` in
+  dark; the drawer's `__label--to-dark` / `--to-light` swap the same way.
+- **Gotchas / dark-mode landmines:** most hardcoded colors live in the
+  deliberately-dark **terminal** (§3 — left as-is, already fits) and **closer**
+  (§10). The closer must *not* invert with the page, so `[data-theme="dark"]
+  .closer` re-pins its **local** `--ink`/`--cream` — this keeps its bg + gradient
+  scrims dark and copy light, and its existing hardcoded tints already suit a dark
+  band. The `.card:hover` shadow (an `rgba` of ink) gets a darker dark-mode
+  override. If you add any new color, use a token; a raw hex needs its own
+  `[data-theme="dark"]` override or it won't flip.
+- **Reduced motion:** no new keyframes — the icon swaps via `display` and the
+  toggle's color transitions are already zeroed by the global reduced-motion
+  block. Nothing extra to guard.
 
 ---
 

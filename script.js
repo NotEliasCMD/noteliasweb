@@ -470,6 +470,8 @@
     const observers = {};  // plane id -> per-plane reveal IntersectionObserver
     let activePlane = null;
     let lastCard = null;
+    let navigating = false;             // guards against overlapping prev/next hops
+    const cards = $$(".card--link");    // ordered card list drives prev/next navigation
 
     // Every plane mounts its animation on ONE shared grid (not the animation's
     // native cols/rows) so fontFor computes the same font size and the centered
@@ -532,14 +534,22 @@
       observers[plane.id] = io;
     }
 
-    function openPlane(projId, card) {
-      const plane = document.getElementById("plane-" + projId);
-      if (!plane || activePlane) return;
+    // clear a plane's reveal state so its blocks animate fresh the next time it
+    // is shown (matters most for the shared placeholder, revisited with new copy)
+    function resetReveals(plane) {
+      if (observers[plane.id]) { observers[plane.id].disconnect(); delete observers[plane.id]; }
+      $$("[data-plane-reveal]", plane).forEach((b) => b.classList.remove("is-in"));
+    }
+
+    // Show a plane (no active-plane guard): borrow content for the shared
+    // placeholder, slide it in, (re)start its animation, reset + reveal its
+    // blocks, re-type the title, track it active. Reused by openPlane + navigateTo.
+    function showPlane(plane, card) {
       lastCard = card || document.activeElement;
       activePlane = plane;
 
-      // the shared placeholder plane borrows the clicked card's title/tag/year
-      if (projId === "placeholder" && card) {
+      // the shared placeholder plane borrows the card's title/tag/year
+      if (card && plane.id === "plane-placeholder") {
         const t = $("[data-plane-type]", plane);
         if (t) {
           t.dataset.text = $(".card__title", card).textContent.trim();
@@ -554,7 +564,7 @@
       document.body.classList.add("is-planed");
       plane.hidden = false;
       plane.setAttribute("aria-hidden", "false");
-      void plane.offsetWidth; // reflow so the slide runs from translateX(100%)
+      void plane.offsetWidth; // reflow so the slide runs from the parked transform
       plane.classList.add("is-open");
       plane.scrollTop = 0;
 
@@ -564,11 +574,18 @@
         if (reduceMotion) requestAnimationFrame(() => ctrl.stop()); // one static frame
       }
 
+      resetReveals(plane);
       revealBlocks(plane);
       setTimeout(() => typeTitle(plane), reduceMotion ? 0 : 420);
 
       const back = $(".plane__back", plane);
       if (back) back.focus();
+    }
+
+    function openPlane(projId, card) {
+      const plane = document.getElementById("plane-" + projId);
+      if (!plane || activePlane) return;
+      showPlane(plane, card);
     }
 
     function closePlane() {
@@ -595,7 +612,59 @@
       if (lastCard && lastCard.focus) lastCard.focus();
     }
 
-    $$(".card--link").forEach((card) => {
+    function focusNav(plane, dir) {
+      const btn = $('.plane__nav-btn[data-dir="' + (dir > 0 ? "next" : "prev") + '"]', plane);
+      if (btn) btn.focus();
+    }
+
+    // retire the plane a hop just left: hide it and stop its animation
+    function retire(plane) {
+      plane.classList.remove("is-open", "plane--incoming", "plane--from-left");
+      plane.hidden = true;
+      plane.setAttribute("aria-hidden", "true");
+      if (anims[plane.id]) anims[plane.id].stop();
+    }
+
+    // Hop to the previous/next project (dir = -1 / +1), looping at the ends.
+    // The incoming plane slides in ON TOP of the stationary current one (both are
+    // opaque), so the dimmed main page is never revealed — a seamless plane-to-plane
+    // hop. body.is-planed stays on throughout. "next" enters from the right, "prev"
+    // from the left. The 8 placeholder cards share ONE element, so a
+    // placeholder→placeholder hop crossfades its content in place instead of sliding.
+    function navigateTo(dir) {
+      if (!activePlane || navigating) return;
+      const i = cards.indexOf(lastCard);
+      if (i === -1) return;
+      const targetCard = cards[(i + dir + cards.length) % cards.length];
+      const targetPlane = document.getElementById("plane-" + targetCard.dataset.project);
+      if (!targetPlane) return;
+      const current = activePlane;
+      navigating = true;
+
+      if (targetPlane === current) {
+        if (reduceMotion) { showPlane(current, targetCard); navigating = false; return; }
+        current.classList.add("is-swapping");            // fade content out
+        setTimeout(() => {
+          showPlane(current, targetCard);                // swap borrowed content while faded
+          current.classList.remove("is-swapping");       // fade back in
+          focusNav(current, dir);
+          setTimeout(() => { navigating = false; }, 320);
+        }, 300);
+        return;
+      }
+
+      targetPlane.classList.add("plane--incoming");            // above the outgoing plane
+      if (dir < 0) targetPlane.classList.add("plane--from-left"); // "prev" enters from the left
+      showPlane(targetPlane, targetCard);                      // slides in over the current one
+      focusNav(targetPlane, dir);
+      setTimeout(() => {
+        retire(current);                                       // hide the now-covered old plane
+        targetPlane.classList.remove("plane--incoming", "plane--from-left");
+        navigating = false;
+      }, reduceMotion ? 0 : 500);
+    }
+
+    cards.forEach((card) => {
       const id = card.dataset.project;
       card.addEventListener("click", () => openPlane(id, card));
       card.addEventListener("keydown", (e) => {
@@ -603,9 +672,15 @@
       });
     });
 
+    $$(".plane__nav-btn").forEach((b) =>
+      b.addEventListener("click", () => navigateTo(b.dataset.dir === "next" ? 1 : -1))
+    );
     $$(".plane__back").forEach((b) => b.addEventListener("click", closePlane));
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && activePlane) closePlane();
+      if (!activePlane) return;
+      if (e.key === "Escape") closePlane();
+      else if (e.key === "ArrowRight") { e.preventDefault(); navigateTo(1); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); navigateTo(-1); }
     });
 
     // refit the ASCII font if the window resizes while a plane is open

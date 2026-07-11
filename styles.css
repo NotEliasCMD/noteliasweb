@@ -448,6 +448,18 @@ body.is-planed .stage {
 }
 .plane.is-open { transform: none; visibility: visible; transition: transform 0.5s var(--ease); }
 
+/* --- project→project navigation (see script.js navigateTo) ---
+   The next plane slides in ON TOP of the (stationary) current one, so the dimmed
+   main page is never revealed — a seamless plane-to-plane hop. `--incoming` lifts
+   it above the outgoing plane; `--from-left` parks it left so a "prev" hop enters
+   from the left instead of the right. */
+.plane--incoming { z-index: 90; }
+.plane--from-left { transform: translateX(-100%); }
+/* the 8 placeholder cards share ONE plane element, so a placeholder→placeholder
+   hop can't slide over itself — crossfade its content in place instead. */
+.plane__grid { transition: opacity 0.3s var(--ease); }
+.plane.is-swapping .plane__grid { opacity: 0; }
+
 /* sticky top bar with back button */
 .plane__bar {
   position: sticky; top: 0; z-index: 5;
@@ -458,6 +470,10 @@ body.is-planed .stage {
 .plane__bar-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
 .plane__back { cursor: pointer; }
 .plane__crumb { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+/* prev/next project controls, grouped opposite the back button */
+.plane__bar-nav { display: flex; align-items: center; gap: 0.6rem; }
+.plane__nav-btn { cursor: pointer; padding: 0.5rem 0.85rem; font-size: 0.8rem; }
+.plane__bar-nav .plane__crumb { margin-left: 0.4rem; }
 
 /* two columns: pinned graphic | scrolling text */
 .plane__grid {
@@ -568,6 +584,10 @@ body.is-planed .stage {
   .footer__cols { grid-template-columns: 1fr 1fr; }
   .cards--carousel { grid-auto-columns: clamp(200px, 70%, 250px); }   /* next column peeks */
   .hl { white-space: normal; }   /* allow highlight phrases to wrap on narrow screens */
+  /* condense the plane bar so back + prev/next fit: drop the crumb, tighten gaps */
+  .plane__bar-nav .plane__crumb { display: none; }
+  .plane__nav-btn { padding: 0.5rem 0.7rem; }
+  .plane__back { padding-left: 0.9rem; padding-right: 0.9rem; }
 }
 
 /* ================================================================= A11Y */

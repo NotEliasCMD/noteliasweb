@@ -175,14 +175,33 @@ Line ranges below are approximate anchors as of this writing.
   `neuralnet`, forecast → `candlestick`, abtest → `barchart`, tickets →
   `attention`, placeholder → `topology` — types its title (reusing `typeSpan`),
   and reveals `[data-plane-reveal]` blocks via its own scoped observer. Back
-  button + Escape close it; focus returns to the originating card. The shared
-  placeholder plane borrows the clicked card's title/tag/year. On ≤900px the
-  pinned media/head columns un-stick.
+  button + Escape close it; prev/next arrows move between projects without closing
+  (see below); focus returns to the current project's card. The shared placeholder
+  plane borrows the clicked card's title/tag/year. On ≤900px the pinned media/head
+  columns un-stick.
 - **Shared grid:** every plane mounts onto one `PLANE_GRID = {cols:62, rows:26}`
   (in `script.js` §9), not each animation's native size, so `fontFor` picks the
   same font size and the graphic lands identically on every plane. The library
   animations are all parametric on `(cols, rows)`, so this just reshapes them a
   little — retune all planes at once by editing `PLANE_GRID`.
+- **Prev/Next navigation:** each `.plane__bar` has a `.plane__bar-nav` group
+  (`← Prev` / `Next →`, `.plane__nav-btn` with `data-dir="prev|next"`) opposite the
+  back button; `ArrowLeft`/`ArrowRight` do the same while a plane is open.
+  `navigateTo(dir)` (`script.js` §9) walks the **`cards` list in DOM order** (not
+  `data-project`, since 8 cards share `#plane-placeholder`) and **loops** at the ends.
+  The transition is a **cover-slide**: the incoming plane slides in *on top of* the
+  stationary current one (both are opaque cream; `.plane--incoming` lifts its z-index),
+  so the dimmed main page is **never revealed** — a seamless plane-to-plane hop. The
+  old plane is retired (`retire()`) once it is fully covered. `next` enters from the
+  right, `prev` from the left (`.plane--from-left` parks it left). `body.is-planed`
+  stays on throughout. `openPlane`'s show logic was extracted into
+  `showPlane(plane, card)` (borrows placeholder content for *any* card, `resetReveals`
+  so blocks re-animate); `navigateTo` reuses it to bring the incoming plane in.
+  Placeholder→placeholder is the **same element**, so it can't slide over itself — it
+  **crossfades its content in place** instead (`.plane.is-swapping .plane__grid`).
+  Retire/reset are timer-driven (fixed durations), not `transitionend`, so a hop can't
+  get stuck. Focus lands on the same-direction nav button; Back/Escape restore focus to
+  the **current** project's card. At ≤720px the crumb hides so the bar fits.
 - **Gotcha / over-engineering:** largest single feature; **all body copy is lorem
   ipsum** — a full interaction shell around placeholder content (see review §R2).
 

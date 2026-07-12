@@ -87,8 +87,14 @@ Line ranges below are approximate anchors as of this writing.
   **Enter** to submit: a matching entry in the `EASTER_EGGS` array (top of the
   `5. terminal typing` banner) fires — its `reaction()` returns `[className,
   text]` chunks (same format as `TABS`) that print via `appendChunk`; a non-match
-  prints `command not found`. Then a fresh `>>> ` prompt is dropped. **To swap
-  the word/celebration, edit `EASTER_EGGS` only** — nothing else changes. Escape
+  prints `command not found`. A match also plays `playChime()` — a short rising
+  major arpeggio **synthesized with Web Audio (no asset file)**, created lazily
+  inside the Enter keypress so autoplay policy is satisfied. Per egg you can set
+  `sound: false` (silent) or `sound: (ctx) => {…}` (custom effect). Then a fresh
+  `>>> ` prompt is dropped. Input is capped at `MAX_INPUT` chars (top of the
+  banner, default 40); further keystrokes past the cap are silently ignored (no
+  error, nothing removed). **To swap the word/celebration/sound, edit
+  `EASTER_EGGS` only** — nothing else changes. Escape
   or clicking away exits; switching tabs clears the input. Keystrokes are caught
   by a document-level `keydown` gated on an `inputActive` flag (no focusable
   control), so the terminal **stays `aria-hidden`/decorative** — screen readers

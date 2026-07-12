@@ -104,6 +104,21 @@
   /* ---------------------------------------------- 5. terminal typing */
   const typedEl = $("#typed");
   const cursorEl = $("#cursor");
+  // --- Easter eggs -------------------------------------------------------
+  // Click the terminal, type one of these `trigger` words, and press Enter.
+  // `reaction()` returns [className, text] chunks (same format as TABS below),
+  // so swapping the word or the celebration output is a one-line edit here —
+  // no other code needs to change.
+  const EASTER_EGGS = [
+    {
+      trigger: "secret",
+      reaction: () => [
+        ["tok-celebrate", "🎉🎊✨🥳🎈🍑✨🎊🎉\n"],
+        ["tok-out", "you found it.\n"],
+      ],
+    },
+  ];
+
   // Each tab is { id, script } where script is an array of [className, text]
   // chunks. \n creates newlines. `null` class = plain. Tabs are click-to-switch;
   // tab 0 auto-types on load. Edit a tab's SESSIONS entry to change its content.
@@ -193,10 +208,13 @@
   ];
 
   const tabBtns = $$(".terminal__tab");
+  const terminalEl = $(".terminal");
+  const inputEl = $("#terminalInput");   // where the visitor's keystrokes land
   let typeToken = 0;        // bump to cancel any in-flight typing chain
   const rendered = {};      // tab id -> true once fully typed (cache)
   let firstShow = true;     // only the first auto-type gets the paint lead-in
   let activeTab = null;
+  let inputActive = false;  // true while the visitor is typing at the prompt
 
   function showTab(id) {
     if (!typedEl || !cursorEl || id === activeTab) return;
@@ -204,6 +222,7 @@
     if (!tab) return;
     activeTab = id;
     typeToken++;            // invalidate whatever was typing
+    exitInputMode();        // switching tabs wipes #typed, so drop any input too
     tabBtns.forEach((b) => b.classList.toggle("is-active", b.dataset.tab === id));
     typedEl.textContent = "";
     if (reduceMotion || rendered[id]) {
@@ -214,9 +233,78 @@
     }
   }
 
+  // --- Easter-egg input mode ---------------------------------------------
+  // Finish typing the active tab instantly so there is a clean trailing
+  // ">>> " prompt for the visitor to type after.
+  function finishActiveTab() {
+    const tab = TABS.find((t) => t.id === activeTab);
+    if (!tab || rendered[activeTab]) return;
+    typeToken++;                       // cancel any in-flight typing
+    typedEl.textContent = "";
+    tab.script.forEach(([cls, text]) => appendChunk(typedEl, cls, text));
+    rendered[activeTab] = true;
+  }
+
+  function enterInputMode() {
+    if (!typedEl || !terminalEl || !inputEl) return;
+    finishActiveTab();
+    inputActive = true;
+    terminalEl.classList.add("terminal--input");
+  }
+
+  function exitInputMode() {
+    inputActive = false;
+    if (inputEl) inputEl.textContent = "";
+    if (terminalEl) terminalEl.classList.remove("terminal--input");
+  }
+
+  // Commit the typed line: echo it, run a matching easter egg (or report an
+  // unknown command), then drop a fresh prompt. Uses appendChunk so it renders
+  // instantly, which also means it works fine under reduced motion.
+  function submitInput() {
+    const raw = inputEl.textContent;
+    const cmd = raw.trim().toLowerCase();
+    if (raw.length) appendChunk(typedEl, "tok-cmd", raw + "\n");
+    inputEl.textContent = "";
+    const egg = EASTER_EGGS.find((e) => e.trigger === cmd);
+    if (egg) {
+      egg.reaction().forEach(([cls, text]) => appendChunk(typedEl, cls, text));
+    } else if (cmd) {
+      appendChunk(typedEl, "tok-comment", "command not found: " + cmd + "\n");
+    }
+    appendChunk(typedEl, "tok-prompt", ">>> ");
+    typedEl.parentElement.scrollTop = typedEl.parentElement.scrollHeight;
+  }
+
   if (typedEl && cursorEl) {
     tabBtns.forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
     showTab(TABS[0].id);
+
+    // Click the terminal to type; click away to leave input mode.
+    if (terminalEl && inputEl) {
+      terminalEl.addEventListener("click", enterInputMode);
+      document.addEventListener("click", (e) => {
+        if (inputActive && !terminalEl.contains(e.target)) exitInputMode();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (!inputActive) return;
+        const ae = document.activeElement;
+        if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable)) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key === "Escape") { exitInputMode(); return; }
+        if (e.key === "Enter") { e.preventDefault(); submitInput(); return; }
+        if (e.key === "Backspace") {
+          e.preventDefault();
+          inputEl.textContent = inputEl.textContent.slice(0, -1);
+          return;
+        }
+        if (e.key.length === 1) {
+          e.preventDefault();
+          inputEl.textContent += e.key;
+          typedEl.parentElement.scrollTop = typedEl.parentElement.scrollHeight;
+        }
+      });
+    }
   }
 
   function appendChunk(parent, cls, text) {
@@ -591,6 +679,15 @@
 
         resetReveals(plane);
         revealBlocks(plane);
+        // data-story planes carry SVG charts (side-projects/ds-charts.js) instead of
+        // an ASCII anim. Their entrance observer is one-shot, so re-run it on every
+        // show: cancel any pending one now (before the slide), then replay once the
+        // plane has settled so the in-view hero animates from the start again. No-op
+        // on planes without charts / when the toolkit isn't loaded.
+        if (window.DSCharts) {
+          DSCharts.reset(plane);
+          setTimeout(() => DSCharts.replay(plane), reduceMotion ? 0 : 520);
+        }
         setTimeout(() => typeTitle(plane), reduceMotion ? 0 : 420);
 
         const back = $(".plane__back", plane);

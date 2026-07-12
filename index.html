@@ -109,7 +109,7 @@
             <button type="button" class="terminal__tab" data-tab="forecast" tabindex="-1">forecast.py</button>
             <button type="button" class="terminal__tab" data-tab="triage" tabindex="-1">triage.py</button>
           </div>
-          <pre class="terminal__body"><code id="typed"></code><span class="cursor" id="cursor">▍</span></pre>
+          <pre class="terminal__body"><code id="typed"></code><span id="terminalInput" class="tok-cmd"></span><span class="cursor" id="cursor">▍</span></pre>
         </div>
       </div>
 
@@ -902,11 +902,14 @@
              aria-hidden="true" aria-labelledby="plane-pw-moneyball-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
-          <button class="plane__back btn btn--ghost" type="button">← Back</button>
           <div class="plane__bar-nav">
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <button class="plane__back btn btn--ghost" type="button">Back<span class="plane__back-full"> to home</span> →</button>
+          </div>
+          <div class="plane__bar-end">
             <span class="plane__crumb">Side project · 2024</span>
+            <button class="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-toggle__sun" aria-hidden="true">☀</span><span class="theme-toggle__moon" aria-hidden="true">☾</span></button>
           </div>
         </div>
       </div>
@@ -928,16 +931,18 @@
             <h1 class="plane__title" id="plane-pw-moneyball-title"><span class="hl" data-plane-type>Moneyball for the Premier League</span></h1>
             <ul class="card__meta plane__meta"><li>pandas</li><li>scikit-learn</li><li>football-data</li></ul>
           </div>
-          <div class="plane__tldr" data-plane-reveal>
-            <h2>TL;DR</h2>
-            <ul>
+          <details class="plane__tldr" data-plane-reveal>
+            <summary class="plane__tldr__summary"><span class="plane__tldr__label">TL;DR</span><span class="plane__tldr__hint">read the takeaways</span></summary>
+            <div class="plane__tldr__body">
+              <ul>
               <li>80 team-seasons across four Premier League seasons (1,520 matches).</li>
               <li>A shots-only expected-points model hits <strong>R²≈0.80</strong> on the held-out 2023-24.</li>
               <li><strong>West Ham +19</strong> over-performed; Brighton is the value side, under-shooting twice.</li>
               <li>Shots-on-target differential tracks points at <strong>r≈0.90</strong> — almost goal difference.</li>
               <li>The model is a value detector, not deployed.</li>
             </ul>
-          </div>
+            </div>
+          </details>
           <div class="plane__block" data-plane-reveal>
             <h2>Some teams bank points their shots don't deserve</h2>
             <figure class="ds-figure" data-ds-chart data-project="pl_moneyball"
@@ -982,6 +987,9 @@
             <h2>Method &amp; honest caveats</h2>
             <p>Data: football-data.co.uk match results, four seasons. Model: linear regression on four per-game shot features, trained on 2020-23 and tested on 2023-24. It beats a train-mean dummy comfortably but loses to goal difference as a pure predictor — its worth is as a value detector, and it is <em>not</em> deployed.</p>
           </div>
+          <div class="plane__next" data-plane-reveal>
+            <button class="plane__nav-btn plane__next-btn btn btn--primary" type="button" data-dir="next">Next project →</button>
+          </div>
         </div>
       </div>
     </article>
@@ -990,11 +998,14 @@
              aria-hidden="true" aria-labelledby="plane-pw-markets-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
-          <button class="plane__back btn btn--ghost" type="button">← Back</button>
           <div class="plane__bar-nav">
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <button class="plane__back btn btn--ghost" type="button">Back<span class="plane__back-full"> to home</span> →</button>
+          </div>
+          <div class="plane__bar-end">
             <span class="plane__crumb">Side project · 2026</span>
+            <button class="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-toggle__sun" aria-hidden="true">☀</span><span class="theme-toggle__moon" aria-hidden="true">☾</span></button>
           </div>
         </div>
       </div>
@@ -1016,16 +1027,18 @@
             <h1 class="plane__title" id="plane-pw-markets-title"><span class="hl" data-plane-type>A decade of markets</span></h1>
             <ul class="card__meta plane__meta"><li>pandas</li><li>NumPy</li><li>Nasdaq API</li></ul>
           </div>
-          <div class="plane__tldr" data-plane-reveal>
-            <h2>TL;DR</h2>
-            <ul>
+          <details class="plane__tldr" data-plane-reveal>
+            <summary class="plane__tldr__summary"><span class="plane__tldr__label">TL;DR</span><span class="plane__tldr__hint">read the takeaways</span></summary>
+            <div class="plane__tldr__body">
+              <ul>
               <li>$100 became <strong>~$1,360 in Bitcoin</strong> and fell to <strong>~$66 in long Treasuries</strong> (monthly close, this window).</li>
               <li>Deepest drawdowns: crude oil and Bitcoin fell roughly <strong>-85%</strong> from peak; the S&amp;P's worst was about a third (COVID).</li>
               <li>Gold is near-uncorrelated with stocks; long bonds slightly negative.</li>
               <li>Equity returns have <strong>fat tails</strong> — far more ±3σ days than a Normal predicts.</li>
               <li>Visualization-only — no model, by design.</li>
             </ul>
-          </div>
+            </div>
+          </details>
           <div class="plane__block" data-plane-reveal>
             <h2>Growth of $100: the same decade, very different endings</h2>
             <figure class="ds-figure" data-ds-chart data-project="markets" data-chart="line" data-figure="growth"
@@ -1086,6 +1099,9 @@
             <h2>Method &amp; honest caveats</h2>
             <p>Data: Nasdaq's public API (liquid ETF proxies) plus Binance for a continuous Bitcoin series, roughly ten years of daily closes. Prices are split-adjusted but <em>not</em> dividend/coupon adjusted, so these are price returns and understate total return for payers. The animation downsamples to month-end, so the headline multiples differ slightly from a daily-close reading.</p>
           </div>
+          <div class="plane__next" data-plane-reveal>
+            <button class="plane__nav-btn plane__next-btn btn btn--primary" type="button" data-dir="next">Next project →</button>
+          </div>
         </div>
       </div>
     </article>
@@ -1094,11 +1110,14 @@
              aria-hidden="true" aria-labelledby="plane-pw-books-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
-          <button class="plane__back btn btn--ghost" type="button">← Back</button>
           <div class="plane__bar-nav">
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <button class="plane__back btn btn--ghost" type="button">Back<span class="plane__back-full"> to home</span> →</button>
+          </div>
+          <div class="plane__bar-end">
             <span class="plane__crumb">Side project · 2025</span>
+            <button class="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-toggle__sun" aria-hidden="true">☀</span><span class="theme-toggle__moon" aria-hidden="true">☾</span></button>
           </div>
         </div>
       </div>
@@ -1121,15 +1140,17 @@
             <h1 class="plane__title" id="plane-pw-books-title"><span class="hl" data-plane-type>Classic novels &amp; the use of words</span></h1>
             <ul class="card__meta plane__meta"><li>scikit-learn</li><li>AFINN-111</li><li>Gutenberg</li></ul>
           </div>
-          <div class="plane__tldr" data-plane-reveal>
-            <h2>TL;DR</h2>
-            <ul>
+          <details class="plane__tldr" data-plane-reveal>
+            <summary class="plane__tldr__summary"><span class="plane__tldr__label">TL;DR</span><span class="plane__tldr__hint">read the takeaways</span></summary>
+            <div class="plane__tldr__body">
+              <ul>
               <li>Six public-domain novels, tokenised from Project Gutenberg.</li>
               <li><strong>Moby Dick</strong> has the richest vocabulary; Zipf's law holds across all six.</li>
               <li>Frankenstein swings hardest and collapses to its darkest point near the end.</li>
               <li>A TF-IDF + Naive-Bayes classifier tells the books apart from a 200-word passage at <strong>98.5%</strong> (vs a 16.7% baseline).</li>
             </ul>
-          </div>
+            </div>
+          </details>
           <div class="plane__block" data-plane-reveal>
             <h2>Vocabulary richness</h2>
             <figure class="ds-figure" data-ds-chart data-project="books" data-chart="bar" data-figure="lexical" data-mode="h"
@@ -1172,6 +1193,9 @@
             <h2>Method &amp; honest caveats</h2>
             <p>Data: six Project Gutenberg texts (public domain) and the AFINN-111 lexicon. Sentiment is a lexicon average, so it misses negation and irony; the classifier is trained on balanced 200-word passages with a held-out test split. Nothing is deployed.</p>
           </div>
+          <div class="plane__next" data-plane-reveal>
+            <button class="plane__nav-btn plane__next-btn btn btn--primary" type="button" data-dir="next">Next project →</button>
+          </div>
         </div>
       </div>
     </article>
@@ -1180,11 +1204,14 @@
              aria-hidden="true" aria-labelledby="plane-pw-pokedex-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
-          <button class="plane__back btn btn--ghost" type="button">← Back</button>
           <div class="plane__bar-nav">
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <button class="plane__back btn btn--ghost" type="button">Back<span class="plane__back-full"> to home</span> →</button>
+          </div>
+          <div class="plane__bar-end">
             <span class="plane__crumb">Side project · 2025</span>
+            <button class="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-toggle__sun" aria-hidden="true">☀</span><span class="theme-toggle__moon" aria-hidden="true">☾</span></button>
           </div>
         </div>
       </div>
@@ -1206,16 +1233,18 @@
             <h1 class="plane__title" id="plane-pw-pokedex-title"><span class="hl" data-plane-type>Pokémon: the original 251</span></h1>
             <ul class="card__meta plane__meta"><li>scikit-learn</li><li>PokeAPI</li><li>pandas</li></ul>
           </div>
-          <div class="plane__tldr" data-plane-reveal>
-            <h2>TL;DR</h2>
-            <ul>
+          <details class="plane__tldr" data-plane-reveal>
+            <summary class="plane__tldr__summary"><span class="plane__tldr__label">TL;DR</span><span class="plane__tldr__hint">read the takeaways</span></summary>
+            <div class="plane__tldr__body">
+              <ul>
               <li>All 251 Gen 1-2 Pokémon, six base stats each.</li>
               <li>Legendaries' median base-stat total is <strong>580</strong> — a class apart.</li>
               <li>Water is the most common primary type; Ghost the fastest/most special.</li>
               <li>A logistic model reaches <strong>ROC-AUC 0.99</strong> from base stats alone.</li>
               <li>Its only misses are the 600-total pseudo-legendaries.</li>
             </ul>
-          </div>
+            </div>
+          </details>
           <div class="plane__block" data-plane-reveal>
             <h2>How special are legendaries?</h2>
             <figure class="ds-figure" data-ds-chart data-project="pokedex" data-chart="histogram" data-figure="bst"
@@ -1265,6 +1294,9 @@
             <h2>Method &amp; honest caveats</h2>
             <p>Data: PokeAPI, all 251 Pokémon (cached). Model: class-weighted logistic regression on the six base stats, 5-fold cross-validated against a majority baseline. With only 11 legendaries the metrics are optimistic, and the model is <em>not</em> deployed.</p>
           </div>
+          <div class="plane__next" data-plane-reveal>
+            <button class="plane__nav-btn plane__next-btn btn btn--primary" type="button" data-dir="next">Next project →</button>
+          </div>
         </div>
       </div>
     </article>
@@ -1273,11 +1305,14 @@
              aria-hidden="true" aria-labelledby="plane-pw-consoles-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
-          <button class="plane__back btn btn--ghost" type="button">← Back</button>
           <div class="plane__bar-nav">
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <button class="plane__back btn btn--ghost" type="button">Back<span class="plane__back-full"> to home</span> →</button>
+          </div>
+          <div class="plane__bar-end">
             <span class="plane__crumb">Side project · 2026</span>
+            <button class="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-toggle__sun" aria-hidden="true">☀</span><span class="theme-toggle__moon" aria-hidden="true">☾</span></button>
           </div>
         </div>
       </div>
@@ -1299,15 +1334,17 @@
             <h1 class="plane__title" id="plane-pw-consoles-title"><span class="hl" data-plane-type>The console wars &amp; the blockbuster era</span></h1>
             <ul class="card__meta plane__meta"><li>pandas</li><li>scikit-learn</li><li>Wikipedia</li></ul>
           </div>
-          <div class="plane__tldr" data-plane-reveal>
-            <h2>TL;DR</h2>
-            <ul>
+          <details class="plane__tldr" data-plane-reveal>
+            <summary class="plane__tldr__summary"><span class="plane__tldr__label">TL;DR</span><span class="plane__tldr__hint">read the takeaways</span></summary>
+            <div class="plane__tldr__body">
+              <ul>
               <li><strong>PlayStation 2 (~155M)</strong> still leads every home console.</li>
               <li>The living room passed Nintendo → Sony → a three-way war.</li>
               <li><strong>Minecraft (~300M)</strong> is the best-selling game ever, and the record keeps climbing.</li>
               <li>A tiny sales regression barely beats the mean — reported honestly (n=21).</li>
             </ul>
-          </div>
+            </div>
+          </details>
           <div class="plane__block" data-plane-reveal>
             <h2>Who won the living room</h2>
             <figure class="ds-figure" data-ds-chart data-project="consoles" data-chart="bar" data-figure="rank" data-mode="h"
@@ -1352,6 +1389,9 @@
             <h2>Method &amp; honest caveats</h2>
             <p>Data: two small, hand-encoded tables cited to Wikipedia (lifetime, approximate units). Several recent figures are best public estimates, and with n=21 the model is illustrative, not authoritative — it is <em>not</em> deployed.</p>
           </div>
+          <div class="plane__next" data-plane-reveal>
+            <button class="plane__nav-btn plane__next-btn btn btn--primary" type="button" data-dir="next">Next project →</button>
+          </div>
         </div>
       </div>
     </article>
@@ -1360,11 +1400,14 @@
              aria-hidden="true" aria-labelledby="plane-pw-ram-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
-          <button class="plane__back btn btn--ghost" type="button">← Back</button>
           <div class="plane__bar-nav">
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <button class="plane__back btn btn--ghost" type="button">Back<span class="plane__back-full"> to home</span> →</button>
+          </div>
+          <div class="plane__bar-end">
             <span class="plane__crumb">Side project · 2026</span>
+            <button class="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-toggle__sun" aria-hidden="true">☀</span><span class="theme-toggle__moon" aria-hidden="true">☾</span></button>
           </div>
         </div>
       </div>
@@ -1387,16 +1430,18 @@
             <h1 class="plane__title" id="plane-pw-ram-title"><span class="hl" data-plane-type>RAM's AI premium</span></h1>
             <ul class="card__meta plane__meta"><li>pandas</li><li>FRED</li><li>TrendForce</li></ul>
           </div>
-          <div class="plane__tldr" data-plane-reveal>
-            <h2>TL;DR</h2>
-            <ul>
+          <details class="plane__tldr" data-plane-reveal>
+            <summary class="plane__tldr__summary"><span class="plane__tldr__label">TL;DR</span><span class="plane__tldr__hint">read the takeaways</span></summary>
+            <div class="plane__tldr__body">
+              <ul>
               <li>After the 2022–23 glut, DRAM contract prices bottomed in <strong>2023-Q3</strong>, then AI demand drove a <strong>~4.2× reversal</strong> (index 68 → 289 by 2026-Q1).</li>
               <li>The quarterly swing runs from <strong>−20% QoQ</strong> to <strong>+92% QoQ</strong>; the AI leg ignites in <strong>2025-Q3 (+47.5%)</strong>.</li>
               <li>DDR5 16Gb <strong>spot prices nearly quadrupled in three months</strong> — $6.84 → $27.20 (<strong>+307%</strong>).</li>
               <li>The driver is <strong>HBM</strong>: it sells at ~5× DDR5 and eats ~3× the wafer area per GB, starving the commodity DRAM market into shortage.</li>
               <li>Official quality-adjusted indices <strong>barely register it</strong> — a story in itself.</li>
             </ul>
-          </div>
+            </div>
+          </details>
           <div class="plane__block" data-plane-reveal>
             <h2>From −20% to +92%: the quarterly swing</h2>
             <figure class="ds-figure" data-ds-chart data-project="ram" data-chart="bar" data-figure="predictors"
@@ -1430,6 +1475,9 @@
           <div class="plane__block" data-plane-reveal>
             <h2>Method &amp; honest caveats</h2>
             <p>TrendForce publishes quarterly DRAM contract-price <em>change guidance</em> (QoQ % ranges), not a public index, and no DRAM-specific series exists in FRED. The headline index is our own construction — the QoQ midpoints chained from a 2022-Q4 base — clearly labelled as illustrative, not an official price series; several 2025–26 quarters were revised sharply upward mid-quarter and we use the later figures. The FRED comparison (computer CPI, computer-storage PPI, retrieved 2026-07-12) is deliberately imperfect: neither is DRAM-specific, which is precisely why the cited TrendForce data is needed. Visualization-only, by design.</p>
+          </div>
+          <div class="plane__next" data-plane-reveal>
+            <button class="plane__nav-btn plane__next-btn btn btn--primary" type="button" data-dir="next">Next project →</button>
           </div>
         </div>
       </div>

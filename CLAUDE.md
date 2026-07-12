@@ -118,6 +118,10 @@ Class names map to `.terminal__body .tok-*` colors in CSS. `tok-out`/`tok-commen
 render fast (program output); everything else types char-by-character. Edit a
 tab's entry to change its demo. The `#cursor` span blinks forever via
 `@keyframes blink`. The whole terminal is `aria-hidden` decoration.
+There is also an **easter egg**: click the terminal to type a command at the
+prompt and press Enter — a matching `EASTER_EGGS` entry (top of the terminal
+banner in `script.js`) prints a celebration. Swap the trigger word/output there;
+the terminal stays `aria-hidden`. See `COMPONENTS.md` §3.
 
 ### f) Work carousel, closer plasma, project planes
 Three larger features added after the original design. Rather than re-document

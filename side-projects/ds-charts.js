@@ -1107,6 +1107,41 @@
     (root || document).querySelectorAll("[data-ds-chart]").forEach(function (f) { setup(f); });
   }
 
+  // Cancel any pending scroll-in observers for figures in `root`. Callers that are
+  // about to re-show a subtree call this FIRST (while it's still animating/off-screen)
+  // so a stale one-shot observer can't fire mid-transition, then call replay() once
+  // the subtree has settled.
+  function reset(root) {
+    (root || document).querySelectorAll("[data-ds-chart]").forEach(function (f) {
+      if (f._dsIO) { f._dsIO.disconnect(); f._dsIO = null; }
+    });
+  }
+
+  // Replay the scroll-in entrance for already-mounted figures in `root`. The initial
+  // observer is one-shot, so a figure otherwise animates only once; the portfolio's
+  // project "planes" call this each time a plane is shown (open or prev/next) so the
+  // hero chart re-runs from the start, like the planes' other entrance animations.
+  // Figures already in the viewport play immediately (deterministic — no dependency
+  // on catching a transform transition); off-screen ones re-arm a one-shot observer
+  // to play when scrolled into view.
+  function replay(root) {
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var vw = window.innerWidth || document.documentElement.clientWidth;
+    (root || document).querySelectorAll("[data-ds-chart]").forEach(function (f) {
+      var inst = f._dsInst;
+      if (!inst) { setup(f); return; }            // never mounted → normal setup
+      if (!inst.play) { if (inst.still) inst.still(); return; }  // static chart, nothing to replay
+      if (REDUCE) { inst.still(); return; }        // reduced motion → hold final frame, no anim
+      if (f._dsIO) { f._dsIO.disconnect(); f._dsIO = null; }
+      var r = f.getBoundingClientRect();
+      if (r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw) { inst.play(); return; }  // in view now
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) { if (en.isIntersecting) { io.unobserve(f); inst.play(); } });
+      }, { threshold: 0.35 });
+      f._dsIO = io; io.observe(f);
+    });
+  }
+
   // Live theme flips: colours resolved to real RGB (heatmaps) must be recomputed,
   // so re-render every chart to its final frame when [data-theme] changes.
   var _themeTimer = null;
@@ -1118,7 +1153,7 @@
     }, 30);
   }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-  window.DSCharts = { mount: mount, render: setup, registry: R };
+  window.DSCharts = { mount: mount, reset: reset, replay: replay, render: setup, registry: R };
   if (document.readyState === "loading")
     document.addEventListener("DOMContentLoaded", function () { mount(); });
   else mount();

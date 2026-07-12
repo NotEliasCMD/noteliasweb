@@ -37,8 +37,9 @@ Line ranges below are approximate anchors as of this writing.
 | [Work carousel](#8-work-carousel) | ~156–375 | `.carousel*` ~234–283 | `7.5 work carousel` |
 | [Skills / Writing / Footer](#9-skills--writing--footer) | ~377–522 | ~284–352 | `7. footer year` |
 | [Closer + plasma backdrop](#10-closer--plasma-backdrop) | ~461–486 | `.closer*` ~303–335 | `8. closer plasma backdrop` |
-| [Project "planes"](#11-project-planes) | ~575–1075 | `.stage/.plane/.plane--mirror/.ascii` ~429–520 | `9. project planes` |
+| [Project "planes"](#11-project-planes) | ~588–1438 | `.stage/.plane/.plane--mirror/.plane--story/.ascii` ~428–505 | `9. project planes` |
 | [ASCII engine](#12-ascii-engine-anim) | — | — | `anim/*.js` |
+| [Data-story charts](#12a-personal-works-data-story-charts-side-projects) | — | `.ds-*` (`side-projects/ds-charts.css`) | `side-projects/*` |
 | [Theme toggle (dark mode)](#13-theme-toggle-dark-mode) | `#themeToggle*` + `<head>` script | `[data-theme="dark"]`, `.theme-toggle*` | `6.5 theme toggle` |
 
 ---
@@ -166,11 +167,13 @@ Line ranges below are approximate anchors as of this writing.
 
 ## 11. Project "planes"
 
-- **HTML** ~575–1075 (**10** `<article class="plane">` in two families — 6 **Work**
-  planes: triage, fraud, forecast, abtest, tickets, + a shared placeholder; and 4
-  mirrored **Personal-works** planes: pw-fraud, pw-tinyml, pw-ascii, pw-finance) ·
-  **CSS** `.stage` / `.plane*` / `.plane--mirror` / `.ascii-*` ~429–520 (+ responsive
-  & reduced-motion blocks) · **JS** banner `9. project planes`.
+- **HTML** ~588–1438 (**12** `<article class="plane">` in two families — 6 **Work**
+  planes: triage, fraud, forecast, abtest, tickets, + a shared placeholder; and 6
+  mirrored **Personal-works "data story"** planes: pw-ram, pw-moneyball, pw-markets,
+  pw-books, pw-pokedex, pw-consoles) · **CSS** `.stage` / `.plane*` / `.plane--mirror`
+  / `.plane--story` / `.ascii-*` ~428–505 (+ responsive & reduced-motion blocks) ·
+  **JS** banner `9. project planes`. The Personal-works charts are a separate toolkit
+  in `side-projects/` — see §12a.
 - **Two families, one controller.** `createPlaneGroup(cards, mirror)` (`script.js`
   §9) builds a self-contained plane controller from an ordered list of triggers,
   and the site instantiates it twice: **Work** = `$$(".card--link")` (the §8
@@ -180,26 +183,36 @@ Line ranges below are approximate anchors as of this writing.
   `data-project` maps to `#plane-<project>`.
 - Activating a trigger (click or Enter/Space) slides the main `.stage` aside and the
   matching plane in (`body.is-planed`; the mirror group also adds
-  `body.is-planed--mirror`). Each plane lazily mounts its own data-science ASCII
-  animation (`data-anim`) into its `.ascii-screen` — Work: triage → `topology`,
-  fraud → `neuralnet`, forecast → `candlestick`, abtest → `barchart`, tickets →
-  `attention`, placeholder → `topology`; Personal works: pw-fraud → `neuralnet`,
-  pw-tinyml → `motherboard`, pw-ascii → `cube`, pw-finance → `candlestick`. It types
-  its title (reusing `typeSpan`) and reveals `[data-plane-reveal]` blocks via its own
-  scoped observer. Back button + Escape close it; prev/next arrows hop between the
-  group's projects without closing (see below); focus returns to the trigger. The
-  shared placeholder plane borrows the clicked card's title/tag/year. On ≤900px the
-  pinned media/head columns un-stick.
+  `body.is-planed--mirror`). Every plane types its title (reusing `typeSpan`) and
+  reveals `[data-plane-reveal]` blocks via its own scoped observer. Back button +
+  Escape close it; prev/next arrows hop between the group's projects without closing
+  (see below); focus returns to the trigger. On ≤900px the pinned media/head columns
+  un-stick.
+- **Two different graphics in `.plane__media`.** *Work* planes lazily mount a
+  data-science **ASCII animation** (`data-anim`) into a `<pre data-anim-target>` —
+  triage → `topology`, fraud → `neuralnet`, forecast → `candlestick`, abtest →
+  `barchart`, tickets → `attention`, placeholder → `topology` (the shared placeholder
+  also borrows the clicked card's title/tag/year). *Personal-works* planes instead put
+  an **animated SVG data-story chart** there (§12a); they keep a vestigial `data-anim`
+  but have **no** `[data-anim-target]`, so `ensureAnim` finds nothing and no-ops — the
+  chart toolkit mounts the SVG on its own.
 - **Mirror variant (Personal works):** `mirror:true` flips the group into a
   horizontal mirror — the plane parks off-screen **left** (`.plane--mirror`,
-  `translateX(-100%)`) and slides in from the left, the ASCII graphic sits on the
-  **right** with text on the **left** (`.plane__content { order:1 }` /
+  `translateX(-100%)`) and slides in from the left, the graphic (SVG chart) sits on
+  the **right** with text on the **left** (`.plane__content { order:1 }` /
   `.plane__media { order:2 }`), the bar's nav group moves **left** of the back button
   (`flex-direction: row-reverse`), and the dimmed page shifts **right**
   (`body.is-planed--mirror .stage`). A "prev" hop enters from the right
   (`.plane--from-right`) — the mirror image of the Work group's `.plane--from-left`.
-  CSS lives in the mirror block at `styles.css` ~463–475; the JS is the same
-  `createPlaneGroup`, just branching on `mirror`.
+  CSS lives in the mirror block at `styles.css` ~469–475; the JS is the same
+  `createPlaneGroup`, just branching on `mirror`. Note the mirror `.plane__grid` /
+  `.plane__media` rules out-specify the ≤900px single-column collapse, so the
+  responsive block **restates** them (`styles.css` ~613–616) to avoid mobile overflow.
+- **Story layout (`.plane--story`, `styles.css` ~477–500):** the Personal-works planes
+  add this modifier for data-story chrome — a boxed **TL;DR** panel (`.plane__tldr`),
+  a wider text column (`max-width: 62ch`), and a `.ds-hero-panel` framing the hero
+  chart. It also **drops the sticky header's soft bottom-fade** (`.plane__head::after`)
+  so the boxed TL;DR clips crisply under the header instead of dissolving into it.
 - **Shared grid:** every plane mounts onto one `PLANE_GRID = {cols:62, rows:26}`
   (in `script.js` §9), not each animation's native size, so `fontFor` picks the
   same font size and the graphic lands identically on every plane. The library
@@ -212,7 +225,7 @@ Line ranges below are approximate anchors as of this writing.
   `data-project`, since 8 mock cards share `#plane-placeholder`) and **loops** at the ends.
   Each group's `navigateTo`/`showPlane`/`openPlane` are closures over that group's
   own `cards` + `activePlane`, so hops stay within the group (Work loops its 13
-  triggers; Personal works loops its 4).
+  triggers; Personal works loops its 6, in list DOM order).
   The transition is a **cover-slide**: the incoming plane slides in *on top of* the
   stationary current one (both are opaque cream; `.plane--incoming` lifts its z-index),
   so the dimmed main page is **never revealed** — a seamless plane-to-plane hop. The
@@ -226,29 +239,29 @@ Line ranges below are approximate anchors as of this writing.
   Retire/reset are timer-driven (fixed durations), not `transitionend`, so a hop can't
   get stuck. Focus lands on the same-direction nav button; Back/Escape restore focus to
   the **current** project's card. At ≤720px the crumb hides so the bar fits.
-- **Content status:** the largest single feature. Real copy now lives in the
-  **triage** Work plane and **all four Personal-works planes**; the remaining Work
-  planes (fraud, forecast, abtest, tickets) + the shared placeholder are still lorem
-  ipsum (see review §R2). New planes are authored from
+- **Content status:** the largest single feature. Real copy + real data now fill the
+  **triage** Work plane and **all six Personal-works data-story planes**; the remaining
+  Work planes (fraud, forecast, abtest, tickets) + the shared placeholder are still
+  lorem ipsum (see review §R2). Work-plane copy is authored from
   `project_desc/plane-content-prompt.md` (a reusable prompt: raw blurb → card + plane
-  HTML), demonstrated on the triage project.
+  HTML), demonstrated on the triage project; the six Personal-works stories arrived as
+  a self-contained package (paste-ready fragments + regenerable data modules, §12a).
 
 ## 12. ASCII engine (`anim/`)
 
 - **Files:** `anim/ascii.js` (254 ln, the engine) + one plugin per animation.
   Loaded at the bottom of `index.html` (engine + the mounted anims `neuralnet`,
-  `candlestick`, `barchart`, `attention`, `topology`, `motherboard`, `cube` +
-  `plasma`) and, for the full library, `components.html`. The engine is **live
-  production code**; the plugins split into tiers:
+  `candlestick`, `barchart`, `attention`, `topology` + the closer `plasma`) and, for
+  the full library, `components.html`. The engine is **live production code**; the
+  plugins split into tiers:
   - **Work-plane anims** (§11): `neuralnet`, `candlestick`, `barchart`,
-    `attention`, `topology`.
-  - **Personal-works plane anims** (mirror, §11): `neuralnet`, `motherboard`,
-    `cube`, `candlestick`.
+    `attention`, `topology`. (The Personal-works planes render SVG charts, not ASCII —
+    they mount no plugin; see §12a.)
   - **Closer:** `plasma` (§10).
-  - **Library spares** (registered + gallery-shown but not mounted by the site,
-    ready to drop into a plane/closer): `actuarial`, `riskcurve`, `losscurve`,
-    `scatterplot`, `thermometer`, `equalizer`, plus the legacy `dna`. These are
-    **intentionally kept** as a palette, not dead code.
+  - **Library spares** (registered + gallery-shown but not mounted by the shipped
+    site, ready to drop into a plane/closer): `actuarial`, `riskcurve`, `losscurve`,
+    `scatterplot`, `thermometer`, `equalizer`, `motherboard`, `cube`, plus the legacy
+    `dna`. These are **intentionally kept** as a palette, not dead code.
     The gallery (`components.html` §11) builds its ASCII grid from
     `ASCII.animations`, so they surface there automatically; the shipped site
     never loads them.
@@ -264,6 +277,35 @@ Line ranges below are approximate anchors as of this writing.
   `components.html`, and reference it by `data-anim` / `data-anim-bg` (or let the
   gallery pick it up). The plugins are thin, idiomatic, and parametric on
   `(cols, rows)` — right-sized, don't refactor.
+
+---
+
+## 12a. Personal-works data-story charts (`side-projects/`)
+
+- **Files:** `side-projects/ds-charts.js` (the vanilla SVG chart toolkit + a
+  scroll-in animation controller), `side-projects/ds-charts.css` (`.ds-*` chart chrome
+  + a `--ds-*` palette, light/dark), and `side-projects/data/NN_<name>.js` (one per
+  project — `window.DS_SIDE["<key>"] = {…}`). Loaded at the bottom of `index.html`
+  after `script.js`: the six data modules first, then `ds-charts.js`. A dependency-free,
+  build-free package (no CDN, no libraries) staged from a separate repo; these are the
+  graphics the §11 Personal-works planes show instead of an ASCII animation.
+- **How it mounts:** `window.DSCharts` auto-runs on `DOMContentLoaded`, scanning
+  `[data-ds-chart]` figures and rendering each as an inline **viewBox** SVG — so it
+  sizes correctly even inside a still-`hidden` plane. It draws the final frame
+  immediately, then an `IntersectionObserver` plays the entrance animation when the
+  figure scrolls into view (i.e. when the plane opens). Everything is gated on
+  `prefers-reduced-motion` (jump straight to the final frame) and re-renders on a
+  `[data-theme]` flip via a `MutationObserver` on `<html>`, so charts recolour with
+  the dark theme for free. `DSCharts.mount(node)` re-scans a subtree if you inject
+  markup later. Only two globals are added, both `DS`-namespaced (`DSCharts`, `DS_SIDE`).
+- **Declaring a chart:** `<figure class="ds-figure" data-ds-chart data-project="<key>"
+  data-chart="line|bar|scatter|histogram|dumbbell|radar|heatmap|lollipop|arcs"
+  data-figure="<slice>" data-mode="…">` wrapping an empty `<div class="ds-chart">`
+  the toolkit fills, plus a title/subtitle/caption. Chart chrome (axes/grid/text) uses
+  host tokens (`--ink`, `--muted`, `--line`, `--peach`); the surrounding TL;DR + hero
+  panel are styled by `.plane--story` (§11). Note the `data-project` **key** (e.g.
+  `pl_moneyball`, `markets`, `ram`) is the `DS_SIDE` key, distinct from the plane's
+  `pw-` trigger slug. Full contract in the package's own `README.md` (source repo).
 
 ---
 
@@ -327,8 +369,8 @@ keep the 3 tabs but drop the render cache + first-paint lead-in, or make it a
 single non-tabbed session. **Recommended: trim.**
 
 **R2 — Some Work planes still wrap lorem-ipsum.** The slide-in detail system now
-carries real copy in the triage Work plane and all four Personal-works planes, but
-fraud/forecast/abtest/tickets + the shared placeholder are still lorem. The shell is
+carries real copy in the triage Work plane and all six Personal-works data-story
+planes, but fraud/forecast/abtest/tickets + the shared placeholder are still lorem. The shell is
 earning its keep now that real case studies live in it. **Recommended: fill the
 remaining Work planes from `project_desc/plane-content-prompt.md`.**
 
@@ -355,4 +397,4 @@ touch both — the duplication is small and readable.**
 - Hero eyebrow reads "Available **for to hire**" — likely a typo.
 - Personal-works links + footer socials are all `href="#"` (JS intercepts the
   plane triggers). The 8 mock work cards still open the shared placeholder plane;
-  real write-ups now exist for triage (Work) and all four Personal-works planes.
+  real write-ups now exist for triage (Work) and all six Personal-works planes.

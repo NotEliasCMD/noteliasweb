@@ -36,7 +36,8 @@ Ground truth of the reference design (extracted from dottxt.ai's compiled CSS):
 | `index.html` | All content & DOM structure, section order, copy | Inline styles/scripts (keep it clean) |
 | `styles.css` | Design tokens (`:root`), all layout, all `@keyframes` | JS-only concerns |
 | `script.js`  | Behavior: reveal, typewriter, count-up, marquee, terminal, nav, year, carousel, closer plasma, project planes | Styling (add a class, style it in CSS) |
-| `anim/*.js`  | ASCII animation engine (`ascii.js`) + one plugin per animation (plane anims, `plasma`, and library spares — see `COMPONENTS.md` §12); loaded by `index.html` | Site behavior (goes in `script.js`) |
+| `anim/*.js`  | ASCII animation engine (`ascii.js`) + one plugin per animation (Work-plane anims, `plasma`, and library spares — see `COMPONENTS.md` §12); loaded by `index.html` | Site behavior (goes in `script.js`) |
+| `side-projects/*` | The "Personal works" data stories: a dependency-free SVG chart toolkit (`ds-charts.js` + `ds-charts.css`) and per-project data modules (`data/*.js`); loaded by `index.html` — see `COMPONENTS.md` §12a | Site behavior / ASCII anims |
 | `COMPONENTS.md` | Per-component reference + simplicity/mobile review | — |
 | `plasma-preview.html` | **Dev-only** scratch harness to tune the closer plasma; **not linked from the site** and duplicates its knobs | Anything the shipped site depends on |
 
@@ -173,10 +174,12 @@ python3 -m http.server 8099   # serve
   animation mounts — triage/placeholder use topology, plus neuralnet/candlestick/
   barchart/attention, title types, blocks reveal); Back + Escape close it, focus
   returns to the card. Prev/Next hop within the group and loop.
-- Click a Personal works entry → the **mirror** plane slides in from the *left*
-  (graphic on the right, nav on the left, page shifts right); pw-fraud/pw-tinyml/
-  pw-ascii/pw-finance mount neuralnet/motherboard/cube/candlestick. Back + Escape
-  close it; the two plane groups never interfere.
+- Click a Personal works entry → the **mirror** data-story plane slides in from the
+  *left* (animated SVG hero chart on the right, story text + boxed TL;DR on the left,
+  nav on the left, page shifts right). Six projects — ram, moneyball, markets, books,
+  pokedex, consoles — Prev/Next loops them in list order. Charts (`side-projects/
+  ds-charts.js`) draw the final frame, animate on scroll-in, and recolour on the dark
+  flip; none mount an ASCII anim. Back + Escape close it; the two groups never interfere.
 - Closer "Let's talk" plasma animates on-screen and freezes under reduced motion.
 - Resize to <720px: burger opens/closes, Escape closes it, layout is single-column.
 - Toggle "Reduce motion" in OS settings: page renders fully static, no jank.

@@ -868,36 +868,57 @@
       fr.add(dot);
       var lab = T(0, 0, "", "ds-datalabel", { fill: cat(s.catIdx), "font-size": 10, opacity: 0 });
       fr.add(lab);
-      return { s: s, p: p, dot: dot, lab: lab };
+      // Pre-resolve the non-null points to pixel space once (they never change), so
+      // the per-frame loop never re-walks nulls or recomputes sx/sy. Series are
+      // cumulative: null until they start, then contiguous — one clean run.
+      var pts = [];
+      s.values.forEach(function (v, i) { if (v != null) pts.push({ x: sx(i), y: sy(v), v: v, i: i }); });
+      return { s: s, p: p, dot: dot, lab: lab, pts: pts, pk: -1, pd: "", pj: 0 };
     });
 
-    function drawTo(k) {   // k = number of points shown (1..n)
+    // g is a fractional index in [0, n-1]. The integer-index prefix path is cached
+    // and rebuilt only when floor(g) advances; each frame just appends one
+    // interpolated head segment so the tip/dot/label glide continuously.
+    function drawTo(g) {
+      var gi = Math.floor(g), frac = g - gi;
       lines.forEach(function (L) {
-        var dd = "", started = false, lastX = 0, lastY = 0, lastV = null;
-        for (var i = 0; i < k; i++) {
-          var v = L.s.values[i]; if (v == null) continue;
-          dd += (started ? "L" : "M") + sx(i) + "," + sy(v); started = true;
-          lastX = sx(i); lastY = sy(v); lastV = v;
+        var pts = L.pts;
+        if (!pts.length || pts[0].i > g) {          // series not started yet → hidden
+          if (L.pk !== -1) {
+            L.p.setAttribute("d", ""); L.dot.setAttribute("opacity", 0); L.lab.setAttribute("opacity", 0);
+            L.pk = -1; L.pd = ""; L.pj = 0;
+          }
+          return;
         }
-        L.p.setAttribute("d", dd);
-        if (lastV != null) {
-          L.dot.setAttribute("cx", lastX); L.dot.setAttribute("cy", lastY); L.dot.setAttribute("opacity", 1);
-          L.lab.setAttribute("x", lastX + 6); L.lab.setAttribute("y", lastY + 3); L.lab.setAttribute("opacity", 1);
-          L.lab.textContent = L.s.name + " " + Math.round(lastV);
+        if (gi !== L.pk) {                           // rebuild cached prefix (rare)
+          var dd = "", cnt = 0;
+          for (var j = 0; j < pts.length && pts[j].i <= gi; j++) {
+            dd += (cnt ? "L" : "M") + pts[j].x + "," + pts[j].y; cnt++;
+          }
+          L.pd = dd; L.pk = gi; L.pj = cnt;
         }
+        var a = pts[L.pj - 1], b = pts[L.pj];        // last prefix point + next point
+        var hx, hy, hv;
+        if (b && b.i === gi + 1) {                   // consecutive → glide toward it
+          hx = lerp(a.x, b.x, frac); hy = lerp(a.y, b.y, frac); hv = lerp(a.v, b.v, frac);
+        } else { hx = a.x; hy = a.y; hv = a.v; }     // final point (or held) → stay put
+        L.p.setAttribute("d", L.pd + "L" + hx + "," + hy);
+        L.dot.setAttribute("cx", hx); L.dot.setAttribute("cy", hy); L.dot.setAttribute("opacity", 1);
+        L.lab.setAttribute("x", hx + 6); L.lab.setAttribute("y", hy + 3); L.lab.setAttribute("opacity", 1);
+        L.lab.textContent = L.s.name + " " + Math.round(hv);
       });
-      var li = Math.min(n - 1, k - 1);
+      var li = Math.min(n - 1, gi);
       readout.textContent = race.dates ? fmtDate(race.dates[li]) : (race.x[li] + " played");
     }
     fr.title("Race");
     host.appendChild(fr.svg);
     var ctl = null;
     function run() { if (ctl) ctl.cancel();
-      ctl = ticker(Math.min(6000, n * 90), function (p) { drawTo(Math.max(1, Math.round(ease(p) * n))); }); }
+      ctl = ticker(Math.min(8500, n * 130), function (p) { drawTo(ease(p) * (n - 1)); }); }
     return {
-      still: function () { drawTo(n); },
-      play: function () { if (REDUCE) { drawTo(n); return; } drawTo(1); run(); },
-      replay: function () { drawTo(1); run(); }
+      still: function () { drawTo(n - 1); },
+      play: function () { if (REDUCE) { drawTo(n - 1); return; } drawTo(0); run(); },
+      replay: function () { drawTo(0); run(); }
     };
   };
   function fmtDate(s) {
@@ -1052,24 +1073,33 @@
     var line = fr.add(E("path", { d: "", class: "ds-series-line", stroke: cat(b.catIdx) }));
     var dot = fr.add(E("circle", { r: 5, fill: "var(--ds-title)", class: "ds-dot", opacity: 0 }));
     var n = xpos.length;
-    function drawTo(k) {
-      var dd = "", i;
-      for (i = 0; i < k; i++) dd += (i ? "L" : "M") + sx(xpos[i]) + "," + sy(b.arc[i]);
-      line.setAttribute("d", dd);
-      if (k >= 1) {
-        fill.setAttribute("d", dd + "L" + sx(xpos[k - 1]) + "," + sy(0) + "L" + sx(0) + "," + sy(0) + "Z");
-        dot.setAttribute("cx", sx(xpos[k - 1])); dot.setAttribute("cy", sy(b.arc[k - 1]));
-        dot.setAttribute("opacity", 1);
+    // Pre-resolve points to pixel space once; cache the integer-index prefix and
+    // only rebuild it when floor(g) advances (see _lineRace for the rationale).
+    var pts = xpos.map(function (x, i) { return { x: sx(x), y: sy(b.arc[i]) }; });
+    var baseY = sy(0), leftX = sx(0), pk = -1, pd = "";
+    function drawTo(g) {              // g = fractional index in [0, n-1]
+      var gi = Math.floor(g), frac = g - gi;
+      if (gi !== pk) {
+        var dd = "", j;
+        for (j = 0; j <= gi; j++) dd += (j ? "L" : "M") + pts[j].x + "," + pts[j].y;
+        pd = dd; pk = gi;
       }
+      var p0 = pts[gi], p1 = pts[gi + 1], hx, hy;
+      if (p1) { hx = lerp(p0.x, p1.x, frac); hy = lerp(p0.y, p1.y, frac); }
+      else { hx = p0.x; hy = p0.y; }
+      var d = pd + "L" + hx + "," + hy;
+      line.setAttribute("d", d);
+      fill.setAttribute("d", d + "L" + hx + "," + baseY + "L" + leftX + "," + baseY + "Z");
+      dot.setAttribute("cx", hx); dot.setAttribute("cy", hy); dot.setAttribute("opacity", 1);
     }
     fr.title(which + " sentiment arc");
     host.appendChild(fr.svg);
     var ctl = null;
     function run() { if (ctl) ctl.cancel();
-      ctl = ticker(2600, function (p) { drawTo(Math.max(1, Math.round(ease(p) * n))); }); }
-    return { still: function () { drawTo(n); },
-      play: function () { if (REDUCE) { drawTo(n); return; } drawTo(1); run(); },
-      replay: function () { drawTo(1); run(); } };
+      ctl = ticker(3800, function (p) { drawTo(ease(p) * (n - 1)); }); }
+    return { still: function () { drawTo(n - 1); },
+      play: function () { if (REDUCE) { drawTo(n - 1); return; } drawTo(0); run(); },
+      replay: function () { drawTo(0); run(); } };
   };
 
   /* =====================================================================

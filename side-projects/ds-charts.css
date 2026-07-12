@@ -1,0 +1,188 @@
+/* =========================================================================
+   ds-charts.css — palette + chart chrome for the six data-story planes.
+
+   The categorical / sequential / diverging palettes are a brand spectrum
+   centred on blue → periwinkle → lavender → lilac → purple → pink → magenta
+   (kept in the same token structure as ds_side/shared/viz_theme.py so the
+   charts stay one system). This is an aesthetic palette, not the CVD-validated
+   reference; blue-vs-pink still separates for most viewers, but it is not
+   guaranteed colourblind-safe. Chart CHROME (axes, grid, text) reuses the host
+   site's own tokens (--ink / --ink-soft / --muted / --line / --peach), so every
+   chart flips for dark mode from the site's one [data-theme="dark"] block.
+
+   Depends on the host defining: --ink, --ink-soft, --muted, --line, --paper,
+   --peach, --font-sans, --font-mono, --ease. (site-tokens.css provides these
+   in the standalone preview.)
+   ========================================================================= */
+
+:root {
+  /* Categorical — a blue → periwinkle → lavender → lilac → purple → pink →
+     magenta spectrum. Fixed identity order 0..7; index 0 = primary blue,
+     index 5 = magenta highlight/negative, index 2 = purple secondary. */
+  --ds-cat-0: #2f6ad6;  /* blue        */  --ds-cat-1: #e05a9c;  /* pink       */
+  --ds-cat-2: #8a3fd1;  /* purple      */  --ds-cat-3: #9aa6ee;  /* lavender   */
+  --ds-cat-4: #c07be2;  /* lilac       */  --ds-cat-5: #cf3f86;  /* magenta    */
+  --ds-cat-6: #5b78e6;  /* periwinkle  */  --ds-cat-7: #4a35a8;  /* indigo     */
+
+  /* Sequential ramp (magnitude; lightest ~ zero) — pale lavender → deep indigo. */
+  --ds-seq-0: #eef0fd;  --ds-seq-1: #d3d8f7;  --ds-seq-2: #aeb6ef;
+  --ds-seq-3: #8388e6;  --ds-seq-4: #5f5cd2;  --ds-seq-5: #46409e;
+  --ds-seq-6: #302a72;
+
+  /* Diverging poles + neutral midpoint (polarity) — blue ↔ pink. */
+  --ds-div-low:  #2f6ad6;
+  --ds-div-mid:  #efecf6;
+  --ds-div-high: #d6408a;
+
+  /* Status / semantic pops (reserved — never a plain series colour). */
+  --ds-good: #ff4d9e;  --ds-warn: #b06fd6;  --ds-crit: #dc3f86;
+
+  /* Chart-local chrome, derived from host tokens with sensible fallbacks. */
+  --ds-axis:   var(--ink-soft, #4b463b);
+  --ds-grid:   var(--line, #ded8c9);
+  --ds-label:  var(--muted, #8a8272);
+  --ds-title:  var(--ink, #17150f);
+  --ds-surface: var(--paper, #fbfaf6);
+}
+
+[data-theme="dark"] {
+  /* Categorical — same spectrum, lifted in luminance for a dark background. */
+  --ds-cat-0: #4d84ee;  --ds-cat-1: #ef77b0;  --ds-cat-2: #a55fe0;
+  --ds-cat-3: #aeb9f5;  --ds-cat-4: #cf93ee;  --ds-cat-5: #e25f9e;
+  --ds-cat-6: #7f97f0;  --ds-cat-7: #7a68d6;
+
+  /* Sequential reversed in luminance so "high" reads bright on the dark canvas
+     (heatmaps mix seq-6 → seq-0, so seq-6 must be the prominent end). */
+  --ds-seq-0: #2a2752;  --ds-seq-1: #3a3675;  --ds-seq-2: #4c47a0;
+  --ds-seq-3: #6a63c9;  --ds-seq-4: #8f88e0;  --ds-seq-5: #b3aef0;
+  --ds-seq-6: #d8d3fb;
+
+  /* Diverging — blue ↔ pink with a warm-dark neutral midpoint. */
+  --ds-div-low:  #4d84ee;
+  --ds-div-mid:  #2b2836;
+  --ds-div-high: #e25f9e;
+
+  --ds-good: #ff6fb0;  --ds-warn: #c58fe6;  --ds-crit: #ec5f97;
+}
+
+/* ---------------------------------------------------------------- figure --- */
+.ds-figure {
+  margin: 0 0 2.4rem;
+  width: 100%;
+}
+.ds-figure__title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.12rem;
+  letter-spacing: -0.01em;
+  color: var(--ds-title);
+  margin: 0 0 0.15rem;
+  line-height: 1.15;
+}
+.ds-figure__subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  text-transform: none;
+  color: var(--ds-label);
+  margin: 0 0 0.7rem;
+  line-height: 1.35;
+}
+.ds-figure__caption {
+  font-family: var(--font-sans);
+  font-size: 0.94rem;
+  color: var(--ink-soft, #4b463b);
+  margin: 0.75rem 0 0;
+  line-height: 1.55;
+}
+.ds-figure__source {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--ds-label);
+  margin-top: 0.45rem;
+}
+
+/* the SVG always scales to its column, never overflows */
+.ds-chart {
+  position: relative;
+  width: 100%;
+}
+.ds-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* ---------------------------------------------------------------- svg bits - */
+.ds-axis-line { stroke: var(--ds-axis); stroke-width: 1; }
+.ds-grid-line { stroke: var(--ds-grid); stroke-width: 1; }
+.ds-baseline  { stroke: var(--ds-grid); stroke-width: 1.4; }
+.ds-tick {
+  fill: var(--ds-label);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ds-axis-label {
+  fill: var(--ds-axis);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ds-datalabel {
+  fill: var(--ds-title);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+.ds-callout {
+  fill: var(--ds-title);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+}
+.ds-annotation-line { stroke: var(--ds-label); stroke-width: 0.8; stroke-dasharray: 3 3; }
+
+.ds-series-line { fill: none; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.ds-series-fill { stroke: none; opacity: 0.14; }
+.ds-dot { stroke: var(--ds-surface); stroke-width: 1; }
+
+/* ---------------------------------------------------------------- legend --- */
+.ds-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin: 0.55rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ds-axis);
+}
+.ds-legend li { display: inline-flex; align-items: center; gap: 0.4rem; }
+.ds-legend .swatch {
+  width: 0.72rem; height: 0.72rem; border-radius: 3px; flex: none;
+}
+.ds-legend .swatch--line { height: 0.24rem; border-radius: 2px; }
+
+/* ---------------------------------------------------------------- replay --- */
+.ds-replay {
+  position: absolute;
+  top: 0; right: 0;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--ds-label);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-grid);
+  border-radius: 999px;
+  padding: 0.2rem 0.66rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s var(--ease, ease), color 0.2s ease, border-color 0.2s ease;
+}
+.ds-chart:hover .ds-replay,
+.ds-replay:focus-visible { opacity: 1; }
+.ds-replay:hover { color: var(--peach-deep, #d97fa0); border-color: var(--peach, #e79cb6); }
+
+/* motion is opt-out: honour the OS setting */
+@media (prefers-reduced-motion: reduce) {
+  .ds-replay { display: none; }
+}

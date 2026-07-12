@@ -169,9 +169,14 @@ python3 -m http.server 8099   # serve
 - Terminal types out; tabs switch; cursor blinks.
 - Marquee scrolls seamlessly (no jump at loop point) and pauses on hover.
 - Work carousel: arrows page, dots track position, scroll-snaps.
-- Click a work card → project plane slides in (its data-science ASCII animation
-  mounts — neuralnet/candlestick/barchart/attention/topology, title types, blocks
-  reveal); Back button + Escape close it, focus returns to the card.
+- Click a work card → project plane slides in from the right (its data-science ASCII
+  animation mounts — triage/placeholder use topology, plus neuralnet/candlestick/
+  barchart/attention, title types, blocks reveal); Back + Escape close it, focus
+  returns to the card. Prev/Next hop within the group and loop.
+- Click a Personal works entry → the **mirror** plane slides in from the *left*
+  (graphic on the right, nav on the left, page shifts right); pw-fraud/pw-tinyml/
+  pw-ascii/pw-finance mount neuralnet/motherboard/cube/candlestick. Back + Escape
+  close it; the two plane groups never interfere.
 - Closer "Let's talk" plasma animates on-screen and freezes under reduced motion.
 - Resize to <720px: burger opens/closes, Escape closes it, layout is single-column.
 - Toggle "Reduce motion" in OS settings: page renders fully static, no jank.

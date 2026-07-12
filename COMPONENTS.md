@@ -37,7 +37,7 @@ Line ranges below are approximate anchors as of this writing.
 | [Work carousel](#8-work-carousel) | ~156–375 | `.carousel*` ~234–283 | `7.5 work carousel` |
 | [Skills / Writing / Footer](#9-skills--writing--footer) | ~377–522 | ~284–352 | `7. footer year` |
 | [Closer + plasma backdrop](#10-closer--plasma-backdrop) | ~461–486 | `.closer*` ~303–335 | `8. closer plasma backdrop` |
-| [Project "planes"](#11-project-planes) | ~525–763 | `.stage/.plane/.ascii` ~370–474 | `9. project planes` |
+| [Project "planes"](#11-project-planes) | ~575–1075 | `.stage/.plane/.plane--mirror/.ascii` ~429–520 | `9. project planes` |
 | [ASCII engine](#12-ascii-engine-anim) | — | — | `anim/*.js` |
 | [Theme toggle (dark mode)](#13-theme-toggle-dark-mode) | `#themeToggle*` + `<head>` script | `[data-theme="dark"]`, `.theme-toggle*` | `6.5 theme toggle` |
 
@@ -126,8 +126,9 @@ Line ranges below are approximate anchors as of this writing.
 
 ## 8. Work carousel
 
-- **HTML** ~156–375 (13 cards: 4 real `data-project` + 9 placeholders) · **CSS**
-  `.carousel*` / `.cards--carousel` ~234–283 (+ responsive ~483, ~497) · **JS**
+- **HTML** ~189–410 (13 cards: **5 real** `data-project` — triage (flagship, first),
+  fraud, forecast, abtest, tickets — + 8 placeholders) · **CSS**
+  `.carousel*` / `.cards--carousel` ~285–334 (+ responsive) · **JS**
   banner `7.5 work carousel`.
 - A `grid-auto-flow: column`, 2-row scroll-snap track. Layered on top of native
   scroll: `←/→` arrows page by ~a viewport with edge-looping, JS-built dots
@@ -165,20 +166,40 @@ Line ranges below are approximate anchors as of this writing.
 
 ## 11. Project "planes"
 
-- **HTML** ~525–763 (5 `<article class="plane">`: fraud, forecast, abtest,
-  tickets, + a shared placeholder) · **CSS** `.stage` / `.plane*` / `.ascii-*`
-  ~370–474 (+ responsive ~486–490, reduced-motion ~507–508) · **JS** banner
-  `9. project planes`.
-- Clicking a `.card--link` (or Enter/Space) slides the main `.stage` back and the
-  matching plane in (`body.is-planed`). Each plane lazily mounts its own
-  data-science ASCII animation (`data-anim`) into its `.ascii-screen` — fraud →
-  `neuralnet`, forecast → `candlestick`, abtest → `barchart`, tickets →
-  `attention`, placeholder → `topology` — types its title (reusing `typeSpan`),
-  and reveals `[data-plane-reveal]` blocks via its own scoped observer. Back
-  button + Escape close it; prev/next arrows move between projects without closing
-  (see below); focus returns to the current project's card. The shared placeholder
-  plane borrows the clicked card's title/tag/year. On ≤900px the pinned media/head
-  columns un-stick.
+- **HTML** ~575–1075 (**10** `<article class="plane">` in two families — 6 **Work**
+  planes: triage, fraud, forecast, abtest, tickets, + a shared placeholder; and 4
+  mirrored **Personal-works** planes: pw-fraud, pw-tinyml, pw-ascii, pw-finance) ·
+  **CSS** `.stage` / `.plane*` / `.plane--mirror` / `.ascii-*` ~429–520 (+ responsive
+  & reduced-motion blocks) · **JS** banner `9. project planes`.
+- **Two families, one controller.** `createPlaneGroup(cards, mirror)` (`script.js`
+  §9) builds a self-contained plane controller from an ordered list of triggers,
+  and the site instantiates it twice: **Work** = `$$(".card--link")` (the §8
+  carousel cards, `mirror:false`) and **Personal works** = `$$(".post__link--plane")`
+  (the section-04 list, `mirror:true`). Each group owns its own active-plane state,
+  button wiring, and Escape/arrow handling, so the two never interfere. A trigger's
+  `data-project` maps to `#plane-<project>`.
+- Activating a trigger (click or Enter/Space) slides the main `.stage` aside and the
+  matching plane in (`body.is-planed`; the mirror group also adds
+  `body.is-planed--mirror`). Each plane lazily mounts its own data-science ASCII
+  animation (`data-anim`) into its `.ascii-screen` — Work: triage → `topology`,
+  fraud → `neuralnet`, forecast → `candlestick`, abtest → `barchart`, tickets →
+  `attention`, placeholder → `topology`; Personal works: pw-fraud → `neuralnet`,
+  pw-tinyml → `motherboard`, pw-ascii → `cube`, pw-finance → `candlestick`. It types
+  its title (reusing `typeSpan`) and reveals `[data-plane-reveal]` blocks via its own
+  scoped observer. Back button + Escape close it; prev/next arrows hop between the
+  group's projects without closing (see below); focus returns to the trigger. The
+  shared placeholder plane borrows the clicked card's title/tag/year. On ≤900px the
+  pinned media/head columns un-stick.
+- **Mirror variant (Personal works):** `mirror:true` flips the group into a
+  horizontal mirror — the plane parks off-screen **left** (`.plane--mirror`,
+  `translateX(-100%)`) and slides in from the left, the ASCII graphic sits on the
+  **right** with text on the **left** (`.plane__content { order:1 }` /
+  `.plane__media { order:2 }`), the bar's nav group moves **left** of the back button
+  (`flex-direction: row-reverse`), and the dimmed page shifts **right**
+  (`body.is-planed--mirror .stage`). A "prev" hop enters from the right
+  (`.plane--from-right`) — the mirror image of the Work group's `.plane--from-left`.
+  CSS lives in the mirror block at `styles.css` ~463–475; the JS is the same
+  `createPlaneGroup`, just branching on `mirror`.
 - **Shared grid:** every plane mounts onto one `PLANE_GRID = {cols:62, rows:26}`
   (in `script.js` §9), not each animation's native size, so `fontFor` picks the
   same font size and the graphic lands identically on every plane. The library
@@ -188,7 +209,10 @@ Line ranges below are approximate anchors as of this writing.
   (`← Prev` / `Next →`, `.plane__nav-btn` with `data-dir="prev|next"`) opposite the
   back button; `ArrowLeft`/`ArrowRight` do the same while a plane is open.
   `navigateTo(dir)` (`script.js` §9) walks the **`cards` list in DOM order** (not
-  `data-project`, since 8 cards share `#plane-placeholder`) and **loops** at the ends.
+  `data-project`, since 8 mock cards share `#plane-placeholder`) and **loops** at the ends.
+  Each group's `navigateTo`/`showPlane`/`openPlane` are closures over that group's
+  own `cards` + `activePlane`, so hops stay within the group (Work loops its 13
+  triggers; Personal works loops its 4).
   The transition is a **cover-slide**: the incoming plane slides in *on top of* the
   stationary current one (both are opaque cream; `.plane--incoming` lifts its z-index),
   so the dimmed main page is **never revealed** — a seamless plane-to-plane hop. The
@@ -202,22 +226,29 @@ Line ranges below are approximate anchors as of this writing.
   Retire/reset are timer-driven (fixed durations), not `transitionend`, so a hop can't
   get stuck. Focus lands on the same-direction nav button; Back/Escape restore focus to
   the **current** project's card. At ≤720px the crumb hides so the bar fits.
-- **Gotcha / over-engineering:** largest single feature; **all body copy is lorem
-  ipsum** — a full interaction shell around placeholder content (see review §R2).
+- **Content status:** the largest single feature. Real copy now lives in the
+  **triage** Work plane and **all four Personal-works planes**; the remaining Work
+  planes (fraud, forecast, abtest, tickets) + the shared placeholder are still lorem
+  ipsum (see review §R2). New planes are authored from
+  `project_desc/plane-content-prompt.md` (a reusable prompt: raw blurb → card + plane
+  HTML), demonstrated on the triage project.
 
 ## 12. ASCII engine (`anim/`)
 
 - **Files:** `anim/ascii.js` (254 ln, the engine) + one plugin per animation.
-  Loaded at the bottom of `index.html` (engine + the 5 plane anims + `plasma`)
-  and, for the full library, `components.html`. The engine is **live production
-  code**; the plugins split into three tiers:
-  - **Plane anims** (site, §11): `neuralnet`, `candlestick`, `barchart`,
+  Loaded at the bottom of `index.html` (engine + the mounted anims `neuralnet`,
+  `candlestick`, `barchart`, `attention`, `topology`, `motherboard`, `cube` +
+  `plasma`) and, for the full library, `components.html`. The engine is **live
+  production code**; the plugins split into tiers:
+  - **Work-plane anims** (§11): `neuralnet`, `candlestick`, `barchart`,
     `attention`, `topology`.
+  - **Personal-works plane anims** (mirror, §11): `neuralnet`, `motherboard`,
+    `cube`, `candlestick`.
   - **Closer:** `plasma` (§10).
   - **Library spares** (registered + gallery-shown but not mounted by the site,
     ready to drop into a plane/closer): `actuarial`, `riskcurve`, `losscurve`,
-    `scatterplot`, `thermometer`, `equalizer`, `motherboard`, plus the legacy
-    `cube` / `dna`. These are **intentionally kept** as a palette, not dead code.
+    `scatterplot`, `thermometer`, `equalizer`, plus the legacy `dna`. These are
+    **intentionally kept** as a palette, not dead code.
     The gallery (`components.html` §11) builds its ASCII grid from
     `ASCII.animations`, so they surface there automatically; the shipped site
     never loads them.
@@ -295,10 +326,11 @@ tab-switch. It's `aria-hidden` eye-candy, so the machinery buys little. Suggest:
 keep the 3 tabs but drop the render cache + first-paint lead-in, or make it a
 single non-tabbed session. **Recommended: trim.**
 
-**R2 — Project planes wrap lorem-ipsum.** A complete slide-in detail system (~150
-JS + ~240 HTML + ~100 CSS lines) with placeholder copy. *Keep as is* only if real
-case-study content is coming soon; otherwise it's a large surface with no payoff.
-**Recommended: keep the shell, prioritize real copy — don't delete.**
+**R2 — Some Work planes still wrap lorem-ipsum.** The slide-in detail system now
+carries real copy in the triage Work plane and all four Personal-works planes, but
+fraud/forecast/abtest/tickets + the shared placeholder are still lorem. The shell is
+earning its keep now that real case studies live in it. **Recommended: fill the
+remaining Work planes from `project_desc/plane-content-prompt.md`.**
 
 **R3 — Work carousel re-implements native scroll.** Native scroll-snap already
 gives touch/trackpad paging. On top sit arrows + looping + dots + a per-frame
@@ -321,5 +353,6 @@ touch both — the duplication is small and readable.**
 - Identity is inconsistent: `og:title` says "Elias Kelly", brand/`<title>` say
   "Peachy". Pick one.
 - Hero eyebrow reads "Available **for to hire**" — likely a typo.
-- Writing posts + footer socials are all `href="#"`; 9/13 work cards + all 5
-  planes are placeholder content.
+- Personal-works links + footer socials are all `href="#"` (JS intercepts the
+  plane triggers). The 8 mock work cards still open the shared placeholder plane;
+  real write-ups now exist for triage (Work) and all four Personal-works planes.

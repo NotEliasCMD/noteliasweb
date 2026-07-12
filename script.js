@@ -454,10 +454,13 @@
   }
 
   /* ---------------------------------------------- 9. project detail planes */
-  // Clicking a work card slides the page left and a detail "plane" slides in
-  // from the right. The plane types its title (reusing typeSpan), pins an ASCII
-  // graphic (cube/dna) on the left, and reveals text blocks on scroll. The whole
-  // thing respects reduced motion. Back button + Escape return to the page.
+  // Clicking a work card (or a personal-works list entry) slides the page aside
+  // and a detail "plane" slides in over it. The plane types its title (reusing
+  // typeSpan), pins an ASCII graphic, and reveals text blocks on scroll. Back
+  // button + Escape return to the page; reduced motion is respected throughout.
+  // Two groups run off the same machinery: Work slides in from the right, and
+  // Personal works is a horizontal mirror (slides in from the left, graphic on
+  // the right, nav on the left) — see createPlaneGroup + .plane--mirror in CSS.
   const planesWrap = $("#planes");
   if (planesWrap && window.ASCII) {
     // blank plane titles up front so they type from empty on open
@@ -466,12 +469,8 @@
       if (!reduceMotion) t.textContent = "";
     });
 
-    const anims = {};      // plane id -> ASCII controller (lazily mounted)
-    const observers = {};  // plane id -> per-plane reveal IntersectionObserver
-    let activePlane = null;
-    let lastCard = null;
-    let navigating = false;             // guards against overlapping prev/next hops
-    const cards = $$(".card--link");    // ordered card list drives prev/next navigation
+    const anims = {};      // plane id -> ASCII controller (lazily mounted, shared)
+    const observers = {};  // plane id -> per-plane reveal IntersectionObserver (shared)
 
     // Every plane mounts its animation on ONE shared grid (not the animation's
     // native cols/rows) so fontFor computes the same font size and the centered
@@ -541,154 +540,180 @@
       $$("[data-plane-reveal]", plane).forEach((b) => b.classList.remove("is-in"));
     }
 
-    // Show a plane (no active-plane guard): borrow content for the shared
-    // placeholder, slide it in, (re)start its animation, reset + reveal its
-    // blocks, re-type the title, track it active. Reused by openPlane + navigateTo.
-    function showPlane(plane, card) {
-      lastCard = card || document.activeElement;
-      activePlane = plane;
+    // A self-contained plane controller wired to one ordered list of triggers.
+    // `cards` is the DOM-ordered trigger list that drives prev/next; `mirror`
+    // flips the group into the left-sliding, graphic-on-right, nav-on-left
+    // variant (see .plane--mirror in styles.css). The site runs two groups:
+    // Work (mirror:false) and Personal works (mirror:true). Each group owns its
+    // own active-plane state, so only its own back/nav/arrows/Escape drive it.
+    function createPlaneGroup(cards, mirror) {
+      let activePlane = null;
+      let lastCard = null;
+      let navigating = false;             // guards against overlapping prev/next hops
+      // the (unique) planes this group owns — scopes button wiring per group
+      const planes = [...new Set(cards
+        .map((c) => document.getElementById("plane-" + c.dataset.project))
+        .filter(Boolean))];
 
-      // the shared placeholder plane borrows the card's title/tag/year
-      if (card && plane.id === "plane-placeholder") {
-        const t = $("[data-plane-type]", plane);
-        if (t) {
-          t.dataset.text = $(".card__title", card).textContent.trim();
-          t.textContent = reduceMotion ? t.dataset.text : "";
+      // Show a plane (no active-plane guard): borrow content for the shared
+      // placeholder, slide it in, (re)start its animation, reset + reveal its
+      // blocks, re-type the title, track it active. Reused by openPlane + navigateTo.
+      function showPlane(plane, card) {
+        lastCard = card || document.activeElement;
+        activePlane = plane;
+
+        // the shared placeholder plane borrows the card's title/tag/year
+        if (card && plane.id === "plane-placeholder") {
+          const t = $("[data-plane-type]", plane);
+          if (t) {
+            t.dataset.text = $(".card__title", card).textContent.trim();
+            t.textContent = reduceMotion ? t.dataset.text : "";
+          }
+          const tag = $(".plane__tag", plane);
+          const crumb = $(".plane__crumb", plane);
+          if (tag) tag.textContent = $(".card__tag", card).textContent;
+          if (crumb) crumb.textContent = "Selected work · " + $(".card__year", card).textContent;
         }
-        const tag = $(".plane__tag", plane);
-        const crumb = $(".plane__crumb", plane);
-        if (tag) tag.textContent = $(".card__tag", card).textContent;
-        if (crumb) crumb.textContent = "Selected work · " + $(".card__year", card).textContent;
+
+        document.body.classList.add("is-planed");
+        if (mirror) document.body.classList.add("is-planed--mirror");
+        plane.hidden = false;
+        plane.setAttribute("aria-hidden", "false");
+        void plane.offsetWidth; // reflow so the slide runs from the parked transform
+        plane.classList.add("is-open");
+        plane.scrollTop = 0;
+
+        const ctrl = ensureAnim(plane);
+        if (ctrl) {
+          ctrl.start();
+          if (reduceMotion) requestAnimationFrame(() => ctrl.stop()); // one static frame
+        }
+
+        resetReveals(plane);
+        revealBlocks(plane);
+        setTimeout(() => typeTitle(plane), reduceMotion ? 0 : 420);
+
+        const back = $(".plane__back", plane);
+        if (back) back.focus();
       }
 
-      document.body.classList.add("is-planed");
-      plane.hidden = false;
-      plane.setAttribute("aria-hidden", "false");
-      void plane.offsetWidth; // reflow so the slide runs from the parked transform
-      plane.classList.add("is-open");
-      plane.scrollTop = 0;
-
-      const ctrl = ensureAnim(plane);
-      if (ctrl) {
-        ctrl.start();
-        if (reduceMotion) requestAnimationFrame(() => ctrl.stop()); // one static frame
+      function openPlane(projId, card) {
+        const plane = document.getElementById("plane-" + projId);
+        if (!plane || activePlane) return;
+        showPlane(plane, card);
       }
 
-      resetReveals(plane);
-      revealBlocks(plane);
-      setTimeout(() => typeTitle(plane), reduceMotion ? 0 : 420);
+      function closePlane() {
+        if (!activePlane) return;
+        const plane = activePlane;
+        activePlane = null;
 
-      const back = $(".plane__back", plane);
-      if (back) back.focus();
-    }
+        plane.classList.remove("is-open");
+        plane.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("is-planed", "is-planed--mirror");
+        if (anims[plane.id]) anims[plane.id].stop();
 
-    function openPlane(projId, card) {
-      const plane = document.getElementById("plane-" + projId);
-      if (!plane || activePlane) return;
-      showPlane(plane, card);
-    }
-
-    function closePlane() {
-      if (!activePlane) return;
-      const plane = activePlane;
-      activePlane = null;
-
-      plane.classList.remove("is-open");
-      plane.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("is-planed");
-      if (anims[plane.id]) anims[plane.id].stop();
-
-      if (reduceMotion) {
-        plane.hidden = true;
-      } else {
-        const onDone = (e) => {
-          if (e.propertyName !== "transform") return;
+        if (reduceMotion) {
           plane.hidden = true;
-          plane.removeEventListener("transitionend", onDone);
-        };
-        plane.addEventListener("transitionend", onDone);
+        } else {
+          const onDone = (e) => {
+            if (e.propertyName !== "transform") return;
+            plane.hidden = true;
+            plane.removeEventListener("transitionend", onDone);
+          };
+          plane.addEventListener("transitionend", onDone);
+        }
+
+        if (lastCard && lastCard.focus) lastCard.focus();
       }
 
-      if (lastCard && lastCard.focus) lastCard.focus();
-    }
+      function focusNav(plane, dir) {
+        const btn = $('.plane__nav-btn[data-dir="' + (dir > 0 ? "next" : "prev") + '"]', plane);
+        if (btn) btn.focus();
+      }
 
-    function focusNav(plane, dir) {
-      const btn = $('.plane__nav-btn[data-dir="' + (dir > 0 ? "next" : "prev") + '"]', plane);
-      if (btn) btn.focus();
-    }
+      // retire the plane a hop just left: hide it and stop its animation
+      function retire(plane) {
+        plane.classList.remove("is-open", "plane--incoming", "plane--from-left", "plane--from-right");
+        plane.hidden = true;
+        plane.setAttribute("aria-hidden", "true");
+        if (anims[plane.id]) anims[plane.id].stop();
+      }
 
-    // retire the plane a hop just left: hide it and stop its animation
-    function retire(plane) {
-      plane.classList.remove("is-open", "plane--incoming", "plane--from-left");
-      plane.hidden = true;
-      plane.setAttribute("aria-hidden", "true");
-      if (anims[plane.id]) anims[plane.id].stop();
-    }
+      // Hop to the previous/next project (dir = -1 / +1), looping at the ends.
+      // The incoming plane slides in ON TOP of the stationary current one (both are
+      // opaque), so the dimmed main page is never revealed — a seamless plane-to-plane
+      // hop. body.is-planed stays on throughout. "next" enters from the group's
+      // resting side, "prev" from the opposite side (mirrored for the mirror group).
+      // The 8 placeholder cards share ONE element, so a placeholder→placeholder hop
+      // crossfades its content in place instead of sliding.
+      function navigateTo(dir) {
+        if (!activePlane || navigating) return;
+        const i = cards.indexOf(lastCard);
+        if (i === -1) return;
+        const targetCard = cards[(i + dir + cards.length) % cards.length];
+        const targetPlane = document.getElementById("plane-" + targetCard.dataset.project);
+        if (!targetPlane) return;
+        const current = activePlane;
+        navigating = true;
 
-    // Hop to the previous/next project (dir = -1 / +1), looping at the ends.
-    // The incoming plane slides in ON TOP of the stationary current one (both are
-    // opaque), so the dimmed main page is never revealed — a seamless plane-to-plane
-    // hop. body.is-planed stays on throughout. "next" enters from the right, "prev"
-    // from the left. The 8 placeholder cards share ONE element, so a
-    // placeholder→placeholder hop crossfades its content in place instead of sliding.
-    function navigateTo(dir) {
-      if (!activePlane || navigating) return;
-      const i = cards.indexOf(lastCard);
-      if (i === -1) return;
-      const targetCard = cards[(i + dir + cards.length) % cards.length];
-      const targetPlane = document.getElementById("plane-" + targetCard.dataset.project);
-      if (!targetPlane) return;
-      const current = activePlane;
-      navigating = true;
+        if (targetPlane === current) {
+          if (reduceMotion) { showPlane(current, targetCard); navigating = false; return; }
+          current.classList.add("is-swapping");            // fade content out
+          setTimeout(() => {
+            showPlane(current, targetCard);                // swap borrowed content while faded
+            current.classList.remove("is-swapping");       // fade back in
+            focusNav(current, dir);
+            setTimeout(() => { navigating = false; }, 320);
+          }, 300);
+          return;
+        }
 
-      if (targetPlane === current) {
-        if (reduceMotion) { showPlane(current, targetCard); navigating = false; return; }
-        current.classList.add("is-swapping");            // fade content out
+        targetPlane.classList.add("plane--incoming");            // above the outgoing plane
+        // "prev" enters from the side opposite the group's resting edge
+        if (dir < 0) targetPlane.classList.add(mirror ? "plane--from-right" : "plane--from-left");
+        showPlane(targetPlane, targetCard);                      // slides in over the current one
+        focusNav(targetPlane, dir);
         setTimeout(() => {
-          showPlane(current, targetCard);                // swap borrowed content while faded
-          current.classList.remove("is-swapping");       // fade back in
-          focusNav(current, dir);
-          setTimeout(() => { navigating = false; }, 320);
-        }, 300);
-        return;
+          retire(current);                                       // hide the now-covered old plane
+          targetPlane.classList.remove("plane--incoming", "plane--from-left", "plane--from-right");
+          navigating = false;
+        }, reduceMotion ? 0 : 500);
       }
 
-      targetPlane.classList.add("plane--incoming");            // above the outgoing plane
-      if (dir < 0) targetPlane.classList.add("plane--from-left"); // "prev" enters from the left
-      showPlane(targetPlane, targetCard);                      // slides in over the current one
-      focusNav(targetPlane, dir);
-      setTimeout(() => {
-        retire(current);                                       // hide the now-covered old plane
-        targetPlane.classList.remove("plane--incoming", "plane--from-left");
-        navigating = false;
-      }, reduceMotion ? 0 : 500);
+      cards.forEach((card) => {
+        const id = card.dataset.project;
+        card.addEventListener("click", (e) => { e.preventDefault(); openPlane(id, card); });
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPlane(id, card); }
+        });
+      });
+
+      // scope button wiring to this group's own planes
+      planes.forEach((plane) => {
+        $$(".plane__nav-btn", plane).forEach((b) =>
+          b.addEventListener("click", () => navigateTo(b.dataset.dir === "next" ? 1 : -1))
+        );
+        $$(".plane__back", plane).forEach((b) => b.addEventListener("click", closePlane));
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (!activePlane) return;
+        if (e.key === "Escape") closePlane();
+        else if (e.key === "ArrowRight") { e.preventDefault(); navigateTo(1); }
+        else if (e.key === "ArrowLeft") { e.preventDefault(); navigateTo(-1); }
+      });
+
+      // refit the ASCII font if the window resizes while a plane is open
+      window.addEventListener("resize", () => {
+        if (!activePlane) return;
+        const pre = $("[data-anim-target]", activePlane);
+        const spec = ASCII.byId(activePlane.dataset.anim);
+        if (pre && spec) fontFor(pre, spec.cols, spec.rows);
+      }, { passive: true });
     }
 
-    cards.forEach((card) => {
-      const id = card.dataset.project;
-      card.addEventListener("click", () => openPlane(id, card));
-      card.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPlane(id, card); }
-      });
-    });
-
-    $$(".plane__nav-btn").forEach((b) =>
-      b.addEventListener("click", () => navigateTo(b.dataset.dir === "next" ? 1 : -1))
-    );
-    $$(".plane__back").forEach((b) => b.addEventListener("click", closePlane));
-    document.addEventListener("keydown", (e) => {
-      if (!activePlane) return;
-      if (e.key === "Escape") closePlane();
-      else if (e.key === "ArrowRight") { e.preventDefault(); navigateTo(1); }
-      else if (e.key === "ArrowLeft") { e.preventDefault(); navigateTo(-1); }
-    });
-
-    // refit the ASCII font if the window resizes while a plane is open
-    window.addEventListener("resize", () => {
-      if (!activePlane) return;
-      const pre = $("[data-anim-target]", activePlane);
-      const spec = ASCII.byId(activePlane.dataset.anim);
-      if (pre && spec) fontFor(pre, spec.cols, spec.rows);
-    }, { passive: true });
+    createPlaneGroup($$(".card--link"), false);        // Work — slides in from the right
+    createPlaneGroup($$(".post__link--plane"), true);  // Personal works — mirrored, slides in from the left
   }
 })();

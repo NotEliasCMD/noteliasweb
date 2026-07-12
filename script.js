@@ -108,7 +108,11 @@
   // Click the terminal, type one of these `trigger` words, and press Enter.
   // `reaction()` returns [className, text] chunks (same format as TABS below),
   // so swapping the word or the celebration output is a one-line edit here —
-  // no other code needs to change.
+  // no other code needs to change. Each egg also plays `playChime()` by default;
+  // set `sound: false` for a silent egg, or `sound: (ctx) => {…}` for a custom
+  // Web Audio effect.
+  const MAX_INPUT = 40;   // max chars a visitor may type at the prompt;
+                          // further keystrokes are silently ignored at the cap
   const EASTER_EGGS = [
     {
       trigger: "secret",
@@ -258,6 +262,36 @@
     if (terminalEl) terminalEl.classList.remove("terminal--input");
   }
 
+  // Celebration sound — synthesized with Web Audio, no asset needed. Created
+  // lazily inside the Enter keypress (a user gesture), so autoplay is allowed.
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!AudioCtx) return null;
+    if (!audioCtx) audioCtx = new AudioCtx();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+  // A short rising major arpeggio (C5–E5–G5–C6) — a little "ta-da".
+  function playChime() {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+      const t = now + i * 0.09;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.4);
+    });
+  }
+
   // Commit the typed line: echo it, run a matching easter egg (or report an
   // unknown command), then drop a fresh prompt. Uses appendChunk so it renders
   // instantly, which also means it works fine under reduced motion.
@@ -269,6 +303,10 @@
     const egg = EASTER_EGGS.find((e) => e.trigger === cmd);
     if (egg) {
       egg.reaction().forEach(([cls, text]) => appendChunk(typedEl, cls, text));
+      if (egg.sound !== false) {
+        if (typeof egg.sound === "function") egg.sound(getAudioCtx());
+        else playChime();
+      }
     } else if (cmd) {
       appendChunk(typedEl, "tok-comment", "command not found: " + cmd + "\n");
     }
@@ -300,6 +338,7 @@
         }
         if (e.key.length === 1) {
           e.preventDefault();
+          if (inputEl.textContent.length >= MAX_INPUT) return; // at cap — ignore
           inputEl.textContent += e.key;
           typedEl.parentElement.scrollTop = typedEl.parentElement.scrollHeight;
         }

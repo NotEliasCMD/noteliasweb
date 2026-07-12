@@ -460,6 +460,49 @@ body.is-planed .stage {
 .plane__grid { transition: opacity 0.3s var(--ease); }
 .plane.is-swapping .plane__grid { opacity: 0; }
 
+/* --- mirror variant (personal-works planes) ---
+   A horizontal mirror of the work planes: the detail view slides in from the
+   LEFT, the ASCII graphic sits on the RIGHT, and the prev/next nav group moves
+   to the LEFT of the bar (back button to the right). Everything else is shared.
+   `.plane.is-open` (two classes) still beats these single-class rules, so the
+   open state resolves to transform:none as usual. */
+.plane--mirror { transform: translateX(-100%); }        /* parked off-screen LEFT */
+.plane--from-right { transform: translateX(100%); }      /* mirror "prev" enters from the right */
+.plane--mirror .plane__grid { grid-template-columns: 1.05fr 0.95fr; }
+.plane--mirror .plane__content { order: 1; }             /* text on the LEFT */
+.plane--mirror .plane__media { order: 2; transform: translate(1.75rem, 2.5rem); }  /* graphic RIGHT, nudged toward the right edge */
+.plane--mirror .plane__bar-inner { flex-direction: row-reverse; }   /* nav LEFT, back RIGHT */
+body.is-planed--mirror .stage { transform: translateX(8%) scale(0.985); }  /* page shifts RIGHT */
+
+/* --- data-story planes (.plane--story) ---
+   The personal-works planes carry an SVG data story: a TL;DR panel + a hero chart
+   in .plane__media. Charts (.ds-*) are styled by side-projects/ds-charts.css; these
+   rules cover the story chrome the toolkit stylesheet leaves to the host. */
+.plane--story .plane__content { max-width: 62ch; }
+/* The header's soft bottom-fade (.plane__head::after) is meant to dissolve plain
+   scrolling text as it passes under the pinned heading. On a story plane the first
+   thing under the header is the boxed TL;DR, and dissolving a bordered panel reads
+   as "blending", so drop the fade here — content then clips crisply under the solid
+   header instead. This only removes a visual overlay; the header/media sticky offsets
+   are untouched, so the pinned title still releases cleanly at the bottom. */
+.plane--story .plane__head::after { display: none; }
+/* give the TL;DR the same top clearance a first .plane__block gets (the adjacent
+   sibling here is .plane__tldr, so the base .plane__head + .plane__block rule misses it) */
+.plane--story .plane__head + .plane__tldr { margin-top: 2.5rem; }
+.plane--story .plane__tldr {
+  background: var(--cream-alt); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 1.1rem 1.3rem; margin-bottom: 2rem;
+}
+.plane--story .plane__tldr h2 {
+  font-family: var(--font-mono); font-size: .74rem; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); margin-bottom: .6rem;
+}
+.ds-hero-panel {
+  background: var(--paper); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 1.1rem 1.2rem 1.3rem;
+}
+.ds-hero-cap { font-family: var(--font-mono); font-size: .7rem; color: var(--muted); margin-top: .6rem; }
+
 /* sticky top bar with back button */
 .plane__bar {
   position: sticky; top: 0; z-index: 5;
@@ -573,6 +616,11 @@ body.is-planed .stage {
   .footer__inner { grid-template-columns: 1fr; }
   .plane__grid { grid-template-columns: 1fr; }
   .plane__media { position: static; transform: none; }
+  /* mirror planes: the .plane--mirror rules above out-specify the single-column
+     collapse, so restate them here (same specificity, later in source) to force
+     one column and drop the rightward nudge — otherwise they overflow on mobile */
+  .plane--mirror .plane__grid { grid-template-columns: 1fr; }
+  .plane--mirror .plane__media { transform: none; }
   .plane__head { position: static; padding: 0 0 0.5rem; }
   .plane__head::after { display: none; }
   .ascii-panel { height: 320px; }

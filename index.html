@@ -17,6 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="side-projects/ds-charts.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍑</text></svg>" />
 
   <!-- Theme: apply the saved choice before first paint to avoid a light→dark
@@ -40,7 +41,7 @@
       <nav class="nav__links" aria-label="Primary">
         <a href="#work">Work</a>
         <a href="#skills">Skills</a>
-        <a href="#writing">Writing</a>
+        <a href="#personal-works">Personal works</a>
         <a href="#about">About</a>
       </nav>
 
@@ -59,7 +60,7 @@
     <div class="nav__drawer" id="drawer" hidden>
       <a href="#work">Work</a>
       <a href="#skills">Skills</a>
-      <a href="#writing">Writing</a>
+      <a href="#personal-works">Personal works</a>
       <a href="#about">About</a>
       <button class="theme-toggle theme-toggle--drawer" id="themeToggleDrawer" type="button" aria-label="Toggle dark mode" aria-pressed="false">
         <span class="theme-toggle__sun" aria-hidden="true">☀</span>
@@ -128,6 +129,14 @@
           <span class="marquee__item">Causal ML</span>
           <span class="marquee__item">Airflow</span>
           <span class="marquee__item">Snowflake</span>
+          <span class="marquee__item">TensorFlow</span>
+          <span class="marquee__item">HuggingFace</span>
+          <span class="marquee__item">LangChain</span>
+          <span class="marquee__item">AWS</span>
+          <span class="marquee__item">Databricks</span>
+          <span class="marquee__item">MLflow</span>
+          <span class="marquee__item">RAG Systems</span>
+          <span class="marquee__item">Agentic AI</span>
         </div>
       </div>
     </section>
@@ -188,6 +197,24 @@
           <div class="carousel" data-reveal>
             <div class="cards cards--carousel" id="workTrack" tabindex="0"
                  role="region" aria-label="Selected work — scroll or use arrows">
+              <article class="card card--link" data-project="triage" role="button" tabindex="0" aria-label="Open project: Agentic triage for Facebook's network">
+                <div class="card__top">
+                  <span class="card__tag">Agentic AI · Reliability</span>
+                  <span class="card__year">2025</span>
+                </div>
+                <h3 class="card__title">Agentic triage for Facebook's network</h3>
+                <p class="card__body">
+                  Built an agentic triage system that keeps Facebook's network at
+                  capacity — predicting hardware failures and rerouting traffic
+                  before a ticket ever fires. Cut monthly incidents 40% and held
+                  98% uptime as the network grew.
+                </p>
+                <ul class="card__meta">
+                  <li>Spark</li><li>XGBoost</li><li>LangGraph</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
               <article class="card card--link" data-project="fraud" role="button" tabindex="0" aria-label="Open project: Sub-100ms fraud scoring">
                 <div class="card__top">
                   <span class="card__tag">Fraud · Real-time ML</span>
@@ -407,19 +434,21 @@
               <h3 class="skills__head">Modeling</h3>
               <ul class="skills__list">
                 <li>Gradient boosting &amp; tree ensembles</li>
-                <li>Deep learning (PyTorch)</li>
+                <li>Deep learning (PyTorch, TensorFlow)</li>
                 <li>Bayesian &amp; hierarchical models</li>
                 <li>Causal inference &amp; uplift</li>
                 <li>Time-series forecasting</li>
+                <li>LLMs, RAG &amp; agentic systems (HuggingFace, LangChain)</li>
               </ul>
             </div>
             <div class="skills__group" data-reveal>
               <h3 class="skills__head">Engineering</h3>
               <ul class="skills__list">
-                <li>Python, SQL, a little Rust</li>
+                <li>Python, R, SQL, a little Rust</li>
                 <li>Polars / pandas / Spark</li>
-                <li>dbt, Airflow, feature stores</li>
+                <li>dbt, Airflow, MLflow, feature stores</li>
                 <li>Docker, CI/CD, testing</li>
+                <li>AWS, Azure, GCP, Databricks</li>
                 <li>Snowflake / BigQuery</li>
               </ul>
             </div>
@@ -428,7 +457,7 @@
               <ul class="skills__list">
                 <li>Experiment design &amp; stats</li>
                 <li>Model monitoring &amp; drift</li>
-                <li>Data storytelling &amp; viz</li>
+                <li>Data storytelling &amp; viz (Streamlit)</li>
                 <li>Stakeholder translation</li>
                 <li>Reproducible research</li>
               </ul>
@@ -438,38 +467,52 @@
       </div>
     </section>
 
-    <!-- ============================ 04 · WRITING ============================ -->
-    <section class="section section--alt" id="writing">
+    <!-- ======================= 04 · PERSONAL WORKS =========================
+         List entries are triggers: each opens a mirrored plane (see #planes,
+         the .plane--mirror articles). data-project maps to plane-<project>. -->
+    <section class="section section--alt" id="personal-works">
       <div class="container section__grid">
         <div class="section__label">
           <span class="section__num">04</span>
-          <span class="section__kicker">Writing</span>
+          <span class="section__kicker">Personal works</span>
         </div>
         <div class="section__content">
-          <h2 class="section__title" data-reveal>Notes from the notebook.</h2>
+          <h2 class="section__title" data-reveal>Things I build on weekends.</h2>
           <ul class="posts">
             <li class="post" data-reveal>
-              <a href="#" class="post__link">
-                <span class="post__title">Your metric is lying to you (and how to notice)</span>
-                <span class="post__meta"><span class="post__date">Jun 2026</span><span class="post__arrow">→</span></span>
+              <a href="#" class="post__link post__link--plane" data-project="pw-ram" aria-label="Open project: RAM's AI premium">
+                <span class="post__title">RAM's AI premium</span>
+                <span class="post__meta"><span class="post__date">2026</span><span class="post__arrow">→</span></span>
               </a>
             </li>
             <li class="post" data-reveal>
-              <a href="#" class="post__link">
-                <span class="post__title">Confidence intervals for people who ship</span>
-                <span class="post__meta"><span class="post__date">Apr 2026</span><span class="post__arrow">→</span></span>
+              <a href="#" class="post__link post__link--plane" data-project="pw-moneyball" aria-label="Open project: Moneyball for the Premier League">
+                <span class="post__title">Moneyball for the Premier League</span>
+                <span class="post__meta"><span class="post__date">2024</span><span class="post__arrow">→</span></span>
               </a>
             </li>
             <li class="post" data-reveal>
-              <a href="#" class="post__link">
-                <span class="post__title">Feature stores: the unglamorous 10x</span>
-                <span class="post__meta"><span class="post__date">Feb 2026</span><span class="post__arrow">→</span></span>
+              <a href="#" class="post__link post__link--plane" data-project="pw-markets" aria-label="Open project: A decade of markets">
+                <span class="post__title">A decade of markets</span>
+                <span class="post__meta"><span class="post__date">2026</span><span class="post__arrow">→</span></span>
               </a>
             </li>
             <li class="post" data-reveal>
-              <a href="#" class="post__link">
-                <span class="post__title">Why I stopped trusting my own dashboards</span>
-                <span class="post__meta"><span class="post__date">Dec 2025</span><span class="post__arrow">→</span></span>
+              <a href="#" class="post__link post__link--plane" data-project="pw-books" aria-label="Open project: Classic novels and the use of words">
+                <span class="post__title">Classic novels &amp; the use of words</span>
+                <span class="post__meta"><span class="post__date">2025</span><span class="post__arrow">→</span></span>
+              </a>
+            </li>
+            <li class="post" data-reveal>
+              <a href="#" class="post__link post__link--plane" data-project="pw-pokedex" aria-label="Open project: Pokémon, the original 251">
+                <span class="post__title">Pokémon: the original 251</span>
+                <span class="post__meta"><span class="post__date">2025</span><span class="post__arrow">→</span></span>
+              </a>
+            </li>
+            <li class="post" data-reveal>
+              <a href="#" class="post__link post__link--plane" data-project="pw-consoles" aria-label="Open project: The console wars and the blockbuster era">
+                <span class="post__title">The console wars &amp; the blockbuster era</span>
+                <span class="post__meta"><span class="post__date">2026</span><span class="post__arrow">→</span></span>
               </a>
             </li>
           </ul>
@@ -518,7 +561,7 @@
           <span class="footer__head">Site</span>
           <a href="#work">Work</a>
           <a href="#skills">Skills</a>
-          <a href="#writing">Writing</a>
+          <a href="#personal-works">Personal works</a>
           <a href="#about">About</a>
         </div>
         <div class="footer__col">
@@ -543,6 +586,57 @@
   <!-- Each card in #work opens one of these. Slides in from the right; graphic
        column is sticky, text blocks reveal on scroll. Copy is placeholder. -->
   <div class="planes" id="planes">
+
+    <!-- Agentic network triage (Facebook) -->
+    <article class="plane" id="plane-triage" data-anim="topology" aria-hidden="true" aria-labelledby="plane-triage-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Selected work · 2025</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ascii-panel">
+            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Agentic AI · Reliability</p>
+            <h1 class="plane__title" id="plane-triage-title"><span class="hl" data-plane-type>Agentic triage for Facebook's network</span></h1>
+            <ul class="card__meta plane__meta">
+              <li>Spark</li><li>XGBoost</li><li>LangGraph</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The problem</h2>
+            <p>Facebook's network runs on live hardware emitting petabytes of telemetry a day, and when a link or box quietly degrades, latency spikes and services drop. Handling it ticket by ticket couldn't keep pace with growth — engineers drowned in false positives while the failures that mattered slipped through.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Approach</h2>
+            <p>I started with petabyte-scale exploratory analysis of years of tickets and failure logs to find where the system actually bottlenecked. From there I trained tree-based models to predict machine health and triage incoming tickets, then wrapped them in agentic workflows that choose and carry out a fix — every action gated by real-engineer validation.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What I built</h2>
+            <p>An end-to-end triage loop — predict, decide, act, verify — that resolves issues before they surface as outages.</p>
+            <ul class="plane__list">
+              <li>Petabyte-scale EDA pipeline surfacing real failure modes</li>
+              <li>Tree-based models scoring machine health and triaging tickets</li>
+              <li>Human-validated agentic workflows that reroute and self-mitigate</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Outcome</h2>
+            <p>Monthly ticket volume dropped 40% as the system auto-resolved false positives and self-healed before impact, and the network held 98% uptime while it kept growing. Engineers were freed from repetitive triage to focus on the failures that genuinely needed them.</p>
+          </div>
+        </div>
+      </div>
+    </article>
 
     <!-- Fraud -->
     <article class="plane" id="plane-fraud" data-anim="neuralnet" aria-hidden="true" aria-labelledby="plane-fraud-title" hidden>
@@ -797,6 +891,550 @@
       </div>
     </article>
 
+    <!-- ===================== PERSONAL-WORKS PLANES (mirror data stories) ==========
+         Mirror planes (.plane--mirror): slide in from the LEFT, hero SVG chart on
+         the RIGHT, prev/next nav on the LEFT of the bar. .plane--story adds the
+         TL;DR + chart layout. Driven by the Personal works list (section 04);
+         prev/next loops through these seven in DOM order. Charts render via
+         side-projects/ds-charts.js (SVG, no ASCII anim). -->
+
+    <article class="plane plane--mirror plane--story" id="plane-pw-moneyball" data-anim="barchart"
+             aria-hidden="true" aria-labelledby="plane-pw-moneyball-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Side project · 2024</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ds-hero-panel">
+            <figure class="ds-figure" data-ds-chart data-project="pl_moneyball"
+                    data-chart="line" data-figure="race" data-mode="race" data-y="Cumulative points">
+              <h3 class="ds-figure__title">The 2023-24 title race</h3>
+              <p class="ds-figure__subtitle">cumulative points, top-6 finishers, matchday by matchday</p>
+              <div class="ds-chart"></div>
+            </figure>
+            <p class="ds-hero-cap">Motion makes a two-horse title race legible in a way a static line can't.</p>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Football · xPts model</p>
+            <h1 class="plane__title" id="plane-pw-moneyball-title"><span class="hl" data-plane-type>Moneyball for the Premier League</span></h1>
+            <ul class="card__meta plane__meta"><li>pandas</li><li>scikit-learn</li><li>football-data</li></ul>
+          </div>
+          <div class="plane__tldr" data-plane-reveal>
+            <h2>TL;DR</h2>
+            <ul>
+              <li>80 team-seasons across four Premier League seasons (1,520 matches).</li>
+              <li>A shots-only expected-points model hits <strong>R²≈0.80</strong> on the held-out 2023-24.</li>
+              <li><strong>West Ham +19</strong> over-performed; Brighton is the value side, under-shooting twice.</li>
+              <li>Shots-on-target differential tracks points at <strong>r≈0.90</strong> — almost goal difference.</li>
+              <li>The model is a value detector, not deployed.</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Some teams bank points their shots don't deserve</h2>
+            <figure class="ds-figure" data-ds-chart data-project="pl_moneyball"
+                    data-chart="scatter" data-figure="scatter" data-mode="diagonal"
+                    data-x="Expected points (shot model)" data-y="Actual points">
+              <h3 class="ds-figure__title">Expected vs actual points</h3>
+              <p class="ds-figure__subtitle">4 seasons · above the line = over-performing</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Each dot is a team-season. Distance above the diagonal is points banked beyond what the shots deserved.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Who beat their numbers in 2023-24?</h2>
+            <figure class="ds-figure" data-ds-chart data-project="pl_moneyball"
+                    data-chart="dumbbell" data-figure="dumbbell" data-x="Points">
+              <h3 class="ds-figure__title">Actual minus expected points</h3>
+              <p class="ds-figure__subtitle">grey = expected (shots) · dot = actual</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">West Ham's +19 is the season's biggest over-performance; Brighton sits deep in the negatives despite strong underlying numbers.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Which raw stat actually predicts points?</h2>
+            <figure class="ds-figure" data-ds-chart data-project="pl_moneyball"
+                    data-chart="bar" data-figure="predictors" data-x="Correlation with final points (r)">
+              <h3 class="ds-figure__title">Correlation of each stat with points</h3>
+              <p class="ds-figure__subtitle">80 team-seasons · Pearson r</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Shots-on-target differential (r≈0.90) rivals goal difference — far more than raw shot counts.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Squad DNA, Football-Manager style</h2>
+            <figure class="ds-figure" data-ds-chart data-project="pl_moneyball" data-chart="radar" data-figure="radar">
+              <h3 class="ds-figure__title">Per-game attributes, scaled across the league</h3>
+              <p class="ds-figure__subtitle">further out = better (defensive metrics inverted)</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">The title contenders are rounded all-rounders; the shape tells you where each side actually earns its points.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Method &amp; honest caveats</h2>
+            <p>Data: football-data.co.uk match results, four seasons. Model: linear regression on four per-game shot features, trained on 2020-23 and tested on 2023-24. It beats a train-mean dummy comfortably but loses to goal difference as a pure predictor — its worth is as a value detector, and it is <em>not</em> deployed.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="plane plane--mirror plane--story" id="plane-pw-markets" data-anim="candlestick"
+             aria-hidden="true" aria-labelledby="plane-pw-markets-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Side project · 2026</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ds-hero-panel">
+            <figure class="ds-figure" data-ds-chart data-project="markets"
+                    data-chart="line" data-figure="race" data-mode="race" data-y="Growth of $100">
+              <h3 class="ds-figure__title">The horse race</h3>
+              <p class="ds-figure__subtitle">$100 in each asset, month by month, log scale</p>
+              <div class="ds-chart"></div>
+            </figure>
+            <p class="ds-hero-cap">Leadership is temporary and the ride is not monotonic — motion shows what a static chart can't.</p>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Markets · Visual EDA</p>
+            <h1 class="plane__title" id="plane-pw-markets-title"><span class="hl" data-plane-type>A decade of markets</span></h1>
+            <ul class="card__meta plane__meta"><li>pandas</li><li>NumPy</li><li>Nasdaq API</li></ul>
+          </div>
+          <div class="plane__tldr" data-plane-reveal>
+            <h2>TL;DR</h2>
+            <ul>
+              <li>$100 became <strong>~$1,360 in Bitcoin</strong> and fell to <strong>~$66 in long Treasuries</strong> (monthly close, this window).</li>
+              <li>Deepest drawdowns: crude oil and Bitcoin fell roughly <strong>-85%</strong> from peak; the S&amp;P's worst was about a third (COVID).</li>
+              <li>Gold is near-uncorrelated with stocks; long bonds slightly negative.</li>
+              <li>Equity returns have <strong>fat tails</strong> — far more ±3σ days than a Normal predicts.</li>
+              <li>Visualization-only — no model, by design.</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Growth of $100: the same decade, very different endings</h2>
+            <figure class="ds-figure" data-ds-chart data-project="markets" data-chart="line" data-figure="growth"
+                    data-x="Year" data-y="Growth of $100">
+              <h3 class="ds-figure__title">$100 invested across the traditional assets</h3>
+              <p class="ds-figure__subtitle">monthly close, indexed to 100 at the start</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Equities compound far ahead of bonds and commodities over the decade.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The underwater view: how deep, and how long</h2>
+            <figure class="ds-figure" data-ds-chart data-project="markets" data-chart="line" data-figure="underwater"
+                    data-mode="area" data-x="Year" data-y="Drawdown (%)">
+              <h3 class="ds-figure__title">Drawdown from the running peak</h3>
+              <p class="ds-figure__subtitle">weekly · S&amp;P 500, crude oil, long Treasuries</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Oil's crater dwarfs the equity dip; bonds bleed slowly rather than crash.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What moves together, what moves apart</h2>
+            <figure class="ds-figure" data-ds-chart data-project="markets" data-chart="heatmap" data-figure="corr">
+              <h3 class="ds-figure__title">Correlation of daily returns</h3>
+              <p class="ds-figure__subtitle">common 7-asset window · blue ↔ pink diverging</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">The equity block moves as one; gold and long bonds are the diversifiers.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Who is calm, who is wild</h2>
+            <figure class="ds-figure" data-ds-chart data-project="markets" data-chart="line" data-figure="vol"
+                    data-x="Year" data-y="Annualised volatility (%)">
+              <h3 class="ds-figure__title">63-day rolling volatility, annualised</h3>
+              <p class="ds-figure__subtitle">weekly sample, all seven assets</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Bitcoin rides far above everything; Treasuries and gold hug the floor.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Markets have fat tails</h2>
+            <figure class="ds-figure" data-ds-chart data-project="markets" data-chart="histogram" data-figure="distSpy"
+                    data-x="Daily return" data-y="Days">
+              <h3 class="ds-figure__title">S&amp;P 500 daily returns vs a fitted Normal</h3>
+              <p class="ds-figure__subtitle">80 bins · dashed = Normal, ±3σ marked</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Far more extreme days than a Normal allows — the tails are where the risk lives.</p>
+            </figure>
+            <figure class="ds-figure" data-ds-chart data-project="markets" data-chart="histogram" data-figure="distBtc"
+                    data-x="Daily return" data-y="Days">
+              <h3 class="ds-figure__title">Bitcoin daily returns</h3>
+              <p class="ds-figure__subtitle">same treatment — a much wider spread</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Crypto's distribution is wider still: bigger up days and bigger down days.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Method &amp; honest caveats</h2>
+            <p>Data: Nasdaq's public API (liquid ETF proxies) plus Binance for a continuous Bitcoin series, roughly ten years of daily closes. Prices are split-adjusted but <em>not</em> dividend/coupon adjusted, so these are price returns and understate total return for payers. The animation downsamples to month-end, so the headline multiples differ slightly from a daily-close reading.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="plane plane--mirror plane--story" id="plane-pw-books" data-anim="attention"
+             aria-hidden="true" aria-labelledby="plane-pw-books-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Side project · 2025</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ds-hero-panel">
+            <figure class="ds-figure" data-ds-chart data-project="books"
+                    data-chart="line" data-figure="arcs" data-mode="draw" data-book="Frankenstein"
+                    data-x="Narrative position (%)" data-y="Mean AFINN valence">
+              <h3 class="ds-figure__title">Frankenstein's mood, as it is read</h3>
+              <p class="ds-figure__subtitle">sentiment drawn left-to-right, the way a reader feels it</p>
+              <div class="ds-chart"></div>
+            </figure>
+            <p class="ds-hero-cap">The arc redraws chunk by chunk — building, then collapsing to its bleakest point near the end.</p>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">NLP · Text mining</p>
+            <h1 class="plane__title" id="plane-pw-books-title"><span class="hl" data-plane-type>Classic novels &amp; the use of words</span></h1>
+            <ul class="card__meta plane__meta"><li>scikit-learn</li><li>AFINN-111</li><li>Gutenberg</li></ul>
+          </div>
+          <div class="plane__tldr" data-plane-reveal>
+            <h2>TL;DR</h2>
+            <ul>
+              <li>Six public-domain novels, tokenised from Project Gutenberg.</li>
+              <li><strong>Moby Dick</strong> has the richest vocabulary; Zipf's law holds across all six.</li>
+              <li>Frankenstein swings hardest and collapses to its darkest point near the end.</li>
+              <li>A TF-IDF + Naive-Bayes classifier tells the books apart from a 200-word passage at <strong>98.5%</strong> (vs a 16.7% baseline).</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Vocabulary richness</h2>
+            <figure class="ds-figure" data-ds-chart data-project="books" data-chart="bar" data-figure="lexical" data-mode="h"
+                    data-x="MATTR (unique words per 1,000-word window)">
+              <h3 class="ds-figure__title">Lexical diversity, ranked</h3>
+              <p class="ds-figure__subtitle">length-fair moving-average type-token ratio</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Moby Dick's whaling lexicon tops a length-fair measure; Alice sits lowest.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Zipf's law holds</h2>
+            <figure class="ds-figure" data-ds-chart data-project="books" data-chart="line" data-figure="zipf"
+                    data-x="Word rank (log)" data-y="Frequency (log)">
+              <h3 class="ds-figure__title">Rank vs frequency, log-log</h3>
+              <p class="ds-figure__subtitle">three books against the ideal 1/rank slope</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Every text hugs the -1 slope for mid-frequency words — Zipf in action.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Emotional arcs differ sharply by book</h2>
+            <figure class="ds-figure" data-ds-chart data-project="books" data-chart="arcs" data-figure="arcs">
+              <h3 class="ds-figure__title">Sentiment arc of each novel</h3>
+              <p class="ds-figure__subtitle">mean AFINN valence across 25 narrative chunks (smoothed)</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Some rise, some fall; the marked dot is each book's darkest passage.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Telling the books apart</h2>
+            <figure class="ds-figure" data-ds-chart data-project="books" data-chart="heatmap" data-figure="confusion">
+              <h3 class="ds-figure__title">Passage-classifier confusion matrix</h3>
+              <p class="ds-figure__subtitle">rows = truth, cols = predicted · row-normalised</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">A near-perfect diagonal: 200 words is plenty to fingerprint a novel.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Method &amp; honest caveats</h2>
+            <p>Data: six Project Gutenberg texts (public domain) and the AFINN-111 lexicon. Sentiment is a lexicon average, so it misses negation and irony; the classifier is trained on balanced 200-word passages with a held-out test split. Nothing is deployed.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="plane plane--mirror plane--story" id="plane-pw-pokedex" data-anim="scatterplot"
+             aria-hidden="true" aria-labelledby="plane-pw-pokedex-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Side project · 2025</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ds-hero-panel">
+            <figure class="ds-figure" data-ds-chart data-project="pokedex"
+                    data-chart="bar" data-figure="evo" data-mode="morph">
+              <h3 class="ds-figure__title">An evolution is a power spike</h3>
+              <p class="ds-figure__subtitle">Charmander → Charmeleon → Charizard, six base stats</p>
+              <div class="ds-chart"></div>
+            </figure>
+            <p class="ds-hero-cap">The six bars grow together — evolving changes how powerful a Pokémon is, not who it is.</p>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Games · Classification</p>
+            <h1 class="plane__title" id="plane-pw-pokedex-title"><span class="hl" data-plane-type>Pokémon: the original 251</span></h1>
+            <ul class="card__meta plane__meta"><li>scikit-learn</li><li>PokeAPI</li><li>pandas</li></ul>
+          </div>
+          <div class="plane__tldr" data-plane-reveal>
+            <h2>TL;DR</h2>
+            <ul>
+              <li>All 251 Gen 1-2 Pokémon, six base stats each.</li>
+              <li>Legendaries' median base-stat total is <strong>580</strong> — a class apart.</li>
+              <li>Water is the most common primary type; Ghost the fastest/most special.</li>
+              <li>A logistic model reaches <strong>ROC-AUC 0.99</strong> from base stats alone.</li>
+              <li>Its only misses are the 600-total pseudo-legendaries.</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>How special are legendaries?</h2>
+            <figure class="ds-figure" data-ds-chart data-project="pokedex" data-chart="histogram" data-figure="bst"
+                    data-x="Base-stat total" data-y="Number of Pokémon">
+              <h3 class="ds-figure__title">Base-stat total, legendaries highlighted</h3>
+              <p class="ds-figure__subtitle">240 non-legendaries (bars) · 11 legendaries (dots)</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Every legendary sits above the pack median; the split at 580 is stark.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Which types hit hardest, tank best, fly fastest?</h2>
+            <figure class="ds-figure" data-ds-chart data-project="pokedex" data-chart="heatmap" data-figure="typeStats">
+              <h3 class="ds-figure__title">Mean base stat by primary type</h3>
+              <p class="ds-figure__subtitle">types ordered by mean total · boxed = the single peak</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Dragon and Psychic types carry the highest averages; the boxed cell is the single hottest stat.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Are fan favourites statistically special?</h2>
+            <figure class="ds-figure" data-ds-chart data-project="pokedex" data-chart="radar" data-figure="radar">
+              <h3 class="ds-figure__title">Seven fan favourites on a 0-160 scale</h3>
+              <p class="ds-figure__subtitle">a lopsided shape = a specialist</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">The crowd-pleasers are spiky, not balanced — they win on one or two standout stats.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Can base stats alone flag a legendary?</h2>
+            <figure class="ds-figure" data-ds-chart data-project="pokedex" data-chart="scatter" data-figure="model" data-mode="pr"
+                    data-x="Recall" data-y="Precision">
+              <h3 class="ds-figure__title">Precision-recall of the legendary classifier</h3>
+              <p class="ds-figure__subtitle">5-fold cross-validated logistic regression</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Well above the prevalence baseline — base stats carry real signal.</p>
+            </figure>
+            <figure class="ds-figure" data-ds-chart data-project="pokedex" data-chart="bar" data-figure="coefs"
+                    data-x="Standardized coefficient">
+              <h3 class="ds-figure__title">What the model leans on</h3>
+              <p class="ds-figure__subtitle">standardized logistic coefficients — all positive</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Every stat pushes toward "legendary"; special stats lead.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Method &amp; honest caveats</h2>
+            <p>Data: PokeAPI, all 251 Pokémon (cached). Model: class-weighted logistic regression on the six base stats, 5-fold cross-validated against a majority baseline. With only 11 legendaries the metrics are optimistic, and the model is <em>not</em> deployed.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="plane plane--mirror plane--story" id="plane-pw-consoles" data-anim="barchart"
+             aria-hidden="true" aria-labelledby="plane-pw-consoles-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Side project · 2026</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ds-hero-panel">
+            <figure class="ds-figure" data-ds-chart data-project="consoles"
+                    data-chart="bar" data-figure="race" data-mode="race" data-x="Cumulative units (millions)">
+              <h3 class="ds-figure__title">The console war, cumulative</h3>
+              <p class="ds-figure__subtitle">home/hybrid units by manufacturer, 1977 → 2024</p>
+              <div class="ds-chart"></div>
+            </figure>
+            <p class="ds-hero-cap">The bars re-sort every year — the crown passes Nintendo → Sony → a three-way war.</p>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Games · Sales trends</p>
+            <h1 class="plane__title" id="plane-pw-consoles-title"><span class="hl" data-plane-type>The console wars &amp; the blockbuster era</span></h1>
+            <ul class="card__meta plane__meta"><li>pandas</li><li>scikit-learn</li><li>Wikipedia</li></ul>
+          </div>
+          <div class="plane__tldr" data-plane-reveal>
+            <h2>TL;DR</h2>
+            <ul>
+              <li><strong>PlayStation 2 (~155M)</strong> still leads every home console.</li>
+              <li>The living room passed Nintendo → Sony → a three-way war.</li>
+              <li><strong>Minecraft (~300M)</strong> is the best-selling game ever, and the record keeps climbing.</li>
+              <li>A tiny sales regression barely beats the mean — reported honestly (n=21).</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Who won the living room</h2>
+            <figure class="ds-figure" data-ds-chart data-project="consoles" data-chart="bar" data-figure="rank" data-mode="h"
+                    data-x="Lifetime units (millions)">
+              <h3 class="ds-figure__title">Home/hybrid consoles by lifetime sales</h3>
+              <p class="ds-figure__subtitle">coloured by manufacturer</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">PS2 sits alone at the top; the Switch is the hybrid comeback.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The room changed hands</h2>
+            <figure class="ds-figure" data-ds-chart data-project="consoles" data-chart="bar" data-figure="genShare" data-mode="stacked"
+                    data-y="Share of generation (%)">
+              <h3 class="ds-figure__title">Manufacturer share by generation</h3>
+              <p class="ds-figure__subtitle">home/hybrid units, % of each generation</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Nintendo owns the early generations; Sony arrives in Gen 5 and takes the room.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Blockbusters keep breaking their ceiling</h2>
+            <figure class="ds-figure" data-ds-chart data-project="consoles" data-chart="scatter" data-figure="gamesTime"
+                    data-x="Release year" data-y="Lifetime units (millions)">
+              <h3 class="ds-figure__title">Best-selling games over time</h3>
+              <p class="ds-figure__subtitle">bubble size ∝ sales · dashed = running record</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">The sales record ratchets upward; Minecraft resets the ceiling entirely.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>A small, honest model</h2>
+            <figure class="ds-figure" data-ds-chart data-project="consoles" data-chart="scatter" data-figure="predVactual"
+                    data-x="Actual units (M)" data-y="Predicted units (M)">
+              <h3 class="ds-figure__title">Predicted vs actual game sales</h3>
+              <p class="ds-figure__subtitle">leave-one-out CV, log-log</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Year + platform + genre barely beat guessing the mean — and I say so.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Method &amp; honest caveats</h2>
+            <p>Data: two small, hand-encoded tables cited to Wikipedia (lifetime, approximate units). Several recent figures are best public estimates, and with n=21 the model is illustrative, not authoritative — it is <em>not</em> deployed.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="plane plane--mirror plane--story" id="plane-pw-ram" data-anim="candlestick"
+             aria-hidden="true" aria-labelledby="plane-pw-ram-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Side project · 2026</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ds-hero-panel">
+            <figure class="ds-figure" data-ds-chart data-project="ram"
+                    data-chart="line" data-figure="race" data-mode="race"
+                    data-y="Index (2022-Q4 = 100)">
+              <h3 class="ds-figure__title">The reversal, quarter by quarter</h3>
+              <p class="ds-figure__subtitle">DRAM contract index vs the official computer CPI, both = 100 at 2022-Q4</p>
+              <div class="ds-chart"></div>
+            </figure>
+            <p class="ds-hero-cap">Memory got cheaper for a generation — then AI demand flipped it. The gap between what the market paid and what the price index recorded opens in real time.</p>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Hardware · Prices</p>
+            <h1 class="plane__title" id="plane-pw-ram-title"><span class="hl" data-plane-type>RAM's AI premium</span></h1>
+            <ul class="card__meta plane__meta"><li>pandas</li><li>FRED</li><li>TrendForce</li></ul>
+          </div>
+          <div class="plane__tldr" data-plane-reveal>
+            <h2>TL;DR</h2>
+            <ul>
+              <li>After the 2022–23 glut, DRAM contract prices bottomed in <strong>2023-Q3</strong>, then AI demand drove a <strong>~4.2× reversal</strong> (index 68 → 289 by 2026-Q1).</li>
+              <li>The quarterly swing runs from <strong>−20% QoQ</strong> to <strong>+92% QoQ</strong>; the AI leg ignites in <strong>2025-Q3 (+47.5%)</strong>.</li>
+              <li>DDR5 16Gb <strong>spot prices nearly quadrupled in three months</strong> — $6.84 → $27.20 (<strong>+307%</strong>).</li>
+              <li>The driver is <strong>HBM</strong>: it sells at ~5× DDR5 and eats ~3× the wafer area per GB, starving the commodity DRAM market into shortage.</li>
+              <li>Official quality-adjusted indices <strong>barely register it</strong> — a story in itself.</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>From −20% to +92%: the quarterly swing</h2>
+            <figure class="ds-figure" data-ds-chart data-project="ram" data-chart="bar" data-figure="predictors"
+                    data-x="Contract price, QoQ change (%)">
+              <h3 class="ds-figure__title">DRAM contract price, quarter-on-quarter</h3>
+              <p class="ds-figure__subtitle">TrendForce guidance midpoints · rose = rising, blue = falling</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Seven falling quarters give way to a rising regime that peaks at a near-unheard-of +92% quarter.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Why the official price indices miss it</h2>
+            <figure class="ds-figure" data-ds-chart data-project="ram" data-chart="line" data-figure="growth"
+                    data-x="Quarter" data-y="Index (2022-Q4 = 100)">
+              <h3 class="ds-figure__title">Three price signals, rebased to 100</h3>
+              <p class="ds-figure__subtitle">curated DRAM contract vs two hedonic FRED indices</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Quality adjustment nets the DRAM spike out of the CPI and storage PPI — "memory prices" depends entirely on which price you mean.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The sharpest evidence: DDR5 spot</h2>
+            <figure class="ds-figure" data-ds-chart data-project="ram" data-chart="line" data-figure="vol"
+                    data-y="Spot price per chip (USD)">
+              <h3 class="ds-figure__title">DDR5 16Gb spot price</h3>
+              <p class="ds-figure__subtitle">TrendForce spot readings, Sep–Dec 2025</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Spot markets react fastest: a chip that traded near $7 in September cleared $27 by mid-December.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Method &amp; honest caveats</h2>
+            <p>TrendForce publishes quarterly DRAM contract-price <em>change guidance</em> (QoQ % ranges), not a public index, and no DRAM-specific series exists in FRED. The headline index is our own construction — the QoQ midpoints chained from a 2022-Q4 base — clearly labelled as illustrative, not an official price series; several 2025–26 quarters were revised sharply upward mid-quarter and we use the later figures. The FRED comparison (computer CPI, computer-storage PPI, retrieved 2026-07-12) is deliberately imperfect: neither is DRAM-specific, which is precisely why the cited TrendForce data is needed. Visualization-only, by design.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
   </div><!-- /.planes -->
 
   <script src="anim/ascii.js"></script>
@@ -807,5 +1445,14 @@
   <script src="anim/topology.js"></script>
   <script src="anim/plasma.js"></script>
   <script src="script.js"></script>
+
+  <!-- Personal-works data stories: DS_SIDE data modules, then the chart toolkit -->
+  <script src="side-projects/data/01_pl_moneyball.js"></script>
+  <script src="side-projects/data/02_markets.js"></script>
+  <script src="side-projects/data/03_classical_books.js"></script>
+  <script src="side-projects/data/04_pokemon_gen12.js"></script>
+  <script src="side-projects/data/06_video_games.js"></script>
+  <script src="side-projects/data/07_ram_ai_prices.js"></script>
+  <script src="side-projects/ds-charts.js"></script>
 </body>
 </html>

@@ -81,6 +81,19 @@ Line ranges below are approximate anchors as of this writing.
   and a first-show paint lead-in. `#cursor` blinks forever (`@keyframes blink`).
 - **Edit the demo:** change a tab's entry in `TABS`. Token colors are the
   `.tok-*` classes in CSS.
+- **Easter egg (interactive prompt):** click the terminal to enter *input mode*
+  (adds `.terminal--input`); the `#terminalInput` span (between `#typed` and
+  `#cursor`) captures keystrokes so you type a command at the prompt. Press
+  **Enter** to submit: a matching entry in the `EASTER_EGGS` array (top of the
+  `5. terminal typing` banner) fires — its `reaction()` returns `[className,
+  text]` chunks (same format as `TABS`) that print via `appendChunk`; a non-match
+  prints `command not found`. Then a fresh `>>> ` prompt is dropped. **To swap
+  the word/celebration, edit `EASTER_EGGS` only** — nothing else changes. Escape
+  or clicking away exits; switching tabs clears the input. Keystrokes are caught
+  by a document-level `keydown` gated on an `inputActive` flag (no focusable
+  control), so the terminal **stays `aria-hidden`/decorative** — screen readers
+  ignore the whole thing. Celebration renders instantly (via `appendChunk`), so
+  it works under reduced motion too.
 - **Gotcha / over-engineering:** tabs are `tabindex="-1"` inside an aria-hidden
   region → keyboard-inert, mouse-only. The cancellation/cache/lead-in machinery
   is heavy for decoration (see review §R1).

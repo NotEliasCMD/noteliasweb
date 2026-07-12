@@ -222,6 +222,12 @@ img { max-width: 100%; display: block; }
 .terminal__body .tok-str     { color: #9ecb9e; }
 .terminal__body .tok-out     { color: #cfc8b8; }
 .terminal__body .tok-num     { color: #e79cb6; }
+.terminal__body .tok-cmd      { color: #ece7dc; }
+.terminal__body .tok-celebrate { color: #7fb08a; }
+/* the terminal invites clicking so visitors can type at the prompt (easter egg) */
+.terminal__body { cursor: text; }
+/* subtle affordance while input mode is active */
+.terminal--input { box-shadow: 0 0 0 1px #E79CB6 inset, 0 30px 60px -30px rgba(23, 21, 15, 0.45); }
 .cursor { display: inline-block; color: #E79CB6; animation: blink 0.8s step-end infinite; }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
@@ -489,14 +495,46 @@ body.is-planed--mirror .stage { transform: translateX(8%) scale(0.985); }  /* pa
 /* give the TL;DR the same top clearance a first .plane__block gets (the adjacent
    sibling here is .plane__tldr, so the base .plane__head + .plane__block rule misses it) */
 .plane--story .plane__head + .plane__tldr { margin-top: 2.5rem; }
+/* TL;DR is a native <details> disclosure: collapsed to a clickable summary bar,
+   click to reveal the takeaways. No JS — the browser handles open/close. */
 .plane--story .plane__tldr {
   background: var(--cream-alt); border: 1px solid var(--line);
-  border-radius: var(--radius); padding: 1.1rem 1.3rem; margin-bottom: 2rem;
+  border-radius: var(--radius); margin-bottom: 2rem; overflow: hidden;
 }
-.plane--story .plane__tldr h2 {
+.plane__tldr__summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: baseline; gap: 1rem;
+  padding: 0.95rem 1.3rem;
+}
+.plane__tldr__summary::-webkit-details-marker { display: none; }  /* Safari's default triangle */
+.plane__tldr__summary:focus-visible { outline: 2px solid var(--peach-deep); outline-offset: -2px; border-radius: var(--radius); }
+.plane__tldr__label {
   font-family: var(--font-mono); font-size: .74rem; text-transform: uppercase;
-  letter-spacing: .08em; color: var(--muted); margin-bottom: .6rem;
+  letter-spacing: .08em; color: var(--muted); transition: color 0.2s var(--ease);
 }
+.plane__tldr__summary:hover .plane__tldr__label { color: var(--ink); }
+.plane__tldr__hint {
+  margin-left: auto; font-family: var(--font-mono); font-size: .72rem; color: var(--peach-deep);
+}
+.plane__tldr__hint::after {
+  content: "▸"; display: inline-block; margin-left: .45rem;
+  transition: transform 0.2s var(--ease);
+}
+.plane--story .plane__tldr[open] .plane__tldr__hint::after { transform: rotate(90deg); }
+.plane__tldr__body { padding: 0 1.3rem 1.15rem; }
+.plane__tldr__body ul { margin: 0; padding-left: 1.2rem; }
+.plane__tldr__body li { margin: .3rem 0; color: var(--ink-soft); }
+
+/* bar: prev/next + "back to home" cluster (right, via the mirror row-reverse) with
+   the crumb + a theme toggle on the other side (the nav toggle is hidden behind the
+   full-screen plane, so the plane carries its own) */
+.plane__bar-end { display: flex; align-items: center; gap: 0.8rem; }
+.plane__bar-end .theme-toggle { flex: none; }
+
+/* a second "Next project" call-to-action at the foot of the story (same data-dir,
+   so it's auto-wired to navigateTo like the bar buttons) */
+.plane__next { margin-top: clamp(2rem, 5vw, 3.5rem); padding-top: 1.6rem; border-top: 1px solid var(--line); }
+.plane__next-btn { cursor: pointer; padding: 0.75rem 1.3rem; font-size: 0.9rem; }
 .ds-hero-panel {
   background: var(--paper); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 1.1rem 1.2rem 1.3rem;
@@ -632,8 +670,10 @@ body.is-planed--mirror .stage { transform: translateX(8%) scale(0.985); }  /* pa
   .footer__cols { grid-template-columns: 1fr 1fr; }
   .cards--carousel { grid-auto-columns: clamp(200px, 70%, 250px); }   /* next column peeks */
   .hl { white-space: normal; }   /* allow highlight phrases to wrap on narrow screens */
-  /* condense the plane bar so back + prev/next fit: drop the crumb, tighten gaps */
-  .plane__bar-nav .plane__crumb { display: none; }
+  /* condense the plane bar so it fits: drop the crumb + the back button's long
+     text ("Back → " instead of "Back to home → "), tighten gaps */
+  .plane__crumb { display: none; }
+  .plane__back-full { display: none; }
   .plane__nav-btn { padding: 0.5rem 0.7rem; }
   .plane__back { padding-left: 0.9rem; padding-right: 0.9rem; }
 }

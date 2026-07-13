@@ -606,6 +606,15 @@
     // slightly. Change here to retune all planes at once.
     const PLANE_GRID = { cols: 62, rows: 26 };
 
+    // Device/browser back button: opening a plane pushes one history entry so the
+    // back gesture closes the plane and returns to the page instead of leaving the
+    // site. Only one plane is open at a time (the full-screen overlay covers the
+    // other group's triggers), so a single shared closer pointer suffices.
+    let closeActivePlane = null;
+    window.addEventListener("popstate", () => {
+      if (closeActivePlane) closeActivePlane();   // close; browser already popped our entry
+    });
+
     // size a <pre> so cols*rows of monospace fill its box
     function fontFor(pre, cols, rows) {
       const boxW = pre.clientWidth, boxH = pre.clientHeight;
@@ -737,9 +746,14 @@
         const plane = document.getElementById("plane-" + projId);
         if (!plane || activePlane) return;
         showPlane(plane, card);
+        // register a history entry so the back button/gesture closes the plane
+        // (navigateTo hops reuse showPlane, not openPlane, so they stay under this
+        // single entry — back returns to the page from anywhere in the session)
+        closeActivePlane = () => closePlane(true);     // true = came from popstate
+        history.pushState({ peachyPlane: true }, "");  // URL unchanged; just a back target
       }
 
-      function closePlane() {
+      function closePlane(fromPopstate) {
         if (!activePlane) return;
         const plane = activePlane;
         activePlane = null;
@@ -759,6 +773,13 @@
           };
           plane.addEventListener("transitionend", onDone);
         }
+
+        // drop our back-button hook; if we're closing via the on-screen Back /
+        // Escape (not a popstate), pop the history entry openPlane pushed so it
+        // doesn't leak (the resulting popstate is a no-op — closeActivePlane is
+        // already null). On a device-back close the browser already popped it.
+        closeActivePlane = null;
+        if (!fromPopstate && history.state && history.state.peachyPlane) history.back();
 
         if (lastCard && lastCard.focus) lastCard.focus();
       }
@@ -830,7 +851,8 @@
         $$(".plane__nav-btn", plane).forEach((b) =>
           b.addEventListener("click", () => navigateTo(b.dataset.dir === "next" ? 1 : -1))
         );
-        $$(".plane__back", plane).forEach((b) => b.addEventListener("click", closePlane));
+        // wrap so the click Event isn't passed as closePlane's fromPopstate arg
+        $$(".plane__back", plane).forEach((b) => b.addEventListener("click", () => closePlane()));
       });
 
       document.addEventListener("keydown", (e) => {

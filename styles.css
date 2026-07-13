@@ -55,7 +55,13 @@
 
 /* ---------------------------------------------------------------- reset */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+/* overflow-x: hidden on the root too (not just body) — iOS Safari's root scroller
+   is <html>, so clamping x here is what actually stops sideways panning of
+   off-screen content (e.g. the shifted .stage behind an open plane). `hidden`
+   (not `clip`) is deliberate: it makes overflow-y compute to `auto`, so vertical
+   scrolling keeps working — `clip` here would leave overflow-y `visible` and
+   disable vertical scroll entirely. */
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; overflow-x: hidden; }
 body {
   margin: 0;
   background: var(--cream);
@@ -446,7 +452,8 @@ body.is-planed .stage {
 .plane {
   position: fixed; inset: 0; z-index: 80;
   background: var(--cream); color: var(--ink);
-  overflow-y: auto; overflow-x: hidden;
+  overflow-y: auto; overflow-x: clip;   /* clip (not hidden) = no x-axis scroll container, so no side-pan on mobile */
+  touch-action: pan-y pinch-zoom;       /* touch: only vertical panning (+ pinch-zoom); blocks left/right drag on the plane */
   transform: translateX(100%); visibility: hidden;
   /* closing (returning to this base state) slides out slower; the visibility
      delay matches the duration so the plane stays visible for the full slide */
@@ -674,6 +681,11 @@ body.is-planed--mirror .stage { transform: translateX(8%) scale(0.985); }  /* pa
   .plane__head { position: static; padding: 0 0 0.5rem; }
   .plane__head::after { display: none; }
   .ascii-panel { height: 320px; }
+  /* clip chart labels/callouts that paint outside the viewBox (ds-charts.css sets
+     overflow:visible for desktop overhang) so they can't bleed past the narrow
+     column and become a side-scroll. End-labels sit inside each chart's reserved
+     right margin, so nothing intended is cut off. */
+  .plane .ds-chart svg { overflow: hidden; }
 }
 @media (max-width: 720px) {
   .nav__links, .nav__cta { display: none; }
@@ -688,6 +700,10 @@ body.is-planed--mirror .stage { transform: translateX(8%) scale(0.985); }  /* pa
   .plane__back-full { display: none; }
   .plane__nav-btn { padding: 0.5rem 0.7rem; }
   .plane__back { padding-left: 0.9rem; padding-right: 0.9rem; }
+  /* tighten the side-projects (story/mirror) plane's horizontal margins on phones
+     so charts + text use more of the narrow screen (was up to var(--gutter) 3rem) */
+  .plane--mirror .plane__grid,
+  .plane--story  .plane__grid { padding-left: 1rem; padding-right: 1rem; }
 }
 
 /* ================================================================= A11Y */

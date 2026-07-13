@@ -654,11 +654,23 @@ body.is-planed--mirror .stage { transform: translateX(8%) scale(0.985); }  /* pa
   .footer__inner { grid-template-columns: 1fr; }
   .plane__grid { grid-template-columns: 1fr; }
   .plane__media { position: static; transform: none; }
-  /* mirror planes: the .plane--mirror rules above out-specify the single-column
-     collapse, so restate them here (same specificity, later in source) to force
-     one column and drop the rightward nudge — otherwise they overflow on mobile */
-  .plane--mirror .plane__grid { grid-template-columns: 1fr; }
-  .plane--mirror .plane__media { transform: none; }
+  /* Mirror planes: restate the single-column collapse here (the .plane--mirror
+     rules ~477-479 out-specify the plain .plane__grid collapse above) AND splice
+     the hero chart in directly UNDER the title — not above everything, not below
+     everything (the old bug). .plane__head is nested inside .plane__content, so
+     promote the content's children into the grid (display:contents) and order
+     them: title, then chart, then the rest of the story. row-gap:0 lets the story
+     blocks' own margins stay the single source of vertical rhythm (blocks
+     self-cap at 56ch, so losing the content wrapper's 62ch max-width doesn't
+     matter). */
+  .plane--mirror .plane__grid { grid-template-columns: 1fr; row-gap: 0; }
+  .plane--mirror .plane__content { display: contents; }
+  /* min-width:0 mirrors line ~579: the content wrapper's box (which carried it)
+     is gone under display:contents, so restore it on the promoted children to
+     keep wide charts from forcing horizontal overflow */
+  .plane--mirror .plane__content > * { order: 3; min-width: 0; }   /* story body, below the chart */
+  .plane--mirror .plane__head { order: 1; }               /* title first */
+  .plane--mirror .plane__media { order: 2; transform: none; margin: 2rem 0; }  /* chart under the title */
   .plane__head { position: static; padding: 0 0 0.5rem; }
   .plane__head::after { display: none; }
   .ascii-panel { height: 320px; }

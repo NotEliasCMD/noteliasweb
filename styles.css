@@ -119,9 +119,17 @@ img { max-width: 100%; display: block; }
 .nav.is-scrolled { border-bottom-color: var(--line); }
 .nav__inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
 .nav__brand { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; }
-.nav__logo { font-size: 1.35rem; line-height: 1; }
-.nav__name { font-family: var(--font-mono); font-size: 1.05rem; letter-spacing: -0.02em; }
+.nav__logo { display: inline-flex; align-items: center; line-height: 1; color: var(--ink); }
+.nav__logo svg { width: 22px; height: 22px; display: block; }
+.nav__name { position: relative; display: inline-block; font-family: var(--font-mono); font-size: 1.05rem; letter-spacing: -0.02em; }
 .nav__dot { color: var(--peach-deep); }
+/* elias ⇄ saile easter egg: hover reflects the wordmark across a peach axis */
+.nav__axis { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--peach); opacity: 0; transition: opacity 0.3s var(--ease); pointer-events: none; }
+.nav__word { display: inline-block; transition: opacity 0.4s var(--ease), transform 0.4s var(--ease); }
+.nav__word--saile { position: absolute; left: 0; top: 0; opacity: 0; transform: translateX(8px); color: var(--peach-deep); }
+.nav__brand:hover .nav__word--elias, .footer__brand .nav__name:hover .nav__word--elias { opacity: 0; transform: translateX(-8px); }
+.nav__brand:hover .nav__word--saile, .footer__brand .nav__name:hover .nav__word--saile { opacity: 1; transform: translateX(0); }
+.nav__brand:hover .nav__axis, .footer__brand .nav__name:hover .nav__axis { opacity: 0.5; }
 .nav__links { display: flex; gap: 2rem; font-family: var(--font-mono); font-size: 0.85rem; }
 .nav__links a { position: relative; color: var(--ink-soft); transition: color 0.2s; }
 .nav__links a::after {
@@ -408,7 +416,8 @@ img { max-width: 100%; display: block; }
 .footer { background: var(--cream-alt); border-top: 1px solid var(--line); padding: 3.5rem 0 2rem; }
 .footer__inner { display: grid; grid-template-columns: 1.2fr 2fr; gap: 2.5rem; }
 .footer__brand { display: flex; flex-direction: column; gap: 0.4rem; }
-.footer__brand .nav__logo, .footer__brand .nav__name { display: inline; }
+.footer__brand .nav__logo { display: inline-flex; align-self: flex-start; }
+.footer__brand .nav__name { display: inline-block; align-self: flex-start; }
 .footer__tag { color: var(--muted); font-size: 0.92rem; margin-top: 0.5rem; }
 .footer__cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 .footer__col { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -715,4 +724,8 @@ body.is-planed--mirror .stage { transform: translateX(8%) scale(0.985); }  /* pa
   .cards--carousel { scroll-behavior: auto; }
   .plane__block[data-plane-reveal] { opacity: 1; transform: none; }
   body.is-planed .stage { transform: none; opacity: 1; }
+  /* keep the wordmark static — no saile flip on hover */
+  .nav__brand:hover .nav__word--elias, .footer__brand .nav__name:hover .nav__word--elias { opacity: 1; transform: none; }
+  .nav__brand:hover .nav__word--saile, .footer__brand .nav__name:hover .nav__word--saile { opacity: 0; }
+  .nav__brand:hover .nav__axis, .footer__brand .nav__name:hover .nav__axis { opacity: 0; }
 }

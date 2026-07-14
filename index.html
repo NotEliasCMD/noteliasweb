@@ -139,6 +139,11 @@
           <span class="marquee__item">dbt</span>
           <span class="marquee__item">Spark</span>
           <span class="marquee__item">XGBoost</span>
+          <span class="marquee__item">LightGBM</span>
+          <span class="marquee__item">GLM</span>
+          <span class="marquee__item">River</span>
+          <span class="marquee__item">imbalanced-learn</span>
+          <span class="marquee__item">NetworkX</span>
           <span class="marquee__item">Bayesian Inference</span>
           <span class="marquee__item">Causal ML</span>
           <span class="marquee__item">Airflow</span>
@@ -229,196 +234,163 @@
                 <span class="card__open" aria-hidden="true">View project →</span>
               </article>
 
-              <article class="card card--link" data-project="fraud" role="button" tabindex="0" aria-label="Open project: Sub-100ms fraud scoring">
+              <article class="card card--link" data-project="cpm" role="button" tabindex="0" aria-label="Open project: CPM pricing for US TV ads">
                 <div class="card__top">
-                  <span class="card__tag">Fraud · Real-time ML</span>
-                  <span class="card__year">2025</span>
-                </div>
-                <h3 class="card__title">Sub-100ms fraud scoring</h3>
-                <p class="card__body">
-                  Rebuilt a gradient-boosted scoring pipeline into a feature-store-backed
-                  real-time service. Held precision while cutting analyst review volume
-                  by 31%.
-                </p>
-                <ul class="card__meta">
-                  <li>XGBoost</li><li>Feast</li><li>gRPC</li>
-                </ul>
-                <span class="card__open" aria-hidden="true">View project →</span>
-              </article>
-
-              <article class="card card--link" data-project="forecast" role="button" tabindex="0" aria-label="Open project: Demand forecasting finance trusts">
-                <div class="card__top">
-                  <span class="card__tag">Forecasting · Bayesian</span>
+                  <span class="card__tag">AdTech · Pricing</span>
                   <span class="card__year">2024</span>
                 </div>
-                <h3 class="card__title">Demand forecasting finance trusts</h3>
+                <h3 class="card__title">CPM pricing for US TV ads</h3>
                 <p class="card__body">
-                  Hierarchical Bayesian model with proper uncertainty intervals,
-                  replacing a spreadsheet nobody could audit. MAPE down from 22% to 9%.
+                  Built a family of models that price expected CPM across the US
+                  cable-TV market — one per sub-region, because networks set ad
+                  inventory locally. Cleaned petabytes of messy impression data for
+                  10k+ channels; the first integration drove $2M in upsells.
                 </p>
                 <ul class="card__meta">
-                  <li>PyMC</li><li>Prophet</li><li>Polars</li>
+                  <li>PySpark</li><li>PyTorch</li><li>Seaborn</li>
                 </ul>
                 <span class="card__open" aria-hidden="true">View project →</span>
               </article>
 
-              <article class="card card--link" data-project="abtest" role="button" tabindex="0" aria-label="Open project: Self-serve A/B platform">
+              <article class="card card--link" data-project="auto-pricing" role="button" tabindex="0" aria-label="Open project: US auto insurance pricing model">
                 <div class="card__top">
-                  <span class="card__tag">Causal · Experimentation</span>
-                  <span class="card__year">2024</span>
-                </div>
-                <h3 class="card__title">Self-serve A/B platform</h3>
-                <p class="card__body">
-                  Designed a CUPED-accelerated experimentation layer and guardrail
-                  metrics so PMs could ship tests without a statistician on call.
-                </p>
-                <ul class="card__meta">
-                  <li>CUPED</li><li>dbt</li><li>Streamlit</li>
-                </ul>
-                <span class="card__open" aria-hidden="true">View project →</span>
-              </article>
-
-              <article class="card card--link" data-project="tickets" role="button" tabindex="0" aria-label="Open project: Structured extraction from support tickets">
-                <div class="card__top">
-                  <span class="card__tag">NLP · LLM</span>
-                  <span class="card__year">2023</span>
-                </div>
-                <h3 class="card__title">Structured extraction from support tickets</h3>
-                <p class="card__body">
-                  Constrained-decoding LLM pipeline that turns free-text tickets into
-                  a validated schema — 98% field accuracy, zero malformed JSON.
-                </p>
-                <ul class="card__meta">
-                  <li>Outlines</li><li>Pydantic</li><li>Airflow</li>
-                </ul>
-                <span class="card__open" aria-hidden="true">View project →</span>
-              </article>
-
-              <!-- ↓ mock placeholders — real copy to come; all share #plane-placeholder -->
-              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Churn propensity model">
-                <div class="card__top">
-                  <span class="card__tag">Retention · Classification</span>
-                  <span class="card__year">2023</span>
-                </div>
-                <h3 class="card__title">Churn propensity model</h3>
-                <p class="card__body">
-                  Placeholder — a survival-aware churn model that flags at-risk accounts
-                  weeks earlier, feeding a lifecycle-marketing playbook.
-                </p>
-                <ul class="card__meta">
-                  <li>LightGBM</li><li>SHAP</li><li>dbt</li>
-                </ul>
-                <span class="card__open" aria-hidden="true">View project →</span>
-              </article>
-
-              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Recommendation reranker">
-                <div class="card__top">
-                  <span class="card__tag">RecSys · Ranking</span>
+                  <span class="card__tag">Insurance · Pricing</span>
                   <span class="card__year">2022</span>
                 </div>
-                <h3 class="card__title">Recommendation reranker</h3>
+                <h3 class="card__title">US auto insurance pricing model</h3>
                 <p class="card__body">
-                  Placeholder — a learning-to-rank layer on top of candidate retrieval
-                  that lifted click-through without hurting diversity.
+                  Built the pricing model behind a US auto book — turning driver,
+                  vehicle and location signals into risk-adjusted premiums. Blended an
+                  interpretable GLM baseline with gradient-boosted lift to protect loss
+                  ratio while keeping quotes competitive.
                 </p>
                 <ul class="card__meta">
-                  <li>XGBoost</li><li>Faiss</li><li>Redis</li>
+                  <li>Python</li><li>XGBoost</li><li>GLM</li>
                 </ul>
                 <span class="card__open" aria-hidden="true">View project →</span>
               </article>
 
-              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: IoT anomaly detection">
+              <article class="card card--link" data-project="black-swan" role="button" tabindex="0" aria-label="Open project: Detecting black swans in specialty lines">
                 <div class="card__top">
-                  <span class="card__tag">Anomaly · Streaming</span>
+                  <span class="card__tag">Specialty · Tail Risk</span>
                   <span class="card__year">2022</span>
                 </div>
-                <h3 class="card__title">IoT anomaly detection</h3>
+                <h3 class="card__title">Detecting black swans in specialty lines</h3>
                 <p class="card__body">
-                  Placeholder — an unsupervised detector over sensor telemetry that
-                  catches equipment drift before it becomes downtime.
+                  Built a tail-risk detector for specialty-line insurance, where a
+                  handful of rare catastrophic losses decide whether the book is
+                  profitable. Extreme-value modeling plus classifiers tuned for the
+                  severe-but-rare class give underwriters an early-warning score.
                 </p>
                 <ul class="card__meta">
-                  <li>Isolation Forest</li><li>Kafka</li><li>Flink</li>
+                  <li>Python</li><li>SciPy</li><li>XGBoost</li>
                 </ul>
                 <span class="card__open" aria-hidden="true">View project →</span>
               </article>
 
-              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Customer segmentation">
+              <article class="card card--link" data-project="car-damage" role="button" tabindex="0" aria-label="Open project: Computer vision for write-off valuation">
                 <div class="card__top">
-                  <span class="card__tag">Clustering · Marketing</span>
+                  <span class="card__tag">Computer Vision · Claims</span>
                   <span class="card__year">2021</span>
                 </div>
-                <h3 class="card__title">Customer segmentation</h3>
+                <h3 class="card__title">Computer vision for write-off valuation</h3>
                 <p class="card__body">
-                  Placeholder — a behavioral clustering of the customer base that gave
-                  growth a shared, data-backed vocabulary for personas.
+                  Built a computer-vision system that assesses car damage from claim
+                  photos to decide write-off status — and the salvage value, since the
+                  insurer owns the car once the claim is paid. YOLO segmentation trained
+                  on a self-built gold-standard dataset paired with historical claims.
                 </p>
                 <ul class="card__meta">
-                  <li>K-Means</li><li>UMAP</li><li>Polars</li>
+                  <li>YOLO</li><li>PyTorch</li><li>OpenCV</li>
                 </ul>
                 <span class="card__open" aria-hidden="true">View project →</span>
               </article>
 
-              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Review topic modeling">
+              <article class="card card--link" data-project="propensity" role="button" tabindex="0" aria-label="Open project: Propensity-to-buy for auto insurance">
                 <div class="card__top">
-                  <span class="card__tag">NLP · Topics</span>
-                  <span class="card__year">2023</span>
-                </div>
-                <h3 class="card__title">Review topic modeling</h3>
-                <p class="card__body">
-                  Placeholder — an embedding-based topic pipeline that turns thousands of
-                  product reviews into a ranked list of what to fix.
-                </p>
-                <ul class="card__meta">
-                  <li>BERTopic</li><li>HDBSCAN</li><li>spaCy</li>
-                </ul>
-                <span class="card__open" aria-hidden="true">View project →</span>
-              </article>
-
-              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Price elasticity model">
-                <div class="card__top">
-                  <span class="card__tag">Causal · Pricing</span>
-                  <span class="card__year">2022</span>
-                </div>
-                <h3 class="card__title">Price elasticity model</h3>
-                <p class="card__body">
-                  Placeholder — a causal demand model that separates price effects from
-                  seasonality so pricing decisions rest on real elasticity.
-                </p>
-                <ul class="card__meta">
-                  <li>DoWhy</li><li>PyMC</li><li>Snowflake</li>
-                </ul>
-                <span class="card__open" aria-hidden="true">View project →</span>
-              </article>
-
-              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Visual QC classifier">
-                <div class="card__top">
-                  <span class="card__tag">Vision · Manufacturing</span>
+                  <span class="card__tag">Marketing · Propensity</span>
                   <span class="card__year">2021</span>
                 </div>
-                <h3 class="card__title">Visual QC classifier</h3>
+                <h3 class="card__title">Propensity-to-buy for auto insurance</h3>
                 <p class="card__body">
-                  Placeholder — a defect classifier on the production line that flags
-                  faulty units in real time and keeps a human in the loop.
+                  Built a calibrated propensity-to-buy model for auto insurance, scoring
+                  every prospect's likelihood to convert. Let marketing concentrate spend
+                  and quoting effort on high-intent leads instead of the whole funnel.
                 </p>
                 <ul class="card__meta">
-                  <li>PyTorch</li><li>ONNX</li><li>OpenCV</li>
+                  <li>LightGBM</li><li>scikit-learn</li><li>Python</li>
                 </ul>
                 <span class="card__open" aria-hidden="true">View project →</span>
               </article>
 
-              <article class="card card--link" data-project="placeholder" role="button" tabindex="0" aria-label="Open project: Streaming analytics dashboard">
+              <article class="card card--link" data-project="minim" role="button" tabindex="0" aria-label="Open project: Music recommendations for indie discovery">
                 <div class="card__top">
-                  <span class="card__tag">Analytics · Realtime</span>
-                  <span class="card__year">2023</span>
+                  <span class="card__tag">RecSys · Music Streaming</span>
+                  <span class="card__year">2020</span>
                 </div>
-                <h3 class="card__title">Streaming analytics dashboard</h3>
+                <h3 class="card__title">Music recommendations for indie discovery</h3>
                 <p class="card__body">
-                  Placeholder — a live metrics layer over event streams that gives ops a
-                  second-by-second read on what the business is doing.
+                  Built the recommendation engine for Minim, a streaming platform for
+                  the smaller artists Spotify couldn't monetize well. Lightweight,
+                  user-data-weighted models with online learning cross-pollinated
+                  fanbases to drive discovery and keep listeners engaged.
                 </p>
                 <ul class="card__meta">
-                  <li>Spark</li><li>Kafka</li><li>Streamlit</li>
+                  <li>Python</li><li>scikit-learn</li><li>River</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
+              <article class="card card--link" data-project="health-propensity" role="button" tabindex="0" aria-label="Open project: Propensity-to-buy for health insurance">
+                <div class="card__top">
+                  <span class="card__tag">Health · Propensity</span>
+                  <span class="card__year">2019</span>
+                </div>
+                <h3 class="card__title">Propensity-to-buy for health insurance</h3>
+                <p class="card__body">
+                  Built a calibrated propensity-to-buy model for health insurance using
+                  2019's state-of-the-art methods, ranking prospects by likelihood to
+                  enroll. Made a costly, heavily regulated acquisition channel measurably
+                  more efficient.
+                </p>
+                <ul class="card__meta">
+                  <li>Python</li><li>XGBoost</li><li>scikit-learn</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
+              <article class="card card--link" data-project="rare-disease" role="button" tabindex="0" aria-label="Open project: Detecting rare disease in health data">
+                <div class="card__top">
+                  <span class="card__tag">Healthcare · Rare Disease</span>
+                  <span class="card__year">2019</span>
+                </div>
+                <h3 class="card__title">Detecting rare disease in health data</h3>
+                <p class="card__body">
+                  Built a rare-disease screening model over health data, where positives
+                  are a needle in a haystack of hundreds of thousands of members.
+                  Imbalance-aware methods surface a ranked shortlist of at-risk patients
+                  for clinical follow-up.
+                </p>
+                <ul class="card__meta">
+                  <li>Python</li><li>XGBoost</li><li>imbalanced-learn</li>
+                </ul>
+                <span class="card__open" aria-hidden="true">View project →</span>
+              </article>
+
+              <article class="card card--link" data-project="health-fraud" role="button" tabindex="0" aria-label="Open project: Fraud detection for health claims">
+                <div class="card__top">
+                  <span class="card__tag">Healthcare · Fraud</span>
+                  <span class="card__year">2019</span>
+                </div>
+                <h3 class="card__title">Fraud detection for health claims</h3>
+                <p class="card__body">
+                  Built a health-claims fraud detection system combining supervised
+                  scoring with provider-network analysis. Gives investigators a
+                  prioritized queue of the claims and collusion clusters most worth
+                  their time.
+                </p>
+                <ul class="card__meta">
+                  <li>Python</li><li>XGBoost</li><li>NetworkX</li>
                 </ul>
                 <span class="card__open" aria-hidden="true">View project →</span>
               </article>
@@ -615,7 +587,8 @@
 
   <!-- ============================ PROJECT PLANES ============================ -->
   <!-- Each card in #work opens one of these. Slides in from the right; graphic
-       column is sticky, text blocks reveal on scroll. Copy is placeholder. -->
+       column is sticky, text blocks reveal on scroll. Each ASCII graphic is a
+       registered anim (data-anim); see the <script src="anim/*.js"> block. -->
   <div class="planes" id="planes">
 
     <!-- Agentic network triage (Facebook) -->
@@ -669,59 +642,8 @@
       </div>
     </article>
 
-    <!-- Fraud -->
-    <article class="plane" id="plane-fraud" data-anim="neuralnet" aria-hidden="true" aria-labelledby="plane-fraud-title" hidden>
-      <div class="plane__bar">
-        <div class="container plane__bar-inner">
-          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
-          <div class="plane__bar-nav">
-            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
-            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
-            <span class="plane__crumb">Selected work · 2025</span>
-          </div>
-        </div>
-      </div>
-      <div class="container plane__grid">
-        <div class="plane__media">
-          <div class="ascii-panel">
-            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
-          </div>
-        </div>
-        <div class="plane__content">
-          <div class="plane__head">
-            <p class="plane__tag">Fraud · Real-time ML</p>
-            <h1 class="plane__title" id="plane-fraud-title"><span class="hl" data-plane-type>Sub-100ms fraud scoring</span></h1>
-            <ul class="card__meta plane__meta">
-              <li>XGBoost</li><li>Feast</li><li>gRPC</li>
-            </ul>
-          </div>
-          <div class="plane__block" data-plane-reveal>
-            <h2>The problem</h2>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
-          </div>
-          <div class="plane__block" data-plane-reveal>
-            <h2>Approach</h2>
-            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
-          </div>
-          <div class="plane__block" data-plane-reveal>
-            <h2>What I built</h2>
-            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto.</p>
-            <ul class="plane__list">
-              <li>Feature-store-backed real-time scoring service</li>
-              <li>Gradient-boosted model with monotonic constraints</li>
-              <li>Shadow deployment and gradual traffic ramp</li>
-            </ul>
-          </div>
-          <div class="plane__block" data-plane-reveal>
-            <h2>Outcome</h2>
-            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam.</p>
-          </div>
-        </div>
-      </div>
-    </article>
-
-    <!-- Forecasting -->
-    <article class="plane" id="plane-forecast" data-anim="candlestick" aria-hidden="true" aria-labelledby="plane-forecast-title" hidden>
+    <!-- US TV advertising CPM pricing -->
+    <article class="plane" id="plane-cpm" data-anim="crttv" aria-hidden="true" aria-labelledby="plane-cpm-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
           <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
@@ -740,46 +662,46 @@
         </div>
         <div class="plane__content">
           <div class="plane__head">
-            <p class="plane__tag">Forecasting · Bayesian</p>
-            <h1 class="plane__title" id="plane-forecast-title"><span class="hl" data-plane-type>Demand forecasting finance trusts</span></h1>
+            <p class="plane__tag">AdTech · Pricing</p>
+            <h1 class="plane__title" id="plane-cpm-title"><span class="hl" data-plane-type>CPM pricing for US TV ads</span></h1>
             <ul class="card__meta plane__meta">
-              <li>PyMC</li><li>Prophet</li><li>Polars</li>
+              <li>PySpark</li><li>PyTorch</li><li>Seaborn</li>
             </ul>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>The problem</h2>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+            <p>A single CPM model can't price US TV advertising: every state splits into sub-regions, and networks set their own inventory and audiences in each. Pricing them uniformly left real money on the table at upsell time and produced rate cards nobody trusted.</p>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>Approach</h2>
-            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+            <p>I pulled petabytes of user-interaction and impression data spanning 10k+ channels on the US cable network, then built a cleaning and validation layer over dozens of dirty, unstructured feeds. On top of that I trained region-specific, state-of-the-art models for CPM prediction, backtested against historical spend.</p>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>What I built</h2>
-            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto.</p>
+            <p>A per-region CPM pricing system — ingest, clean, validate, predict — that plugs directly into the ad-sales platform.</p>
             <ul class="plane__list">
-              <li>Hierarchical Bayesian model with partial pooling</li>
-              <li>Calibrated uncertainty intervals finance could plan against</li>
-              <li>Automated backtesting and drift monitoring</li>
+              <li>Ingestion cleaning tens of dirty impression feeds</li>
+              <li>Region-specific CPM models across 10k+ channels</li>
+              <li>Historical backtesting that validates every estimate</li>
             </ul>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>Outcome</h2>
-            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam.</p>
+            <p>The first integration delivered $2M immediately through smarter upsell pricing. Sales teams finally had per-region CPM estimates they could quote with confidence, instead of one blunt national number that fit no market well.</p>
           </div>
         </div>
       </div>
     </article>
 
-    <!-- A/B platform -->
-    <article class="plane" id="plane-abtest" data-anim="barchart" aria-hidden="true" aria-labelledby="plane-abtest-title" hidden>
+    <!-- Auto insurance pricing (Liberty) -->
+    <article class="plane" id="plane-auto-pricing" data-anim="actuarial" aria-hidden="true" aria-labelledby="plane-auto-pricing-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
           <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
           <div class="plane__bar-nav">
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
-            <span class="plane__crumb">Selected work · 2024</span>
+            <span class="plane__crumb">Selected work · 2022</span>
           </div>
         </div>
       </div>
@@ -791,46 +713,46 @@
         </div>
         <div class="plane__content">
           <div class="plane__head">
-            <p class="plane__tag">Causal · Experimentation</p>
-            <h1 class="plane__title" id="plane-abtest-title"><span class="hl" data-plane-type>Self-serve A/B platform</span></h1>
+            <p class="plane__tag">Insurance · Pricing</p>
+            <h1 class="plane__title" id="plane-auto-pricing-title"><span class="hl" data-plane-type>US auto insurance pricing model</span></h1>
             <ul class="card__meta plane__meta">
-              <li>CUPED</li><li>dbt</li><li>Streamlit</li>
+              <li>Python</li><li>XGBoost</li><li>GLM</li>
             </ul>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>The problem</h2>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+            <p>Pricing US auto insurance means setting a premium that covers expected losses without pricing yourself out of a fiercely competitive market. Rate the risk too high and you lose the customer; too low and the book bleeds on claims.</p>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>Approach</h2>
-            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+            <p>I engineered features from driver history, vehicle characteristics and geography, then modeled expected claim frequency and severity. I blended a transparent GLM baseline the actuaries could reason about with gradient-boosted models that captured the non-linear interactions, calibrated against years of historical loss experience.</p>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>What I built</h2>
-            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto.</p>
+            <p>A production pricing model that scores expected loss cost per policy and feeds the rating engine.</p>
             <ul class="plane__list">
-              <li>CUPED variance reduction baked into the pipeline</li>
-              <li>Guardrail metrics and automated significance checks</li>
-              <li>Self-serve UI so PMs ship tests without a statistician</li>
+              <li>Frequency and severity models on historical losses</li>
+              <li>GLM baseline paired with gradient-boosted lift</li>
+              <li>Calibration keeping premiums competitive and adequate</li>
             </ul>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>Outcome</h2>
-            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam.</p>
+            <p>Pricing moved from flat rating tables to per-policy risk cost, tightening premiums to actual risk so the book could grow without underpricing it. Actuaries kept an interpretable baseline they could defend to regulators, with the ML layer adding accuracy where it mattered.</p>
           </div>
         </div>
       </div>
     </article>
 
-    <!-- Ticket extraction -->
-    <article class="plane" id="plane-tickets" data-anim="attention" aria-hidden="true" aria-labelledby="plane-tickets-title" hidden>
+    <!-- Specialty-line black-swan detection (Liberty) -->
+    <article class="plane" id="plane-black-swan" data-anim="riskcurve" aria-hidden="true" aria-labelledby="plane-black-swan-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
           <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
           <div class="plane__bar-nav">
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
-            <span class="plane__crumb">Selected work · 2023</span>
+            <span class="plane__crumb">Selected work · 2022</span>
           </div>
         </div>
       </div>
@@ -842,47 +764,46 @@
         </div>
         <div class="plane__content">
           <div class="plane__head">
-            <p class="plane__tag">NLP · LLM</p>
-            <h1 class="plane__title" id="plane-tickets-title"><span class="hl" data-plane-type>Structured extraction from support tickets</span></h1>
+            <p class="plane__tag">Specialty · Tail Risk</p>
+            <h1 class="plane__title" id="plane-black-swan-title"><span class="hl" data-plane-type>Detecting black swans in specialty lines</span></h1>
             <ul class="card__meta plane__meta">
-              <li>Outlines</li><li>Pydantic</li><li>Airflow</li>
+              <li>Python</li><li>SciPy</li><li>XGBoost</li>
             </ul>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>The problem</h2>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+            <p>Specialty lines are dominated by rare, catastrophic losses — the black swans that barely appear in the data but decide whether the book is profitable. Models trained to fit the common case are blind to exactly the tail that matters most.</p>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>Approach</h2>
-            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+            <p>I focused on the tail rather than the mean: extreme-value analysis of historical loss distributions, plus features that flag the early conditions preceding large losses. I paired that with gradient-boosted classifiers tuned for the severe-but-rare class instead of overall accuracy.</p>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>What I built</h2>
-            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto.</p>
+            <p>A tail-risk detection layer that scores specialty exposures for black-swan potential before binding.</p>
             <ul class="plane__list">
-              <li>Constrained decoding to a validated schema</li>
-              <li>Pydantic models as the single source of truth</li>
-              <li>Zero malformed JSON, 98% field accuracy</li>
+              <li>Extreme-value modeling of historical loss tails</li>
+              <li>Features surfacing early signals of severe losses</li>
+              <li>Classifiers tuned for the rare severe class</li>
             </ul>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>Outcome</h2>
-            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam.</p>
+            <p>Underwriters gained an early-warning score on the exposures most likely to blow up the book, shifting attention from routine risks to the handful of accounts carrying genuine tail danger — where a single missed black swan outweighs hundreds of ordinary policies.</p>
           </div>
         </div>
       </div>
     </article>
 
-    <!-- Shared placeholder — every mock card (data-project="placeholder") opens this.
-         Its tag/title/crumb are populated from the clicked card in script.js. -->
-    <article class="plane" id="plane-placeholder" data-anim="topology" aria-hidden="true" aria-labelledby="plane-placeholder-title" hidden>
+    <!-- Car-damage computer vision (Liberty) -->
+    <article class="plane" id="plane-car-damage" data-anim="neuralnet" aria-hidden="true" aria-labelledby="plane-car-damage-title" hidden>
       <div class="plane__bar">
         <div class="container plane__bar-inner">
           <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
           <div class="plane__bar-nav">
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
             <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
-            <span class="plane__crumb">Selected work</span>
+            <span class="plane__crumb">Selected work · 2021</span>
           </div>
         </div>
       </div>
@@ -894,29 +815,287 @@
         </div>
         <div class="plane__content">
           <div class="plane__head">
-            <p class="plane__tag">Selected work</p>
-            <h1 class="plane__title" id="plane-placeholder-title"><span class="hl" data-plane-type>Project write-up</span></h1>
+            <p class="plane__tag">Computer Vision · Claims</p>
+            <h1 class="plane__title" id="plane-car-damage-title"><span class="hl" data-plane-type>Computer vision for write-off valuation</span></h1>
+            <ul class="card__meta plane__meta">
+              <li>YOLO</li><li>PyTorch</li><li>OpenCV</li>
+            </ul>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>The problem</h2>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+            <p>When a car is written off, the insurer owns it and needs to value the salvage accurately — but damage assessment was manual, slow and inconsistent. Getting the write-off decision or the residual value wrong costs money on every claim.</p>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>Approach</h2>
-            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+            <p>I built a gold-standard labeled dataset by hand and paired it with historical claims outcomes, then trained YOLO-based object-segmentation models to localize and grade damage from photos. OpenCV handled preprocessing, and the model output fed a valuation step weighing repair cost against the vehicle's worth.</p>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>What I built</h2>
-            <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto.</p>
+            <p>An image-to-decision pipeline that segments damage, flags likely write-offs, and estimates salvage value.</p>
             <ul class="plane__list">
-              <li>Placeholder detail — real write-up to come</li>
-              <li>Reproducible pipeline with tests and monitoring</li>
-              <li>Shipped behind a gradual rollout</li>
+              <li>Hand-built gold-standard damage dataset</li>
+              <li>YOLO segmentation locating and grading damage</li>
+              <li>Valuation pairing damage with historical claims</li>
             </ul>
           </div>
           <div class="plane__block" data-plane-reveal>
             <h2>Outcome</h2>
-            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam.</p>
+            <p>Damage assessment moved from manual inspection to an automated, consistent estimate of write-off status and salvage value, giving adjusters a repeatable second opinion grounded in both the images and years of historical claim outcomes.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Propensity-to-buy, auto insurance (Liberty) -->
+    <article class="plane" id="plane-propensity" data-anim="scatterplot" aria-hidden="true" aria-labelledby="plane-propensity-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Selected work · 2021</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ascii-panel">
+            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Marketing · Propensity</p>
+            <h1 class="plane__title" id="plane-propensity-title"><span class="hl" data-plane-type>Propensity-to-buy for auto insurance</span></h1>
+            <ul class="card__meta plane__meta">
+              <li>LightGBM</li><li>scikit-learn</li><li>Python</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The problem</h2>
+            <p>Marketing spend on auto insurance was spread thin across every prospect, most of whom would never convert. Without a way to rank who was actually likely to buy, acquisition budget chased low-intent leads and quoting capacity was wasted.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Approach</h2>
+            <p>I framed it as a binary propensity problem, engineering features from prospect demographics, quote behavior and prior interactions. I trained gradient-boosted classifiers, calibrated the probabilities so scores mapped to real conversion likelihood, and validated on held-out cohorts.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What I built</h2>
+            <p>A propensity model that scores every prospect's likelihood to buy and ranks them for outreach.</p>
+            <ul class="plane__list">
+              <li>Calibrated gradient-boosted propensity classifier</li>
+              <li>Features from quote behavior and demographics</li>
+              <li>Ranked lead lists feeding marketing outreach</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Outcome</h2>
+            <p>Marketing could concentrate spend and quoting effort on high-propensity prospects instead of the whole funnel, lifting conversion efficiency by targeting the people most likely to buy rather than treating every lead the same.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Minim indie music recommendations -->
+    <article class="plane" id="plane-minim" data-anim="equalizer" aria-hidden="true" aria-labelledby="plane-minim-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Selected work · 2020</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ascii-panel">
+            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">RecSys · Music Streaming</p>
+            <h1 class="plane__title" id="plane-minim-title"><span class="hl" data-plane-type>Music recommendations for indie discovery</span></h1>
+            <ul class="card__meta plane__meta">
+              <li>Python</li><li>scikit-learn</li><li>River</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The problem</h2>
+            <p>Minim's whole premise was surfacing the small artists Spotify treated as an afterthought — but small catalogs mean sparse data, so conventional recommenders that lean on massive play histories had nothing to work with. Without good recommendations, listeners didn't discover new bands and engagement stalled.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Approach</h2>
+            <p>I built deliberately lightweight models that lean on user behavior rather than catalog scale, so they work with limited data. Online-learning methods let the recommender update continuously as the user base grew, and the design explicitly favored cross-pollination — connecting fans of one small artist to adjacent ones.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What I built</h2>
+            <p>A recommendation engine tuned for a small-catalog, small-audience platform, learning online as listeners arrived.</p>
+            <ul class="plane__list">
+              <li>Lightweight models weighted toward user signals</li>
+              <li>Online learning that evolves with the user base</li>
+              <li>Cross-pollination linking adjacent artist fanbases</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Outcome</h2>
+            <p>Listeners kept discovering new small artists instead of hitting a dead end, driving the continued engagement Minim depended on — and giving emerging bands a route to fans that a big platform's popularity bias would never have surfaced.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Propensity-to-buy, health insurance -->
+    <article class="plane" id="plane-health-propensity" data-anim="barchart" aria-hidden="true" aria-labelledby="plane-health-propensity-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Selected work · 2019</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ascii-panel">
+            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Health · Propensity</p>
+            <h1 class="plane__title" id="plane-health-propensity-title"><span class="hl" data-plane-type>Propensity-to-buy for health insurance</span></h1>
+            <ul class="card__meta plane__meta">
+              <li>Python</li><li>XGBoost</li><li>scikit-learn</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The problem</h2>
+            <p>Health-insurance acquisition is expensive and heavily regulated, and blanket outreach wastes spend on prospects who won't enroll. The business needed to know who was genuinely likely to buy a plan before committing marketing dollars.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Approach</h2>
+            <p>Using the state-of-the-art methods of 2019, I built gradient-boosted propensity models over prospect and demographic features, calibrated to output trustworthy purchase probabilities. I validated on held-out cohorts and checked the model behaved sensibly across the segments that mattered.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What I built</h2>
+            <p>A calibrated propensity model ranking prospects by likelihood to enroll in a health plan.</p>
+            <ul class="plane__list">
+              <li>Gradient-boosted purchase-propensity classifier</li>
+              <li>Calibrated probabilities across prospect segments</li>
+              <li>Ranked lists directing acquisition spend</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Outcome</h2>
+            <p>Acquisition focused on the prospects most likely to enroll, making a costly, regulated marketing channel measurably more efficient and giving the team a defensible way to prioritize outreach.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Rare-disease detection (health) -->
+    <article class="plane" id="plane-rare-disease" data-anim="thermometer" aria-hidden="true" aria-labelledby="plane-rare-disease-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Selected work · 2019</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ascii-panel">
+            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Healthcare · Rare Disease</p>
+            <h1 class="plane__title" id="plane-rare-disease-title"><span class="hl" data-plane-type>Detecting rare disease in health data</span></h1>
+            <ul class="card__meta plane__meta">
+              <li>Python</li><li>XGBoost</li><li>imbalanced-learn</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The problem</h2>
+            <p>Rare diseases are, by definition, almost absent from the data — a few positive cases hidden among hundreds of thousands of members. That extreme imbalance defeats models optimized for accuracy, which learn to predict "healthy" every time and miss the patients who need attention most.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Approach</h2>
+            <p>I treated it as a rare-event detection problem: resampling and class-weighting to counter the imbalance, features drawn from claims and clinical history, and evaluation on positive-class precision and recall rather than raw accuracy. All built on 2019's state-of-the-art gradient-boosting and sampling techniques.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What I built</h2>
+            <p>A screening model that flags members whose patterns match a rare-disease signature for clinical follow-up.</p>
+            <ul class="plane__list">
+              <li>Imbalance handling via resampling and class weights</li>
+              <li>Claims and clinical-history feature engineering</li>
+              <li>Evaluation focused on rare positive-class recall</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Outcome</h2>
+            <p>The model surfaced a shortlist of at-risk members from a population where the condition was vanishingly rare, turning an impossible manual search into a ranked list clinicians could actually review — catching candidates that accuracy-driven models silently ignore.</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Health-claims fraud detection -->
+    <article class="plane" id="plane-health-fraud" data-anim="topology" aria-hidden="true" aria-labelledby="plane-health-fraud-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <button class="plane__back btn btn--ghost" type="button">← Back to work</button>
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <span class="plane__crumb">Selected work · 2019</span>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ascii-panel">
+            <pre class="ascii-screen" data-anim-target aria-hidden="true"></pre>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Healthcare · Fraud</p>
+            <h1 class="plane__title" id="plane-health-fraud-title"><span class="hl" data-plane-type>Fraud detection for health claims</span></h1>
+            <ul class="card__meta plane__meta">
+              <li>Python</li><li>XGBoost</li><li>NetworkX</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The problem</h2>
+            <p>Health-insurance fraud drains money quietly — inflated claims, phantom services, collusion between providers — and it hides in a tiny fraction of an enormous claim stream. Manual investigation can only sample; most of it goes unexamined.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Approach</h2>
+            <p>I combined supervised gradient-boosted models on labeled fraud with anomaly and network analysis to catch patterns rules miss — linking providers, members and claims to expose suspicious clusters. Built with 2019's state-of-the-art techniques and tuned to rank cases by investigative value.</p>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>What I built</h2>
+            <p>A claims-fraud scoring system that ranks the highest-risk claims and provider networks for investigators.</p>
+            <ul class="plane__list">
+              <li>Supervised models scoring individual claims</li>
+              <li>Network analysis exposing collusion clusters</li>
+              <li>Ranked case queue prioritizing investigator time</li>
+            </ul>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Outcome</h2>
+            <p>Investigators got a prioritized queue focused on the claims and provider rings most likely to be fraudulent, concentrating limited capacity where recoveries were largest instead of sampling blindly across millions of claims.</p>
           </div>
         </div>
       </div>
@@ -1637,6 +1816,12 @@
   <script src="anim/attention.js"></script>
   <script src="anim/topology.js"></script>
   <script src="anim/plasma.js"></script>
+  <script src="anim/crttv.js"></script>
+  <script src="anim/actuarial.js"></script>
+  <script src="anim/riskcurve.js"></script>
+  <script src="anim/scatterplot.js"></script>
+  <script src="anim/equalizer.js"></script>
+  <script src="anim/thermometer.js"></script>
   <script src="script.js"></script>
 
   <!-- Personal-works data stories: DS_SIDE data modules, then the chart toolkit -->

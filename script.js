@@ -670,7 +670,7 @@
     }
 
     // clear a plane's reveal state so its blocks animate fresh the next time it
-    // is shown (matters most for the shared placeholder, revisited with new copy)
+    // is shown
     function resetReveals(plane) {
       if (observers[plane.id]) { observers[plane.id].disconnect(); delete observers[plane.id]; }
       $$("[data-plane-reveal]", plane).forEach((b) => b.classList.remove("is-in"));
@@ -691,25 +691,12 @@
         .map((c) => document.getElementById("plane-" + c.dataset.project))
         .filter(Boolean))];
 
-      // Show a plane (no active-plane guard): borrow content for the shared
-      // placeholder, slide it in, (re)start its animation, reset + reveal its
-      // blocks, re-type the title, track it active. Reused by openPlane + navigateTo.
+      // Show a plane (no active-plane guard): slide it in, (re)start its
+      // animation, reset + reveal its blocks, re-type the title, track it
+      // active. Reused by openPlane + navigateTo.
       function showPlane(plane, card) {
         lastCard = card || document.activeElement;
         activePlane = plane;
-
-        // the shared placeholder plane borrows the card's title/tag/year
-        if (card && plane.id === "plane-placeholder") {
-          const t = $("[data-plane-type]", plane);
-          if (t) {
-            t.dataset.text = $(".card__title", card).textContent.trim();
-            t.textContent = reduceMotion ? t.dataset.text : "";
-          }
-          const tag = $(".plane__tag", plane);
-          const crumb = $(".plane__crumb", plane);
-          if (tag) tag.textContent = $(".card__tag", card).textContent;
-          if (crumb) crumb.textContent = "Selected work · " + $(".card__year", card).textContent;
-        }
 
         document.body.classList.add("is-planed");
         if (mirror) document.body.classList.add("is-planed--mirror");
@@ -802,29 +789,16 @@
       // opaque), so the dimmed main page is never revealed — a seamless plane-to-plane
       // hop. body.is-planed stays on throughout. "next" enters from the group's
       // resting side, "prev" from the opposite side (mirrored for the mirror group).
-      // The 8 placeholder cards share ONE element, so a placeholder→placeholder hop
-      // crossfades its content in place instead of sliding.
+      // Every card maps to its own plane, so a hop always slides a distinct plane in.
       function navigateTo(dir) {
         if (!activePlane || navigating) return;
         const i = cards.indexOf(lastCard);
         if (i === -1) return;
         const targetCard = cards[(i + dir + cards.length) % cards.length];
         const targetPlane = document.getElementById("plane-" + targetCard.dataset.project);
-        if (!targetPlane) return;
+        if (!targetPlane || targetPlane === activePlane) return;
         const current = activePlane;
         navigating = true;
-
-        if (targetPlane === current) {
-          if (reduceMotion) { showPlane(current, targetCard); navigating = false; return; }
-          current.classList.add("is-swapping");            // fade content out
-          setTimeout(() => {
-            showPlane(current, targetCard);                // swap borrowed content while faded
-            current.classList.remove("is-swapping");       // fade back in
-            focusNav(current, dir);
-            setTimeout(() => { navigating = false; }, 320);
-          }, 300);
-          return;
-        }
 
         targetPlane.classList.add("plane--incoming");            // above the outgoing plane
         // "prev" enters from the side opposite the group's resting edge

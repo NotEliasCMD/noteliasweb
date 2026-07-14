@@ -477,10 +477,6 @@ body.is-planed .stage {
    from the left instead of the right. */
 .plane--incoming { z-index: 90; }
 .plane--from-left { transform: translateX(-100%); }
-/* the 8 placeholder cards share ONE plane element, so a placeholder→placeholder
-   hop can't slide over itself — crossfade its content in place instead. */
-.plane__grid { transition: opacity 0.3s var(--ease); }
-.plane.is-swapping .plane__grid { opacity: 0; }
 
 /* --- mirror variant (personal-works planes) ---
    A horizontal mirror of the work planes: the detail view slides in from the

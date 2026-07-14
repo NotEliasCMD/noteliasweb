@@ -278,9 +278,8 @@ Line ranges below are approximate anchors as of this writing.
     they mount no plugin; see §12a.)
   - **Closer:** `plasma` (§10).
   - **Library spares** (registered + gallery-shown but not mounted by the shipped
-    site, ready to drop into a plane/closer): `actuarial`, `riskcurve`, `losscurve`,
-    `scatterplot`, `thermometer`, `equalizer`, `motherboard`, `cube`, plus the legacy
-    `dna`. These are **intentionally kept** as a palette, not dead code.
+    site, ready to drop into a plane/closer): `riskcurve`. Kept **intentionally**
+    as a palette, not dead code.
     The gallery (`components.html` §11) builds its ASCII grid from
     `ASCII.animations`, so they surface there automatically; the shipped site
     never loads them.

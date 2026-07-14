@@ -1102,6 +1102,171 @@
       replay: function () { drawTo(0); run(); } };
   };
 
+  /* ---- board3d (09 chess: HERO animated 3D board-visitation terrain) -------
+     data.boardPhases = { files:[a..h], ranks:[1..8], phases:[g0,g1,g2] } where
+     each gN is an 8x8 grid (ranks 1..8 rows x files a..h cols) of raw landing
+     counts for the opening / middlegame / endgame. This is the SVG+JS twin of
+     the report's board_visits.gif: 64 bars projected in dimetric 3D, whose
+     terrain BUILDS phase by phase (centre first, then spreads to the wings)
+     while the board slowly rotates, then holds on the full terrain. Colours
+     come from the sequential ramp so it flips with the host's dark theme. */
+  R.board3d = function (host, fig, data) {
+    var bp = data.boardPhases, P = bp.phases;                // P[0..2] = 8x8 grids
+    var N = 8, s = 0.46;                                      // grid size, bar half-footprint
+    // cumulative grids: opening -> +middlegame -> +endgame
+    function addGrid(a, b) { return a.map(function (row, i) {
+      return row.map(function (v, j) { return v + b[i][j]; }); }); }
+    var C0 = P[0], C1 = addGrid(C0, P[1]), C2 = addGrid(C1, P[2]);
+    var total = 0; C2.forEach(function (r) { r.forEach(function (v) { total += v; }); });
+    function per1k(g) { return g.map(function (r) { return r.map(function (v) { return v / total * 1000; }); }); }
+    var Z0 = per1k(C0), Z1 = per1k(C1), Z2 = per1k(C2);
+    var zmaxC = 0; Z2.forEach(function (r) { r.forEach(function (v) { if (v > zmaxC) zmaxC = v; }); });
+    var zmax = zmaxC * 1.05;
+    // interpolated height (per-1,000) at animation time t in [0,1] — matches the
+    // GIF's frame_z: three linear segments across the three phases.
+    function heightAt(i, j, t) {
+      var p = t * 3;
+      if (p <= 1) return Z0[i][j] * p;
+      if (p <= 2) return Z0[i][j] + (Z1[i][j] - Z0[i][j]) * (p - 1);
+      return Z1[i][j] + (Z2[i][j] - Z1[i][j]) * Math.min(1, p - 2);
+    }
+
+    var W = 700, H = 540, CX = 350, CY = 336, SX = 40, SY = 20, MAXH = 168;
+    var svg = E("svg", { viewBox: "0 0 " + W + " " + H, role: "img",
+                         preserveAspectRatio: "xMidYMid meet" });
+    var gBoard = E("g"); svg.appendChild(gBoard);
+    var phaseTxt = T(20, 34, "", "ds-callout", { "font-size": 15 });
+    var subTxt = T(20, 52, "", "ds-tick", { "font-size": 11 });
+    svg.appendChild(phaseTxt); svg.appendChild(subTxt);
+    var ttl = E("title"); ttl.textContent = "Board-visitation terrain, built phase by phase";
+    svg.insertBefore(ttl, svg.firstChild);
+    svg.appendChild(E("desc", {}, [document.createTextNode(
+      "3D bar terrain of how often each of the 64 squares is landed on across " +
+      "~2,000 champion games; the d/e-file centre dominates.")]));
+
+    var seq = seqStops();
+    function darken(rgb, f) { return [Math.round(rgb[0] * f), Math.round(rgb[1] * f), Math.round(rgb[2] * f)]; }
+    var CORN = [[-s, -s], [s, -s], [s, s], [-s, s]];
+    // one reusable <g> per cell: floor tile + two side faces + top face
+    var cells = [];
+    for (var i = 0; i < N; i++) for (var j = 0; j < N; j++) {
+      var g = E("g");
+      var floor = E("polygon", { "fill-opacity": ((i + j) % 2 ? 0.10 : 0.04) });
+      var faceL = E("polygon", {}), faceR = E("polygon", {}), top = E("polygon", {});
+      g.appendChild(floor); g.appendChild(faceR); g.appendChild(faceL); g.appendChild(top);
+      gBoard.appendChild(g);
+      cells.push({ i: i, j: j, g: g, floor: floor, faceL: faceL, faceR: faceR, top: top });
+    }
+
+    // board-coordinate labels (files a–h, ranks 1–8) — overlaid above the bars,
+    // repositioned each frame so they orbit with the rotating board.
+    var gLabels = E("g"); svg.appendChild(gLabels);
+    var fileLabels = [], rankLabels = [];
+    for (var lj = 0; lj < N; lj++) {
+      var tf = T(0, 0, bp.files[lj], "ds-tick", { "text-anchor": "middle", "font-size": 11 });
+      gLabels.appendChild(tf); fileLabels.push(tf);
+    }
+    for (var li = 0; li < N; li++) {
+      var tr = T(0, 0, String(bp.ranks[li]), "ds-tick", { "text-anchor": "middle", "font-size": 11 });
+      gLabels.appendChild(tr); rankLabels.push(tr);
+    }
+    // fade labels by depth so ones that rotate to the back recede behind the terrain
+    function depthOpacity(y) { return Math.max(0.15, Math.min(1, 0.2 + 0.8 * ((y - CY + 150) / 300))); }
+
+    function pts(a) { return a.map(function (p) { return p[0].toFixed(1) + "," + p[1].toFixed(1); }).join(" "); }
+    var PHASE = ["Opening", "+ Middlegame", "+ Endgame"];
+    var PHASE_SUB = ["moves 1–12 · the centre first", "moves 13–30 · spreading out", "moves 31+ · to the wings"];
+
+    // hp = build/height progress in [0,1]; ang = rotation angle (radians).
+    // Rotation is decoupled from the build so the board can keep turning after
+    // the terrain is full.
+    function draw(hp, ang) {
+      var co = Math.cos(ang), si = Math.sin(ang);
+      function proj(fx, fy, hpx) {
+        var u = fx - (N - 1) / 2, v = fy - (N - 1) / 2;
+        var ru = u * co - v * si, rv = u * si + v * co;
+        return [CX + (ru - rv) * SX, CY + (ru + rv) * SY - hpx];
+      }
+      var order = [];
+      cells.forEach(function (c) {
+        var z = heightAt(c.i, c.j, hp);
+        var hpx = z / zmax * MAXH;
+        var bc = CORN.map(function (d) { return proj(c.j + d[0], c.i + d[1], 0); });
+        var tc = CORN.map(function (d) { return proj(c.j + d[0], c.i + d[1], hpx); });
+        // front corner = max screen-Y at the base; its two edges face the viewer
+        var F = 0; for (var k = 1; k < 4; k++) if (bc[k][1] > bc[F][1]) F = k;
+        var R1 = (F + 1) % 4, L1 = (F + 3) % 4;
+        var norm = Math.max(0, Math.min(1, z / (zmaxC || 1)));
+        var topRgb = rampAt(seq, 0.15 + 0.85 * norm);
+        c.floor.setAttribute("points", pts(bc));
+        c.floor.setAttribute("fill", rgbCss(rampAt(seq, 0.5)));
+        c.faceR.setAttribute("points", pts([bc[F], bc[R1], tc[R1], tc[F]]));
+        c.faceR.setAttribute("fill", rgbCss(darken(topRgb, 0.78)));
+        c.faceL.setAttribute("points", pts([bc[F], bc[L1], tc[L1], tc[F]]));
+        c.faceL.setAttribute("fill", rgbCss(darken(topRgb, 0.6)));
+        c.top.setAttribute("points", pts(tc));
+        c.top.setAttribute("fill", rgbCss(topRgb));
+        c.top.setAttribute("stroke", "var(--ds-panel, rgba(255,255,255,0.15))");
+        c.top.setAttribute("stroke-width", "0.4");
+        order.push({ g: c.g, y: proj(c.j, c.i, 0)[1] });
+      });
+      order.sort(function (a, b) { return a.y - b.y; });        // back (small Y) first
+      order.forEach(function (o) { gBoard.appendChild(o.g); });  // painter's restack
+      // labels sit just outside the footprint at floor level and orbit with ang
+      fileLabels.forEach(function (t1, j) {
+        var p = proj(j, 7.85, 0);
+        t1.setAttribute("x", p[0].toFixed(1)); t1.setAttribute("y", (p[1] + 4).toFixed(1));
+        t1.setAttribute("opacity", depthOpacity(p[1]).toFixed(2));
+      });
+      rankLabels.forEach(function (t2, i) {
+        var p = proj(7.85, i, 0);
+        t2.setAttribute("x", p[0].toFixed(1)); t2.setAttribute("y", (p[1] + 4).toFixed(1));
+        t2.setAttribute("opacity", depthOpacity(p[1]).toFixed(2));
+      });
+      var pi = hp < 1 / 3 ? 0 : (hp < 2 / 3 ? 1 : 2);
+      phaseTxt.textContent = PHASE[pi];
+      subTxt.textContent = PHASE_SUB[pi];
+    }
+
+    host.appendChild(svg);
+    // Continuous animation: the terrain builds over BUILD ms, then the board
+    // keeps rotating indefinitely (ANG0 + OMEGA*elapsed). An elapsed accumulator
+    // lets us pause/resume (off-screen) without a jump. Background tabs already
+    // throttle rAF, so an IntersectionObserver is enough to stop wasted work.
+    var BUILD = 5200, ANG0 = -0.42, OMEGA = 2 * Math.PI / 40000;   // ~1 turn / 40s
+    var raf = null, elapsed = 0, last = null, running = false, onScreen = true;
+    function frame(ts) {
+      if (last == null) last = ts;
+      elapsed += ts - last; last = ts;
+      draw(ease(Math.min(1, elapsed / BUILD)), ANG0 + OMEGA * elapsed);
+      raf = requestAnimationFrame(frame);
+    }
+    function start(fromZero) {
+      if (fromZero) elapsed = 0;
+      last = null;
+      if (!running) { running = true; raf = requestAnimationFrame(frame); }
+    }
+    function stop() {
+      running = false;
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      last = null;
+    }
+    if (typeof IntersectionObserver !== "undefined") {
+      new IntersectionObserver(function (ents) {
+        ents.forEach(function (e) {
+          onScreen = e.isIntersecting;
+          if (onScreen) { if (!REDUCE) start(false); } else stop();
+        });
+      }, { threshold: 0.05 }).observe(svg);
+    }
+    return {
+      still: function () { stop(); draw(1, ANG0); },
+      play: function () { if (REDUCE) { draw(1, ANG0); return; } start(true); },
+      replay: function () { stop(); start(true); },
+      _draw: function (hp, ang) { stop(); draw(hp, ang); }   // test seam: render a fixed frame
+    };
+  };
+
   /* =====================================================================
      controller
      ===================================================================== */

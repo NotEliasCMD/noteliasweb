@@ -480,6 +480,12 @@
           <h2 class="section__title" data-reveal>Things I build on weekends.</h2>
           <ul class="posts">
             <li class="post" data-reveal>
+              <a href="#" class="post__link post__link--plane" data-project="pw-chess" aria-label="Open project: The board, the fight, and the fingerprint">
+                <span class="post__title">The board, the fight, and the fingerprint</span>
+                <span class="post__meta"><span class="post__date">2024</span><span class="post__arrow">→</span></span>
+              </a>
+            </li>
+            <li class="post" data-reveal>
               <a href="#" class="post__link post__link--plane" data-project="pw-ram" aria-label="Open project: RAM's AI premium">
                 <span class="post__title">RAM's AI premium</span>
                 <span class="post__meta"><span class="post__date">2026</span><span class="post__arrow">→</span></span>
@@ -1483,6 +1489,120 @@
       </div>
     </article>
 
+    <article class="plane plane--mirror plane--story" id="plane-pw-chess" data-anim="barchart"
+             aria-hidden="true" aria-labelledby="plane-pw-chess-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <button class="plane__back btn btn--ghost" type="button">Back<span class="plane__back-full"> to home</span> →</button>
+          </div>
+          <div class="plane__bar-end">
+            <span class="plane__crumb">Side project · 2024</span>
+            <button class="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-toggle__sun" aria-hidden="true">☀</span><span class="theme-toggle__moon" aria-hidden="true">☾</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ds-hero-panel">
+            <figure class="ds-figure" data-ds-chart data-project="chess"
+                    data-chart="board3d" data-figure="boardPhases">
+              <h3 class="ds-figure__title">How the board fills up, phase by phase</h3>
+              <p class="ds-figure__subtitle">piece landings per 1,000 moves · opening → middlegame → endgame</p>
+              <div class="ds-chart"></div>
+            </figure>
+            <p class="ds-hero-cap">The terrain builds from the centre: d4 is the most-landed-on square, and the four centre squares soak up 14.5% of all traffic before it spreads to the wings.</p>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Chess · Game replay</p>
+            <h1 class="plane__title" id="plane-pw-chess-title"><span class="hl" data-plane-type>The board, the fight, and the fingerprint</span></h1>
+            <ul class="card__meta plane__meta"><li>python-chess</li><li>pandas</li><li>PGN Mentor</li></ul>
+          </div>
+          <details class="plane__tldr" data-plane-reveal>
+            <summary class="plane__tldr__summary"><span class="plane__tldr__label">TL;DR</span><span class="plane__tldr__hint">read the takeaways</span></summary>
+            <div class="plane__tldr__body">
+            <ul>
+              <li>Replayed <strong>2,011 games</strong> (156,075 moves) by Morphy, Fischer, Kasparov &amp; Carlsen — every move re-played on a real board.</li>
+              <li>The most-visited square is <strong>d4</strong>; the four centre squares soak up <strong>14.5%</strong> of all piece traffic (they are 6% of the board).</li>
+              <li><strong>Pawns do most of the killing</strong> — 9,977 captures, more than any other piece; pawn-takes-pawn is the commonest exchange.</li>
+              <li>The decisive edge is about <strong>+2 pawns</strong> at move 20; a one-pawn lead is more often held to a draw at this level.</li>
+              <li>Openings are a fingerprint: Fischer opened <strong>1.e4 94%</strong> of the time as White, Kasparov only <strong>15%</strong>.</li>
+            </ul>
+            </div>
+          </details>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The board is a battle for the centre</h2>
+            <figure class="ds-figure" data-ds-chart data-project="chess" data-chart="heatmap" data-figure="typeStats">
+              <h3 class="ds-figure__title">Where pieces land, per 1,000 moves</h3>
+              <p class="ds-figure__subtitle">files a–h across, ranks 8–1 down · all games</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">A ridge down the d- and e-files, peaking at d4 (boxed). The corners are near-dead.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Who does the killing</h2>
+            <figure class="ds-figure" data-ds-chart data-project="chess" data-chart="heatmap" data-figure="teamHeatmap">
+              <h3 class="ds-figure__title">Captures: attacker (rows) takes victim (columns)</h3>
+              <p class="ds-figure__subtitle">counts across ~2,000 champion games</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">The pawn row (boxed) glows: pawns are the busiest executioners, and pawn-takes-pawn dwarfs everything.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>How much of an edge do you need?</h2>
+            <figure class="ds-figure" data-ds-chart data-project="chess" data-chart="line" data-figure="growth"
+                    data-x="Material balance at move 20 (pawns, + favours White)" data-y="Share of games (0–1)">
+              <h3 class="ds-figure__title">Game outcome vs material balance</h3>
+              <p class="ds-figure__subtitle">measured once at move 20 · White's point of view</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">White pulls clear of the draw line only around +2 pawns. Bars beyond ±3 rest on few games.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The opening fingerprint</h2>
+            <figure class="ds-figure" data-ds-chart data-project="chess" data-chart="bar" data-figure="rank"
+                    data-x="Share of White games opening 1.e4 (%)">
+              <h3 class="ds-figure__title">Romantics push the king's pawn; scientists don't</h3>
+              <p class="ds-figure__subtitle">share of each champion's White games opened 1.e4</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Morphy (100%) and Fischer (94%) are pure 1.e4; Kasparov (15%) is a 1.d4 player from a different school.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Fischer's home was the Sicilian</h2>
+            <figure class="ds-figure" data-ds-chart data-project="chess" data-chart="bar" data-figure="lexical"
+                    data-x="Games (first 600)">
+              <h3 class="ds-figure__title">Fischer's most-played opening families</h3>
+              <p class="ds-figure__subtitle">by ECO code range · his first 600 games</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">The sharp, unbalancing Sicilian tops the list — the answer to 1.e4 that defined his attacking style.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>A champion's scoreboard</h2>
+            <figure class="ds-figure" data-ds-chart data-project="chess"
+                    data-chart="line" data-figure="race" data-mode="race" data-y="Cumulative wins">
+              <h3 class="ds-figure__title">A champion's scoreboard, win by win</h3>
+              <p class="ds-figure__subtitle">cumulative victories over each career's first games</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">Morphy's line is short but steep; the moderns grind longer. Slope is win rate — not proof of strength across eras.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Method &amp; honest caveats</h2>
+            <p>Data: the complete game collections of Morphy, Fischer, Kasparov and Carlsen from <strong>PGN Mentor</strong>, each capped at its first 600 games chronologically (Morphy has 211). Every game is re-played move-by-move with <em>python-chess</em>, so square-visits and captures are exact. <em>Advantage</em> uses raw material (1/3/3/5/9, king excluded) as a proxy for who is better — it ignores position, so the extreme buckets are noisy. Morphy's ~80% win rate reflects weak 1850s opposition, not superiority over the moderns: the scoreboard shows volume and win rate, not playing strength across eras.</p>
+          </div>
+          <div class="plane__next" data-plane-reveal>
+            <button class="plane__nav-btn plane__next-btn btn btn--primary" type="button" data-dir="next">Next project →</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
   </div><!-- /.planes -->
 
   <script src="anim/ascii.js"></script>
@@ -1501,6 +1621,7 @@
   <script src="side-projects/data/04_pokemon_gen12.js"></script>
   <script src="side-projects/data/06_video_games.js"></script>
   <script src="side-projects/data/07_ram_ai_prices.js"></script>
+  <script src="side-projects/data/09_chess.js"></script>
   <script src="side-projects/ds-charts.js"></script>
 </body>
 </html>

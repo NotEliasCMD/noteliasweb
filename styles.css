@@ -194,6 +194,17 @@ img { max-width: 100%; display: block; }
 .hero__lede { font-size: clamp(1.05rem, 1.6vw, 1.2rem); color: var(--ink-soft); max-width: 34ch; }
 .hero__actions { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 2rem; }
 
+/* ---- 404 (branded not-found page; see 404.html) ---- */
+.notfound {
+  display: flex; align-items: center;
+  min-height: calc(100vh - 68px);           /* fill the viewport under the sticky nav */
+  padding: clamp(3rem, 8vw, 6rem) 0;
+}
+.notfound__inner { max-width: 46ch; }
+.notfound__title { font-size: clamp(2.6rem, 6.5vw, 5rem); margin: 1.2rem 0 1.4rem; }
+.notfound__lede { font-size: clamp(1.05rem, 1.6vw, 1.2rem); color: var(--ink-soft); max-width: 40ch; }
+.notfound__actions { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 2rem; }
+
 /* ---- terminal ---- */
 .terminal {
   background: #1c1a15; color: #ece7dc;

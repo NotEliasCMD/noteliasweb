@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 — Saile</title>
+  <meta name="description" content="Page not found." />
+  <meta name="robots" content="noindex" />
+
+  <!-- Fonts: Space Grotesk (display) + JetBrains Mono (mono), matching index.html -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+
+  <!-- Relative asset paths (matching index.html) so the page is styled whether it's
+       opened directly (file://), served from a subdirectory, served from the site
+       root, or served by GitHub Pages for an unknown single-segment path like /f1
+       (there the document base is "/", so "styles.css" → "/styles.css"). Only a
+       deep bogus path (/a/b/c) would miss these — and every real project slug is a
+       single segment that the shim above redirects before this page ever renders. -->
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><style>.s{stroke:%2317150F}@media(prefers-color-scheme:dark){.s{stroke:%23F1ECE0}}</style><path d='M2 19C7.5 19 8 6 12 6C16 6 16.5 19 22 19Z' fill='%23E79CB6' fill-opacity='.22'/><path class='s' d='M2 19C7.5 19 8 6 12 6C16 6 16.5 19 22 19' stroke-width='1.8' stroke-linecap='round'/><line class='s' x1='2' y1='19' x2='22' y2='19' stroke-width='1.2' stroke-opacity='.4'/><circle cx='12' cy='6' r='2' fill='%23D97FA0'/></svg>" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
+  <meta name="theme-color" content="#F4F1EA" />
+
+  <!-- Apply saved theme before first paint (no light→dark flash). Same as index.html. -->
+  <script>
+    try { if (localStorage.getItem("theme") === "dark")
+      document.documentElement.dataset.theme = "dark"; } catch (e) {}
+  </script>
+
+  <!-- Deep-link redirect shim. This 404 page doubles as the entry point for
+       shareable project links: GitHub Pages can't rewrite paths, so a link like
+       /f1 lands here. If the first path segment is a REAL project slug, stash it
+       and bounce to the app root — index.html restores the clean URL and the
+       router opens that plane. Any other path falls through and renders the
+       branded 404 below.
+       KEEP `KNOWN` IN SYNC with the plane slugs (each trigger's data-project,
+       with the Personal-works "pw-" prefix dropped). See COMPONENTS.md §11
+       "Deep-link routing". -->
+  <script>
+    (function () {
+      var KNOWN = {
+        // Work
+        "triage": 1, "cpm": 1, "auto-pricing": 1, "black-swan": 1, "car-damage": 1,
+        "propensity": 1, "minim": 1, "health-propensity": 1, "rare-disease": 1, "health-fraud": 1,
+        // Personal works (pw- prefix dropped)
+        "chess": 1, "f1": 1, "ram": 1, "moneyball": 1, "markets": 1, "books": 1, "pokedex": 1, "consoles": 1
+      };
+      var seg = location.pathname.replace(/^\/+|\/+$/g, "").split("/")[0];
+      if (seg && KNOWN[seg]) {
+        try { sessionStorage.setItem("deepLink", seg + location.search + location.hash); } catch (e) {}
+        location.replace("/");           // aborts this render; the branded page never shows
+      }
+      // else: unknown path — render the branded 404 page.
+    })();
+  </script>
+</head>
+<body>
+  <div class="stage">
+  <!-- ============================ NAV ============================ -->
+  <header class="nav" id="nav">
+    <div class="container nav__inner">
+      <a class="nav__brand" href="index.html" aria-label="Elias home">
+        <span class="nav__logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" focusable="false">
+            <path d="M2 19 C 7.5 19, 8 6, 12 6 C 16 6, 16.5 19, 22 19 Z" fill="var(--peach)" opacity="0.20"/>
+            <path d="M2 19 C 7.5 19, 8 6, 12 6 C 16 6, 16.5 19, 22 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="2" y1="19" x2="22" y2="19" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+            <circle cx="12" cy="6" r="1.8" fill="var(--peach-deep)"/>
+          </svg>
+        </span>
+        <span class="nav__name">
+          <span class="nav__axis" aria-hidden="true"></span>
+          <span class="nav__word nav__word--elias">Elias<span class="nav__dot">.</span></span>
+          <span class="nav__word nav__word--saile" aria-hidden="true">sailE<span class="nav__dot">.</span></span>
+        </span>
+      </a>
+
+      <nav class="nav__links" aria-label="Primary">
+        <a href="index.html#work">Work</a>
+        <a href="index.html#skills">Skills</a>
+        <a href="index.html#personal-works">Personal works</a>
+        <a href="index.html#about">About</a>
+      </nav>
+
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+        <span class="theme-toggle__sun" aria-hidden="true">☀</span>
+        <span class="theme-toggle__moon" aria-hidden="true">☾</span>
+      </button>
+
+      <a class="btn btn--primary nav__cta" href="index.html#contact">Get in touch</a>
+
+      <button class="nav__burger" id="burger" aria-label="Toggle menu" aria-controls="drawer" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <!-- Mobile drawer -->
+    <div class="nav__drawer" id="drawer" hidden>
+      <a href="index.html#work">Work</a>
+      <a href="index.html#skills">Skills</a>
+      <a href="index.html#personal-works">Personal works</a>
+      <a href="index.html#about">About</a>
+      <button class="theme-toggle theme-toggle--drawer" id="themeToggleDrawer" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+        <span class="theme-toggle__sun" aria-hidden="true">☀</span>
+        <span class="theme-toggle__moon" aria-hidden="true">☾</span>
+        <span class="theme-toggle__label theme-toggle__label--to-dark">Dark mode</span>
+        <span class="theme-toggle__label theme-toggle__label--to-light">Light mode</span>
+      </button>
+      <a class="btn btn--primary" href="index.html#contact">Get in touch</a>
+    </div>
+  </header>
+
+  <!-- ============================ 404 ============================ -->
+  <main id="top">
+    <section class="notfound">
+      <div class="container notfound__inner">
+        <p class="eyebrow"><span class="eyebrow__tick"></span> Error 404 · no data point here</p>
+        <h1 class="notfound__title">This one's an <span class="hl">outlier</span>.</h1>
+        <p class="notfound__lede">
+          That page isn't in the dataset. It may have moved, or the link picked up
+          some noise on the way over.
+        </p>
+        <div class="notfound__actions">
+          <a class="btn btn--primary" href="index.html">← Back home</a>
+          <a class="btn btn--ghost" href="index.html#work">See selected work →</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================ FOOTER ============================ -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <span class="nav__logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" focusable="false">
+            <path d="M2 19 C 7.5 19, 8 6, 12 6 C 16 6, 16.5 19, 22 19 Z" fill="var(--peach)" opacity="0.20"/>
+            <path d="M2 19 C 7.5 19, 8 6, 12 6 C 16 6, 16.5 19, 22 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="2" y1="19" x2="22" y2="19" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+            <circle cx="12" cy="6" r="1.8" fill="var(--peach-deep)"/>
+          </svg>
+        </span>
+        <span class="nav__name">
+          <span class="nav__axis" aria-hidden="true"></span>
+          <span class="nav__word nav__word--elias">Elias<span class="nav__dot">.</span></span>
+          <span class="nav__word nav__word--saile" aria-hidden="true">sailE<span class="nav__dot">.</span></span>
+        </span>
+        <p class="footer__tag">Turning messy data into decisions.</p>
+      </div>
+      <nav class="footer__cols" aria-label="Footer">
+        <div class="footer__col">
+          <span class="footer__head">Site</span>
+          <a href="index.html#work">Work</a>
+          <a href="index.html#skills">Skills</a>
+          <a href="index.html#personal-works">Personal works</a>
+          <a href="index.html#about">About</a>
+        </div>
+        <div class="footer__col">
+          <span class="footer__head">Elsewhere</span>
+          <a href="https://github.com/NotEliasCMD">GitHub</a>
+          <a href="https://www.linkedin.com/in/elias-oisin-kelly-902621134/">LinkedIn</a>
+        </div>
+        <div class="footer__col">
+          <span class="footer__head">Contact</span>
+          <a href="mailto:hello@saile.codes">hello@saile.codes</a>
+        </div>
+      </nav>
+    </div>
+    <div class="container footer__base">
+      <span>© <span id="year">2026</span> Saile. All the pixels reserved.</span>
+      <span class="footer__note">There is a secret on my website can you find it ?</span>
+    </div>
+  </footer>
+  </div><!-- /.stage -->
+
+  <!-- Minimal self-contained behavior for the branded 404: theme toggle, mobile
+       burger, nav scrolled-state, and the year. Deliberately NOT loading
+       script.js (it wires the terminal/planes/marquee/carousel and would error on
+       this page's missing elements). Mirrors the equivalent handlers in script.js. -->
+  <script>
+    (function () {
+      var $ = function (s, c) { return (c || document).querySelector(s); };
+      var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+
+      // Theme toggle (mirror of script.js §6.5)
+      var root = document.documentElement;
+      var themeBtns = $$(".theme-toggle");
+      if (themeBtns.length) {
+        var isDark = function () { return root.dataset.theme === "dark"; };
+        var syncBtns = function () {
+          themeBtns.forEach(function (b) { b.setAttribute("aria-pressed", String(isDark())); });
+        };
+        var setTheme = function (dark) {
+          if (dark) root.dataset.theme = "dark"; else delete root.dataset.theme;
+          try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
+          syncBtns();
+        };
+        syncBtns();
+        themeBtns.forEach(function (b) { b.addEventListener("click", function () { setTheme(!isDark()); }); });
+      }
+
+      // Mobile burger drawer (mirror of script.js §6)
+      var burger = $("#burger"), drawer = $("#drawer");
+      if (burger && drawer) {
+        var toggle = function (open) {
+          var willOpen = (open === undefined) ? drawer.hidden : open;
+          drawer.hidden = !willOpen;
+          drawer.classList.toggle("is-open", willOpen);
+          burger.classList.toggle("is-open", willOpen);
+          burger.setAttribute("aria-expanded", String(willOpen));
+        };
+        burger.addEventListener("click", function () { toggle(); });
+        $$("a", drawer).forEach(function (a) { a.addEventListener("click", function () { toggle(false); }); });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && !drawer.hidden) { toggle(false); burger.focus(); }
+        });
+      }
+
+      // Nav scrolled state (mirror of script.js §6)
+      var nav = $("#nav");
+      var onScroll = function () { if (nav) nav.classList.toggle("is-scrolled", window.scrollY > 8); };
+      onScroll();
+      window.addEventListener("scroll", onScroll, { passive: true });
+
+      // Year
+      var y = $("#year");
+      if (y) y.textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>

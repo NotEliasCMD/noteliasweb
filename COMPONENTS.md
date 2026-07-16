@@ -186,10 +186,11 @@ Line ranges below are approximate anchors as of this writing.
 
 ## 11. Project "planes"
 
-- **HTML** ~588–1438 (**12** `<article class="plane">` in two families — 6 **Work**
-  planes: triage, fraud, forecast, abtest, tickets, + a shared placeholder; and 6
-  mirrored **Personal-works "data story"** planes: pw-ram, pw-moneyball, pw-markets,
-  pw-books, pw-pokedex, pw-consoles) · **CSS** `.stage` / `.plane*` / `.plane--mirror`
+- **HTML** ~588–1438 (`<article class="plane">` in two families — 6 **Work**
+  planes: triage, fraud, forecast, abtest, tickets, + a shared placeholder; and the
+  mirrored **Personal-works "data story"** planes, in list order: pw-chess, pw-f1,
+  pw-ram, pw-moneyball, pw-markets, pw-books, pw-pokedex, pw-consoles) · **CSS**
+  `.stage` / `.plane*` / `.plane--mirror`
   / `.plane--story` / `.ascii-*` ~428–505 (+ responsive & reduced-motion blocks) ·
   **JS** banner `9. project planes`. The Personal-works charts are a separate toolkit
   in `side-projects/` — see §12a.
@@ -317,13 +318,20 @@ Line ranges below are approximate anchors as of this writing.
   the dark theme for free. `DSCharts.mount(node)` re-scans a subtree if you inject
   markup later. Only two globals are added, both `DS`-namespaced (`DSCharts`, `DS_SIDE`).
 - **Declaring a chart:** `<figure class="ds-figure" data-ds-chart data-project="<key>"
-  data-chart="line|bar|scatter|histogram|dumbbell|radar|heatmap|lollipop|arcs"
+  data-chart="line|bar|scatter|histogram|dumbbell|radar|heatmap|lollipop|arcs|board3d|f1track"
   data-figure="<slice>" data-mode="…">` wrapping an empty `<div class="ds-chart">`
   the toolkit fills, plus a title/subtitle/caption. Chart chrome (axes/grid/text) uses
   host tokens (`--ink`, `--muted`, `--line`, `--peach`); the surrounding TL;DR + hero
   panel are styled by `.plane--story` (§11). Note the `data-project` **key** (e.g.
   `pl_moneyball`, `markets`, `ram`) is the `DS_SIDE` key, distinct from the plane's
   `pw-` trigger slug. Full contract in the package's own `README.md` (source repo).
+- **Per-project hero renderers.** Two `data-chart` values are bespoke heroes for a
+  single project rather than general chart types: `board3d` (chess — a 3D board-
+  visitation terrain) and `f1track` (F1 — the 2025 season drawn as one endurance
+  race on the 24 stitched circuits, reading top-level `rounds`/`drivers`/`track` off
+  `DS_SIDE["f1"]`, ignoring `data-figure`). Both resolve colours from the site
+  `--ds-cat-*` brand palette (F1 maps each team to a fixed palette index in its data
+  module — on-brand, not real team liveries) so they flip with the theme.
 
 ---
 

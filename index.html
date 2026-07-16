@@ -479,6 +479,12 @@
               </a>
             </li>
             <li class="post" data-reveal>
+              <a href="#" class="post__link post__link--plane" data-project="pw-f1" aria-label="Open project: The 2025 title race, drawn as a race">
+                <span class="post__title">The 2025 title race, drawn as a race</span>
+                <span class="post__meta"><span class="post__date">2026</span><span class="post__arrow">→</span></span>
+              </a>
+            </li>
+            <li class="post" data-reveal>
               <a href="#" class="post__link post__link--plane" data-project="pw-ram" aria-label="Open project: RAM's AI premium">
                 <span class="post__title">RAM's AI premium</span>
                 <span class="post__meta"><span class="post__date">2026</span><span class="post__arrow">→</span></span>
@@ -1824,6 +1830,92 @@
       </div>
     </article>
 
+    <article class="plane plane--mirror plane--story" id="plane-pw-f1" data-anim="candlestick"
+             aria-hidden="true" aria-labelledby="plane-pw-f1-title" hidden>
+      <div class="plane__bar">
+        <div class="container plane__bar-inner">
+          <div class="plane__bar-nav">
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="prev" aria-label="Previous project">← Prev</button>
+            <button class="plane__nav-btn btn btn--ghost" type="button" data-dir="next" aria-label="Next project">Next →</button>
+            <button class="plane__back btn btn--ghost" type="button">Back<span class="plane__back-full"> to home</span> →</button>
+          </div>
+          <div class="plane__bar-end">
+            <span class="plane__crumb">Side project · 2026</span>
+            <button class="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-toggle__sun" aria-hidden="true">☀</span><span class="theme-toggle__moon" aria-hidden="true">☾</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="container plane__grid">
+        <div class="plane__media">
+          <div class="ds-hero-panel">
+            <figure class="ds-figure" data-ds-chart data-project="f1"
+                    data-chart="f1track" data-figure="track">
+              <h3 class="ds-figure__title">The whole 2025 season as one endurance race</h3>
+              <p class="ds-figure__subtitle">All 24 circuits stitched into one course; each dot is one of the five title contenders in their team's colour, driving every circuit in turn — the further behind a race's winner they finish, the longer that circuit takes them, so they string out</p>
+              <div class="ds-chart"></div>
+            </figure>
+            <p class="ds-hero-cap">The five leading drivers each drive all 24 circuits in sequence. On each circuit they lose ground in proportion to their real time behind that race's winner, so the pace-setters pull clear and the camera zooms out to keep them in view. Distance along the course is therefore <strong>cumulative time behind the race winners: a race-PACE ranking, not the points title</strong> (the bar chart below grows this same measure for the whole field). Team-mates share a colour, so the second driver of each team wears a dark ring; all five are named.</p>
+          </div>
+        </div>
+        <div class="plane__content">
+          <div class="plane__head">
+            <p class="plane__tag">Motorsport · Season</p>
+            <h1 class="plane__title" id="plane-pw-f1-title"><span class="hl" data-plane-type>The 2025 title race, drawn as a race</span></h1>
+            <ul class="card__meta plane__meta"><li>Jolpica-F1</li><li>requests</li><li>pandas</li><li>matplotlib</li></ul>
+          </div>
+          <details class="plane__tldr" data-plane-reveal>
+            <summary class="plane__tldr__summary"><span class="plane__tldr__label">TL;DR</span><span class="plane__tldr__hint">read the takeaways</span></summary>
+            <div class="plane__tldr__body">
+            <ul>
+              <li><strong>Lando Norris won the 2025 drivers' title on 423 points</strong> — but only just: Verstappen finished on <strong>421</strong> and Piastri on <strong>410</strong>. Three drivers inside <strong>13 points</strong> after 24 rounds.</li>
+              <li>The lead <strong>changed hands late</strong>: Norris led after four rounds, <strong>Piastri then led for fifteen straight rounds (5–19)</strong>, and Norris retook it at <strong>round 20 (Mexico)</strong> and never let go.</li>
+              <li>Piastri led the championship most of the year and <strong>still finished third</strong> — Verstappen's late charge (a season-high 8 wins) pipped him.</li>
+              <li><strong>McLaren ran away with the constructors' title: 833 points</strong>, nearly double second-placed Mercedes (469).</li>
+              <li>The title contenders were also the <strong>most reliable</strong> — McLaren and Red Bull retired just 3 cars each; Williams retired most (9).</li>
+            </ul>
+            </div>
+          </details>
+          <div class="plane__block" data-plane-reveal>
+            <h2>The whole field strings out</h2>
+            <figure class="ds-figure" data-ds-chart data-project="f1" data-chart="bar" data-mode="race" data-figure="race"
+                    data-x="Cumulative time behind the race winners (minutes)">
+              <h3 class="ds-figure__title">Cumulative time behind the race winners</h3>
+              <p class="ds-figure__subtitle">A hyperlapse of every driver's running total, growing round by round, in team colours — least time (fastest on pace) stays on top</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">This is the measure the hero races on, shown for the full field: for each race, how far behind the winner a driver finished, summed across the season. Norris pulls clear on pace — about <strong>12 minutes</strong> behind across the whole year, versus 35+ for everyone else. The points title, by contrast, went to the wire: Norris 423, Verstappen 421, Piastri 410.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>McLaren's runaway</h2>
+            <figure class="ds-figure" data-ds-chart data-project="f1" data-chart="line" data-figure="growth"
+                    data-x="Round" data-y="Cumulative points">
+              <h3 class="ds-figure__title">Cumulative constructor points, round by round</h3>
+              <p class="ds-figure__subtitle">Every team's running total across the 24 rounds, in team colours</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">The drivers' title was a thriller; the constructors' was over early. McLaren pulls clear almost from the start and finishes on 833 — nearly double anyone else — while Mercedes, Red Bull and Ferrari scrap over the minor placings.</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Who finished, and who broke down</h2>
+            <figure class="ds-figure" data-ds-chart data-project="f1" data-chart="bar" data-figure="rank"
+                    data-x="Retirements (did-not-finish)">
+              <h3 class="ds-figure__title">Car retirements per team, all 24 rounds</h3>
+              <p class="ds-figure__subtitle">Both cars, full season, in team colours · fewer is better</p>
+              <div class="ds-chart"></div>
+              <p class="ds-figure__caption">A car that doesn't finish can't score — and the front of the grid simply broke down less. The two teams fighting for the title, McLaren and Red Bull, were the most reliable (3 DNFs each); Williams retired most (9).</p>
+            </figure>
+          </div>
+          <div class="plane__block" data-plane-reveal>
+            <h2>Method &amp; honest caveats</h2>
+            <p>Results and standings come from the <a href="https://api.jolpi.ca/ergast/">Jolpica-F1 API</a> (the maintained continuation of Ergast). For every round we use the <em>official</em> driver and constructor standings, which already include <strong>sprint points</strong> and the sport's tie-break rules — adding up the grand-prix results alone would silently miss the sprint points and mis-order the table. Circuit layouts are real, from the <a href="https://github.com/bacinger/f1-circuits">bacinger/f1-circuits</a> GeoJSON dataset, each matched to its 2025 round by location (within ~1.3&nbsp;km) and stitched onto a serpentine grid into one continuous course. The hero's pacing uses each driver's race <strong>time behind the winner</strong> (from the results' lap-time data), summed across the season. <strong>Caveats:</strong> the hero ranks drivers by that cumulative time — a race-<em>pace</em> ranking, deliberately <em>distinct</em> from the points championship (a driver can lead on pace yet lose the title on points), which is why the pace leader here need not match the points champion; a lapped car's raw time understates being a lap down, so laps-down are added back, and retirements — which have no finish time — are given a fixed penalty, both modelling choices rather than measured gaps; the single "track" is a visual construction — the circuit shapes are real, but the connectors joining them are not part of any real circuit; team colours are approximate 2025 liveries (an entity encoding, not a colourblind-safe palette), and team-mates are told apart by ring and by name; and the results feed reports only whether a car was classified, with no cause detail, so reliability is a single honest count of retirements (disqualifications excluded).</p>
+          </div>
+          <div class="plane__next" data-plane-reveal>
+            <button class="plane__nav-btn plane__next-btn btn btn--primary" type="button" data-dir="next">Next project →</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
   </div><!-- /.planes -->
 
   <script src="anim/ascii.js"></script>
@@ -1852,6 +1944,7 @@
   <script src="side-projects/data/06_video_games.js"></script>
   <script src="side-projects/data/07_ram_ai_prices.js"></script>
   <script src="side-projects/data/09_chess.js"></script>
+  <script src="side-projects/data/10_f1_2025.js"></script>
   <script src="side-projects/ds-charts.js"></script>
 </body>
 </html>

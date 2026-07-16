@@ -929,43 +929,61 @@
 
   /* ---- HERO: bar race (06 console cumulative) */
   R._barRace = function (host, fig, data) {
-    var race = data.race, w = 660, h = 360, fr = Frame(w, h, { l: 96, t: 34, b: 40, r: 44 });
+    // Animated "hyperlapse" bar race: bars grow + re-sort over race.years. Options
+    // (all optional, back-compatible with the console race): m.color (entity colour,
+    // else cat(brandIdx)); race.unit (value suffix, default "M"); race.dp (decimals);
+    // race.asc (true = smallest on top, e.g. least time = leader); race.durMs; race.title.
+    var race = data.race, mans = race.manufacturers, N = mans.length, n = race.years.length;
+    var w = 660, h = Math.max(360, N * 17 + 74);
+    var fr = Frame(w, h, { l: 102, t: 34, b: 40, r: 52 });
     var sx = linScale(0, race.xmax, fr.x0, fr.x1);
-    gridX(fr, sx, niceTicks(0, race.xmax, 6), function (v) { return v + "M"; }, fig.dataset.x);
-    var mans = race.manufacturers, N = mans.length;
+    var suffix = race.unit != null ? race.unit : "M", dp = race.dp || 0;
+    function lab(v) { return (dp ? v.toFixed(dp) : Math.round(v)) + suffix; }
+    gridX(fr, sx, niceTicks(0, race.xmax, 6), lab, fig.dataset.x);
     var rowH = fr.ph / N;
     var year = fr.add(T(fr.x1 - 4, fr.yTop + 30, "", "ds-callout",
-      { "text-anchor": "end", "font-size": 30, "fill-opacity": 0.45 }));
+      { "text-anchor": "end", "font-size": 30, "fill-opacity": 0.4 }));
     var bars = mans.map(function (m) {
       var g = E("g");
-      var rect = E("rect", { x: fr.x0, y: 0, width: 0, height: rowH * 0.72, rx: 2, fill: cat(m.brandIdx) });
-      var name = T(fr.x0 - 6, 0, m.name, "ds-tick", { "text-anchor": "end" });
-      var val = T(0, 0, "", "ds-datalabel");
+      var col = m.color || cat(m.brandIdx);
+      var rect = E("rect", { x: fr.x0, y: 0, width: 0, height: rowH * 0.72, rx: 2, fill: col });
+      var name = T(fr.x0 - 6, 0, m.name, "ds-tick", { "text-anchor": "end", "font-size": N > 12 ? 9 : 11 });
+      var val = T(0, 0, "", "ds-datalabel", { "font-size": N > 12 ? 9 : 11 });
       g.appendChild(rect); g.appendChild(name); g.appendChild(val); fr.add(g);
-      return { m: m, rect: rect, name: name, val: val, pos: 0 };
+      return { m: m, rect: rect, name: name, val: val };
     });
-    function frame(fi) {
-      var vals = mans.map(function (m, i) { return { i: i, v: m.cum[fi] }; });
-      var ranked = vals.slice().sort(function (a, b) { return a.v - b.v; }); // asc -> top=biggest at bottom idx? we want biggest on top
-      ranked.reverse(); // biggest first (top)
-      ranked.forEach(function (r, rank) {
-        var b = bars[r.i], y = fr.yTop + rank * rowH + rowH * 0.14;
-        b.rect.setAttribute("y", y); b.rect.setAttribute("width", Math.max(0, sx(r.v) - fr.x0));
-        b.name.setAttribute("y", y + rowH * 0.36 + 4);
-        b.val.setAttribute("x", sx(r.v) + 6); b.val.setAttribute("y", y + rowH * 0.36 + 4);
-        b.val.textContent = r.v > 0 ? Math.round(r.v) + "M" : "";
+    // g is a CONTINUOUS round index (0..n-1): values are interpolated between the
+    // two bracketing rounds so bars grow smoothly, and each bar's row position is
+    // eased toward its rank so re-orderings glide rather than jump. snap=true sets
+    // everything immediately (initial / still / reduced-motion).
+    function frame(g, snap) {
+      var fi0 = Math.floor(g), fi1 = Math.min(n - 1, fi0 + 1), tt = g - fi0;
+      var vals = mans.map(function (m, i) {
+        return { i: i, v: m.cum[fi0] + (m.cum[fi1] - m.cum[fi0]) * tt }; });
+      var ranked = vals.slice().sort(function (a, b) { return a.v - b.v; });  // ascending
+      if (!race.asc) ranked.reverse();                                        // default: biggest on top
+      var ty = []; ranked.forEach(function (r, rank) { ty[r.i] = fr.yTop + rank * rowH + rowH * 0.14; });
+      vals.forEach(function (r) {
+        var b = bars[r.i];
+        b.y = (snap || b.y == null) ? ty[r.i] : b.y + (ty[r.i] - b.y) * 0.2;   // ease row swaps
+        var yc = b.y + rowH * 0.36 + 3.5;
+        b.rect.setAttribute("y", b.y); b.rect.setAttribute("width", Math.max(0, sx(r.v) - fr.x0));
+        b.name.setAttribute("y", yc);
+        b.val.setAttribute("x", sx(r.v) + 6); b.val.setAttribute("y", yc);
+        b.val.textContent = r.v > 0 ? lab(r.v) : "";
       });
-      year.textContent = race.years[fi];
+      year.textContent = race.years[Math.min(n - 1, Math.round(g))];
     }
-    fr.title("Console-sales race");
+    fr.title(race.title || "Bar race");
     host.appendChild(fr.svg);
-    host.appendChild(legend(mans.map(function (m) { return { label: m.name, color: cat(m.brandIdx) }; })));
-    var ctl = null, n = race.years.length;
+    if (N <= 8) host.appendChild(legend(mans.map(function (m) {
+      return { label: m.name, color: m.color || cat(m.brandIdx) }; })));
+    var ctl = null;
     function run() { if (ctl) ctl.cancel();
-      ctl = ticker(6000, function (p) { frame(Math.min(n - 1, Math.round(ease(p) * (n - 1)))); }); }
-    return { still: function () { frame(n - 1); },
-      play: function () { if (REDUCE) { frame(n - 1); return; } frame(0); run(); },
-      replay: function () { frame(0); run(); } };
+      ctl = ticker(race.durMs || 6000, function (p) { frame(ease(p) * (n - 1), false); }); }
+    return { still: function () { if (ctl) ctl.cancel(); frame(n - 1, true); },
+      play: function () { if (REDUCE) { frame(n - 1, true); return; } frame(0, true); run(); },
+      replay: function () { frame(0, true); run(); } };
   };
 
   /* ---- HERO: bar morph (04 evolution) */
@@ -1264,6 +1282,164 @@
       play: function () { if (REDUCE) { draw(1, ANG0); return; } start(true); },
       replay: function () { stop(); start(true); },
       _draw: function (hp, ang) { stop(); draw(hp, ang); }   // test seam: render a fixed frame
+    };
+  };
+
+  /* ---- f1track (10 F1: HERO — the season as one long endurance race) --------
+     The 24 real 2025 circuits are stitched into ONE polyline (data.track). Every
+     driver (data.drivers[i] = {code,name,cid,color,dur[NR]}) drives all 24
+     circuits in sequence; dur[k] is the animation-time to complete circuit k,
+     longer the further behind that race's WINNER they finished — so the field
+     strings out and distance along the course = cumulative TIME BEHIND THE RACE
+     WINNERS, a race-PACE ranking (deliberately NOT the points title). A camera
+     follows the pack, zooming out as the gaps widen, while dots/labels stay a
+     constant size (fixed viewBox + a transformed world <g> for the track, marks
+     projected on top). Holds when the pace leader finishes; driver colours come
+     from the site --ds-cat-* brand palette (each team a fixed index, set in the
+     data) so it flips with the theme; team-mates share a hue so the 2nd driver of
+     a team gets a dark ring. Plays once, holds, replay. */
+  R.f1track = function (host, fig, data) {
+    var RN = data.rounds, DR = data.drivers;
+    var pts = data.track.pts, segs = data.track.segments || [];
+    var NR = RN.length;
+
+    // arc length along the stitched track (world coords) -> posAt(s), s in [0,1]
+    var cum = [0];
+    for (var i = 1; i < pts.length; i++) {
+      var dx = pts[i][0] - pts[i - 1][0], dy = pts[i][1] - pts[i - 1][1];
+      cum.push(cum[i - 1] + Math.sqrt(dx * dx + dy * dy));
+    }
+    var total = cum[cum.length - 1] || 1;
+    function posAt(s) {
+      var target = Math.max(0, Math.min(1, s)) * total, lo = 0, hi = cum.length - 1;
+      while (lo < hi - 1) { var m = (lo + hi) >> 1; if (cum[m] <= target) lo = m; else hi = m; }
+      var seg = cum[lo + 1] - cum[lo], f = seg === 0 ? 0 : (target - cum[lo]) / seg;
+      return [pts[lo][0] + (pts[lo + 1][0] - pts[lo][0]) * f,
+              pts[lo][1] + (pts[lo + 1][1] - pts[lo][1]) * f];
+    }
+    // circuit i occupies arc-length fraction [seg0[i], seg1[i]] of the course
+    var seg0 = segs.map(function (s) { return cum[s.i0] / total; });
+    var seg1 = segs.map(function (s) { return cum[s.i1] / total; });
+    // per-circuit tag anchor (centroid x, top y) in world coords
+    var tagPos = segs.map(function (s) {
+      var x = 0, top = 1e9;
+      for (var k = s.i0; k <= s.i1; k++) { x += pts[k][0]; if (pts[k][1] < top) top = pts[k][1]; }
+      return [x / (s.i1 - s.i0 + 1), top];
+    });
+
+    // per-driver arrival times (cumulative durations) + the leader's finish time
+    DR.forEach(function (d) {
+      var a = [0]; for (var k = 0; k < NR; k++) a.push(a[k] + (d.dur[k] || 1)); d._arr = a;
+    });
+    var T_END = Math.min.apply(null, DR.map(function (d) { return d._arr[NR]; }));
+    function heroS(d, t) {                       // arc-length fraction at clock t
+      var a = d._arr; if (t >= a[NR]) return 1;
+      var lo = 0, hi = NR; while (lo < hi - 1) { var m = (lo + hi) >> 1; if (a[m] <= t) lo = m; else hi = m; }
+      var dd = a[lo + 1] - a[lo], f = dd <= 0 ? 0 : Math.max(0, Math.min(1, (t - a[lo]) / dd));
+      return seg0[lo] + f * (seg1[lo] - seg0[lo]);
+    }
+    function heroCircuit(d, t) {                  // which race (1-based) they're on
+      var a = d._arr; if (t >= a[NR]) return NR;
+      var lo = 0, hi = NR; while (lo < hi - 1) { var m = (lo + hi) >> 1; if (a[m] <= t) lo = m; else hi = m; }
+      return Math.max(1, Math.min(NR, lo + 1));
+    }
+
+    var W = 760, H = 470, CAM_ASP = W / H, TOTAL_MS = 105000;   // slow, ~1:45 (tunable)
+    var svg = E("svg", { viewBox: "0 0 " + W + " " + H, role: "img",
+                         preserveAspectRatio: "xMidYMid meet" });
+    var ttl = E("title"); ttl.textContent = "The 2025 F1 season as one long endurance race";
+    svg.appendChild(ttl);
+    svg.appendChild(E("desc", {}, [document.createTextNode(
+      "Every driver drives all 24 stitched circuits in turn; the camera follows the "
+      + "field as it strings out by cumulative time behind each race's winner.")]));
+
+    // clip everything to the panel so the zoomed-out track can't bleed past the frame
+    R.f1track._n = (R.f1track._n || 0) + 1;
+    var clipId = "ds-f1clip-" + R.f1track._n;
+    var defs = E("defs"), cpp = E("clipPath", { id: clipId });
+    cpp.appendChild(E("rect", { x: 0, y: 0, width: W, height: H }));
+    defs.appendChild(cpp); svg.appendChild(defs);
+    var root = E("g", { "clip-path": "url(#" + clipId + ")" }); svg.appendChild(root);
+
+    // world layer: the stitched track (transformed each frame; stroke counter-scaled)
+    var world = E("g");
+    var trackD = "M" + pts.map(function (p) { return p[0].toFixed(4) + "," + p[1].toFixed(4); }).join("L");
+    var trackPath = E("path", { d: trackD, fill: "none", stroke: "var(--ds-label)",
+      "stroke-opacity": 0.32, "stroke-linecap": "round", "stroke-linejoin": "round" });
+    world.appendChild(trackPath); root.appendChild(world);
+
+    // overlay marks (screen coords, constant size): circuit tags, dots, labels, readout
+    var tags = tagPos.map(function (_, i) {
+      var t = T(0, 0, "" + segs[i].round, "ds-tick",
+        { "text-anchor": "middle", "font-size": 8, "fill-opacity": 0.55 });
+      root.appendChild(t); return t;
+    });
+    var seen = {}, dots = DR.map(function (d) {
+      var n = seen[d.cid] || 0; seen[d.cid] = n + 1;
+      var c = E("circle", { r: 6, fill: d.color,
+        stroke: n ? "var(--ds-title)" : "var(--ds-surface)", "stroke-width": n ? 1.6 : 0.9 });
+      root.appendChild(c); return c;
+    });
+    // label EVERY driver, at its dot (labels may overlap while the field is
+    // bunched early, and separate as it strings out over the season)
+    var labels = DR.map(function (d) {
+      var lb = T(0, 0, d.name, "ds-datalabel", { "font-size": 9, "font-weight": 700, fill: d.color });
+      root.appendChild(lb); return lb;
+    });
+    var readout = T(14, 22, "", "ds-callout", { "font-size": 15, "font-weight": 700 });
+    var subread = T(14, 40, "", "ds-tick", { "font-size": 10.5 });
+    root.appendChild(readout); root.appendChild(subread);
+
+    host.appendChild(svg);
+
+    // camera: eased {cx,cy,hw} in world units; world→screen is an affine matrix.
+    var cam = null, MIN_HW = 0.14, PAD = 1.12;
+    function drawAt(t, ease) {
+      var P = DR.map(function (d) { return posAt(heroS(d, t)); });
+      var xmin = 1e9, ymin = 1e9, xmax = -1e9, ymax = -1e9;
+      P.forEach(function (p) {
+        if (p[0] < xmin) xmin = p[0]; if (p[0] > xmax) xmax = p[0];
+        if (p[1] < ymin) ymin = p[1]; if (p[1] > ymax) ymax = p[1];
+      });
+      var tcx = (xmin + xmax) / 2, tcy = (ymin + ymax) / 2;
+      var thw = Math.max((xmax - xmin) / 2 * PAD, (ymax - ymin) / 2 * PAD * CAM_ASP, MIN_HW);
+      if (!cam || !ease) { cam = { cx: tcx, cy: tcy, hw: thw }; }
+      else { var e = 0.08; cam.cx += (tcx - cam.cx) * e; cam.cy += (tcy - cam.cy) * e; cam.hw += (thw - cam.hw) * e; }
+      var k = (W / 2) / cam.hw, tx = W / 2 - cam.cx * k, ty = H / 2 + cam.cy * k;   // y flipped
+      world.setAttribute("transform", "matrix(" + k + " 0 0 " + (-k) + " " + tx + " " + ty + ")");
+      trackPath.setAttribute("stroke-width", (1.5 / k).toFixed(4));
+      function proj(w) { return [k * w[0] + tx, -k * w[1] + ty]; }
+      // circuit round tags (projected; hidden when off-screen)
+      tags.forEach(function (tg, idx) {
+        var p = proj(tagPos[idx]);
+        if (p[0] < 8 || p[0] > W - 8 || p[1] < 54 || p[1] > H - 6) { tg.setAttribute("opacity", 0); return; }
+        tg.setAttribute("opacity", 1);
+        tg.setAttribute("x", p[0].toFixed(1)); tg.setAttribute("y", (p[1] - 6).toFixed(1));
+      });
+      var scr = P.map(proj);
+      dots.forEach(function (c, idx) { c.setAttribute("cx", scr[idx][0].toFixed(1)); c.setAttribute("cy", scr[idx][1].toFixed(1)); });
+      // reposition every driver's name label at its dot; track the pace leader
+      var leadIdx = 0;
+      labels.forEach(function (lab, idx) {
+        lab.setAttribute("x", Math.max(6, Math.min(W - 48, scr[idx][0] + 8)).toFixed(1));
+        lab.setAttribute("y", Math.max(56, Math.min(H - 6, scr[idx][1] + 3.2)).toFixed(1));
+        if (heroS(DR[idx], t) > heroS(DR[leadIdx], t)) leadIdx = idx;
+      });
+      var lead = DR[leadIdx], ci = heroCircuit(lead, t);
+      readout.textContent = "Pace leader on race " + ci + "/" + NR + " — " + RN[ci - 1].name;
+      subread.textContent = "Leading on pace: " + lead.name
+        + "  ·  the field strung out by time behind the race winners";
+    }
+
+    var ctl = null;
+    function run() { if (ctl) ctl.cancel(); cam = null;      // reset zoom to circuit 1
+      ctl = ticker(TOTAL_MS, function (p) { drawAt(p * T_END, true); },
+        function () { drawAt(T_END, true); }); }
+    return {
+      still: function () { if (ctl) ctl.cancel(); drawAt(T_END, false); },   // snap to full spread
+      play: function () { if (REDUCE) { drawAt(T_END, false); return; } run(); },
+      replay: function () { run(); },
+      _seek: function (frac) { if (ctl) ctl.cancel(); drawAt(frac * T_END, false); }  // debug/QA
     };
   };
 

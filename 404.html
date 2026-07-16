@@ -121,15 +121,22 @@
   <main id="top">
     <section class="notfound">
       <div class="container notfound__inner">
-        <p class="eyebrow"><span class="eyebrow__tick"></span> Error 404 · no data point here</p>
-        <h1 class="notfound__title">This one's an <span class="hl">outlier</span>.</h1>
-        <p class="notfound__lede">
-          That page isn't in the dataset. It may have moved, or the link picked up
-          some noise on the way over.
-        </p>
-        <div class="notfound__actions">
-          <a class="btn btn--primary" href="index.html">← Back home</a>
-          <a class="btn btn--ghost" href="index.html#work">See selected work →</a>
+        <!-- Decorative spinning "404" slab (anim/notfound.js). First in DOM so it
+             stacks on top on mobile; sits left of the text on desktop. The real
+             404 meaning lives in the visible eyebrow/title below, so this is
+             aria-hidden. -->
+        <pre class="notfound__anim ascii-screen" id="notfoundAnim" aria-hidden="true"></pre>
+        <div class="notfound__text">
+          <p class="eyebrow"><span class="eyebrow__tick"></span> Error 404 · no data point here</p>
+          <h1 class="notfound__title">This one's an <span class="hl">outlier</span>.</h1>
+          <p class="notfound__lede">
+            That page isn't in the dataset. It may have moved, or the link picked up
+            some noise on the way over.
+          </p>
+          <div class="notfound__actions">
+            <a class="btn btn--primary" href="index.html">← Back home</a>
+            <a class="btn btn--ghost" href="index.html#work">See selected work →</a>
+          </div>
         </div>
       </div>
     </section>
@@ -180,10 +187,18 @@
   </footer>
   </div><!-- /.stage -->
 
+  <!-- ASCII engine + the one "404 spin" plugin (anim/notfound.js). These are the
+       animation engine, not site behavior, so loading them here doesn't break the
+       "no script.js on the 404 page" rule — the mount call lives in the inline
+       handler below. -->
+  <script src="anim/ascii.js"></script>
+  <script src="anim/notfound.js"></script>
+
   <!-- Minimal self-contained behavior for the branded 404: theme toggle, mobile
-       burger, nav scrolled-state, and the year. Deliberately NOT loading
-       script.js (it wires the terminal/planes/marquee/carousel and would error on
-       this page's missing elements). Mirrors the equivalent handlers in script.js. -->
+       burger, nav scrolled-state, the year, and mounting the decorative 404 anim.
+       Deliberately NOT loading script.js (it wires the terminal/planes/marquee/
+       carousel and would error on this page's missing elements). Mirrors the
+       equivalent handlers in script.js. -->
   <script>
     (function () {
       var $ = function (s, c) { return (c || document).querySelector(s); };
@@ -232,6 +247,21 @@
       // Year
       var y = $("#year");
       if (y) y.textContent = new Date().getFullYear();
+
+      // Decorative spinning "404" ASCII slab. Native 80x30 grid, scaled by CSS
+      // font-size. Under reduced motion, paint one frame (B=0 → "404" facing the
+      // viewer) then freeze — mirrors the closer plasma in script.js.
+      var animEl = $("#notfoundAnim");
+      if (animEl && window.ASCII) {
+        var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var ctrl = ASCII.mount(animEl, "notfound", { autostart: false });
+        if (reduceMotion) {
+          ctrl.start();
+          requestAnimationFrame(function () { ctrl.stop(); });
+        } else {
+          ctrl.start();
+        }
+      }
     })();
   </script>
 </body>

@@ -200,10 +200,29 @@ img { max-width: 100%; display: block; }
   min-height: calc(100vh - 68px);           /* fill the viewport under the sticky nav */
   padding: clamp(3rem, 8vw, 6rem) 0;
 }
-.notfound__inner { max-width: 46ch; }
+/* Two columns on desktop: spinning "404" slab | text. */
+.notfound__inner {
+  display: flex; align-items: center;
+  gap: clamp(2rem, 5vw, 4.5rem);
+}
+/* Decorative ASCII slab (80x30). .ascii-screen already sets flex/line-height/
+   white-space/color; here we cap its share of the row and set a scale. */
+.notfound__anim {
+  flex: 0 1 40%; max-width: 40%;
+  font-size: clamp(6px, 1.15vw, 12px);
+  align-self: center;
+}
+.notfound__text { flex: 1 1 auto; max-width: 46ch; }
 .notfound__title { font-size: clamp(2.6rem, 6.5vw, 5rem); margin: 1.2rem 0 1.4rem; }
 .notfound__lede { font-size: clamp(1.05rem, 1.6vw, 1.2rem); color: var(--ink-soft); max-width: 40ch; }
 .notfound__actions { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 2rem; }
+
+/* Mobile: stack. Anim is first in the DOM, so it lands on top. */
+@media (max-width: 900px) {
+  .notfound__inner { flex-direction: column; align-items: flex-start; gap: clamp(1.5rem, 6vw, 2.5rem); }
+  .notfound__anim { flex: none; width: 100%; max-width: min(360px, 100%); font-size: clamp(5px, 3.5vw, 9px); }
+  .notfound__text { max-width: 100%; }
+}
 
 /* ---- terminal ---- */
 .terminal {

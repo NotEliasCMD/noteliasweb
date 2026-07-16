@@ -15,8 +15,7 @@ noteliasweb/
 ├── index.html   # all page markup / content
 ├── styles.css   # design tokens + all styling and keyframes
 ├── script.js    # animation & interaction layer (vanilla JS)
-├── README.md    # this file
-└── CLAUDE.md    # deeper guide for an LLM continuing the build
+└── README.md    # this file
 ```
 
 ## Run it
@@ -76,5 +75,3 @@ reveals show instantly, marquee/cursor stop.
 - **Content:** edit `index.html` directly.
 - **Terminal script:** edit the `SCRIPT` array in `script.js`.
 - **Marquee items:** edit the `.marquee__item` list in `index.html`.
-
-See `CLAUDE.md` for the full architecture, conventions, and extension guide.

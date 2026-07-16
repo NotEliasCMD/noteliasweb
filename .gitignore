@@ -1,11 +1,14 @@
-# Local Claude Code settings
-.claude/
-
 # macOS
 .DS_Store
 
 # Editor cruft
 *.swp
 
-# Local planning notes
+# Local-only files (not part of the published site)
+.claude/
+CLAUDE.md
+docs/
+dev/
 future plans/
+project_desc/
+details.txt

@@ -38,6 +38,7 @@ Ground truth of the reference design (extracted from dottxt.ai's compiled CSS):
 | `script.js`  | Behavior: reveal, typewriter, count-up, marquee, terminal, nav, year, carousel, closer plasma, project planes | Styling (add a class, style it in CSS) |
 | `anim/*.js`  | ASCII animation engine (`ascii.js`) + one plugin per animation (Work-plane anims, `plasma`, and library spares — see `COMPONENTS.md` §12); loaded by `index.html` | Site behavior (goes in `script.js`) |
 | `side-projects/*` | The "Personal works" data stories: a dependency-free SVG chart toolkit (`ds-charts.js` + `ds-charts.css`) and per-project data modules (`data/*.js`); loaded by `index.html` — see `COMPONENTS.md` §12a | Site behavior / ASCII anims |
+| `404.html` | Branded not-found page (real nav + footer + dark-mode toggle, "Back home") that **doubles** as the cold-deep-link shim: a known project slug (`saile.codes/f1`) is stashed + redirected to `/` so the router opens that plane; any other path renders the 404 — see `COMPONENTS.md` §11 "Deep-link routing". **Keep its `KNOWN` slug allowlist in sync** with the plane slugs (`data-project` minus `pw-`) | `script.js` (it inlines only theme/burger/year — never load the site's JS here) |
 | `COMPONENTS.md` | Per-component reference + simplicity/mobile review | — |
 | `plasma-preview.html` | **Dev-only** scratch harness to tune the closer plasma; **not linked from the site** and duplicates its knobs | Anything the shipped site depends on |
 

@@ -37,6 +37,20 @@
     try { if (localStorage.getItem("theme") === "dark")
       document.documentElement.dataset.theme = "dark"; } catch (e) {}
   </script>
+
+  <!-- Deep-link fixup: a shared link like /f1 hits GitHub Pages' 404, which
+       (via 404.html) stashes the slug and reloads the app root. Restore the
+       clean path here, pre-paint, so the address bar shows /f1 with no flash.
+       The router in script.js reads location.pathname on load and opens the
+       matching plane. See CLAUDE.md / COMPONENTS.md (plane routing). -->
+  <script>
+    (function () {
+      try {
+        var dl = sessionStorage.getItem("deepLink");
+        if (dl) { sessionStorage.removeItem("deepLink"); history.replaceState(null, "", "/" + dl); }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <div class="stage" id="stage">
@@ -473,49 +487,49 @@
           <h2 class="section__title" data-reveal>Things I build on weekends.</h2>
           <ul class="posts">
             <li class="post" data-reveal>
-              <a href="#" class="post__link post__link--plane" data-project="pw-chess" aria-label="Open project: The board, the fight, and the fingerprint">
+              <a href="/chess" class="post__link post__link--plane" data-project="pw-chess" aria-label="Open project: The board, the fight, and the fingerprint">
                 <span class="post__title">The board, the fight, and the fingerprint</span>
                 <span class="post__meta"><span class="post__date">2024</span><span class="post__arrow">→</span></span>
               </a>
             </li>
             <li class="post" data-reveal>
-              <a href="#" class="post__link post__link--plane" data-project="pw-f1" aria-label="Open project: The 2025 title race, drawn as a race">
+              <a href="/f1" class="post__link post__link--plane" data-project="pw-f1" aria-label="Open project: The 2025 title race, drawn as a race">
                 <span class="post__title">The 2025 title race, drawn as a race</span>
                 <span class="post__meta"><span class="post__date">2026</span><span class="post__arrow">→</span></span>
               </a>
             </li>
             <li class="post" data-reveal>
-              <a href="#" class="post__link post__link--plane" data-project="pw-ram" aria-label="Open project: RAM's AI premium">
+              <a href="/ram" class="post__link post__link--plane" data-project="pw-ram" aria-label="Open project: RAM's AI premium">
                 <span class="post__title">RAM's AI premium</span>
                 <span class="post__meta"><span class="post__date">2026</span><span class="post__arrow">→</span></span>
               </a>
             </li>
             <li class="post" data-reveal>
-              <a href="#" class="post__link post__link--plane" data-project="pw-moneyball" aria-label="Open project: Moneyball for the Premier League">
+              <a href="/moneyball" class="post__link post__link--plane" data-project="pw-moneyball" aria-label="Open project: Moneyball for the Premier League">
                 <span class="post__title">Moneyball for the Premier League</span>
                 <span class="post__meta"><span class="post__date">2024</span><span class="post__arrow">→</span></span>
               </a>
             </li>
             <li class="post" data-reveal>
-              <a href="#" class="post__link post__link--plane" data-project="pw-markets" aria-label="Open project: A decade of markets">
+              <a href="/markets" class="post__link post__link--plane" data-project="pw-markets" aria-label="Open project: A decade of markets">
                 <span class="post__title">A decade of markets</span>
                 <span class="post__meta"><span class="post__date">2026</span><span class="post__arrow">→</span></span>
               </a>
             </li>
             <li class="post" data-reveal>
-              <a href="#" class="post__link post__link--plane" data-project="pw-books" aria-label="Open project: Classic novels and the use of words">
+              <a href="/books" class="post__link post__link--plane" data-project="pw-books" aria-label="Open project: Classic novels and the use of words">
                 <span class="post__title">Classic novels &amp; the use of words</span>
                 <span class="post__meta"><span class="post__date">2025</span><span class="post__arrow">→</span></span>
               </a>
             </li>
             <li class="post" data-reveal>
-              <a href="#" class="post__link post__link--plane" data-project="pw-pokedex" aria-label="Open project: Pokémon, the original 251">
+              <a href="/pokedex" class="post__link post__link--plane" data-project="pw-pokedex" aria-label="Open project: Pokémon, the original 251">
                 <span class="post__title">Pokémon: the original 251</span>
                 <span class="post__meta"><span class="post__date">2025</span><span class="post__arrow">→</span></span>
               </a>
             </li>
             <li class="post" data-reveal>
-              <a href="#" class="post__link post__link--plane" data-project="pw-consoles" aria-label="Open project: The console wars and the blockbuster era">
+              <a href="/consoles" class="post__link post__link--plane" data-project="pw-consoles" aria-label="Open project: The console wars and the blockbuster era">
                 <span class="post__title">The console wars &amp; the blockbuster era</span>
                 <span class="post__meta"><span class="post__date">2026</span><span class="post__arrow">→</span></span>
               </a>
@@ -582,7 +596,7 @@
         </div>
         <div class="footer__col">
           <span class="footer__head">Elsewhere</span>
-          <a href="#">GitHub</a>
+          <a href="https://github.com/NotEliasCMD">GitHub</a>
           <a href="https://www.linkedin.com/in/elias-oisin-kelly-902621134/">LinkedIn</a>
         </div>
         <div class="footer__col">

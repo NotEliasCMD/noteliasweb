@@ -259,6 +259,58 @@ Line ranges below are approximate anchors as of this writing.
   Retire/reset are timer-driven (fixed durations), not `transitionend`, so a hop can't
   get stuck. Focus lands on the same-direction nav button; Back/Escape restore focus to
   the **current** project's card. At ≤720px the crumb hides so the bar fits.
+- **Deep-link routing (shareable URLs):** opening a plane also writes a **clean
+  path** to the address bar so it can be shared — Work planes use their
+  `data-project` verbatim (`saile.codes/black-swan`), Personal-works drop the
+  `pw-` prefix (`saile.codes/f1`, `/ram`, …). `slug = data-project.replace(/^pw-/, "")`;
+  the two groups never collide. All wiring lives in `script.js` §9 (module scope
+  near the `popstate` listener): a shared `openBySlug` registry (slug → open fn),
+  an `openSlug` marker, `slugOf`/`currentSlug`/`setUrl` helpers, and a `popstate`
+  handler that **reconciles URL ↔ open plane** (opens the URL's plane, or closes
+  when the URL returns to base). `openPlane(projId, card, fromRoute)` pushes
+  `/slug` on a click (`fromRoute` → `replaceState`, no duplicate entry);
+  `navigateTo` `replaceState`s each hop (prev/next stays under one history entry,
+  so Back always returns to the homepage); `closePlane` clears `openSlug`. On
+  load, `routeOnLoad` opens the plane named by the path (pinning a `/` base entry
+  behind it so Back = home) — but **only for a slug it owns**, leaving the URL
+  untouched otherwise. This all rides on the pre-existing back-button trap (the
+  `peachyPlane` history state); it extends it, it doesn't replace it.
+  - **Cold links need a static-host fallback.** `saile.codes` is on GitHub Pages,
+    which can't rewrite server paths, so a shared `/f1` first hits GitHub's 404.
+    `404.html` (repo root) is a **branded not-found page** (real nav + footer +
+    dark-mode toggle + "Back home"; the `.notfound` block lives in `styles.css`)
+    that doubles as the shim. Its `<head>` script holds a `KNOWN` **slug
+    allowlist**: if the path's first segment is a real project slug, it stashes it
+    in `sessionStorage` and `location.replace("/")` (the branded page never
+    renders) — then `index.html`'s inline `<head>` script restores the clean path
+    pre-paint and `routeOnLoad` opens the plane. Any other path renders the branded
+    404. On-site clicks/back/forward never touch the network — only cold loads use
+    the shim. **`KNOWN` is the one place the slug set is duplicated** — keep it in
+    sync (`data-project` minus `pw-`).
+    `404.html` uses **relative** asset + link paths (like `index.html`) so it's
+    styled whether opened via `file://`, from a subdirectory, from the site root,
+    or served by GitHub Pages for a single-segment unknown path (document base is
+    `/`, so `styles.css` → `/styles.css`); home links point at `index.html` for the
+    same reason. Only a deep bogus path (`/a/b/c`) would miss the styles, and every
+    real slug is a single segment the shim redirects first. It inlines its own
+    minimal theme/burger/year JS rather than loading `script.js`.
+  - **`CLEAN_URLS` guard.** URL-syncing is gated to root-served hosts
+    (`!location.hostname.endsWith("github.io")` → `saile.codes` + localhost). On
+    the `github.io/noteliasweb/` project-page **mirror** (served from a subpath),
+    absolute `/slug` paths would point outside the app, so the router falls back
+    to the original behavior there: planes still open on click and push one
+    back-target entry (URL unchanged), just no shareable link. Deep links are a
+    custom-domain feature.
+  - **Adding a project needs nothing extra:** the router derives the slug from
+    `data-project`, so a new `.card--link` / `.post__link--plane` is routable
+    automatically. Personal-works anchors carry a real `href="/<slug>"` (JS still
+    intercepts) so right-click→Copy-link and middle-click work; Work triggers are
+    `<article role="button">` (no href) and are reachable by typed/shared URL.
+
+  > Note: the "Content status" / count figures below predate later additions —
+  > the site now ships **10 Work planes** and **8 Personal-works planes** (adds
+  > `pw-chess`, `pw-f1`), with no shared `#plane-placeholder`. Treat the older
+  > `fraud/forecast/abtest/tickets/placeholder` names as stale.
 - **Content status:** the largest single feature. Real copy + real data now fill the
   **triage** Work plane and **all six Personal-works data-story planes**; the remaining
   Work planes (fraud, forecast, abtest, tickets) + the shared placeholder are still

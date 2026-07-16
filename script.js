@@ -606,13 +606,59 @@
     // slightly. Change here to retune all planes at once.
     const PLANE_GRID = { cols: 62, rows: 26 };
 
-    // Device/browser back button: opening a plane pushes one history entry so the
-    // back gesture closes the plane and returns to the page instead of leaving the
+    // Device/browser back button + shareable deep links. Opening a plane pushes
+    // one history entry AND writes a clean path (e.g. /f1) so the plane can be
+    // linked to and the back gesture returns to the page instead of leaving the
     // site. Only one plane is open at a time (the full-screen overlay covers the
-    // other group's triggers), so a single shared closer pointer suffices.
+    // other group's triggers), so a single shared closer pointer + a single
+    // "which slug is open" marker suffice.
     let closeActivePlane = null;
+    let openSlug = null;                 // slug of the currently-open plane, or null
+    const openBySlug = {};               // slug -> (fromRoute) => opens that plane
+
+    // Clean /slug deep links assume the site is served from the domain root
+    // (saile.codes, or localhost while developing). The github.io project-page
+    // mirror is served from /noteliasweb/, so writing absolute /slug paths there
+    // would point outside the app. On that mirror we fall back to the original
+    // behavior: a plane still opens on click and pushes ONE back-target entry
+    // (URL unchanged), so the back gesture closes it — just no shareable URL.
+    const CLEAN_URLS = !location.hostname.endsWith("github.io");
+
+    // A trigger's data-project is the plane key; the public URL slug drops the
+    // Personal-works "pw-" prefix (Work keys are used as-is). No collisions.
+    const slugOf = (projId) => projId.replace(/^pw-/, "");
+    // the slug the URL currently points at (first path segment), or "" for home
+    const currentSlug = () => location.pathname.replace(/^\/+|\/+$/g, "").split("/")[0];
+    // Reflect the open plane in the URL. On CLEAN_URLS hosts, write a clean
+    // /slug path (push on open, replace on prev/next hops). Elsewhere, keep the
+    // URL unchanged and only push the single back-target entry on open.
+    function setUrl(slug, replace) {
+      if (!CLEAN_URLS) {
+        if (!replace) history.pushState({ peachyPlane: true }, "");  // back target only
+        return;
+      }
+      const st = { peachyPlane: true, slug };
+      if (replace) history.replaceState(st, "", "/" + slug);
+      else history.pushState(st, "", "/" + slug);
+    }
+
+    // Keep the URL and the open plane in agreement on back/forward navigation.
     window.addEventListener("popstate", () => {
-      if (closeActivePlane) closeActivePlane();   // close; browser already popped our entry
+      if (!CLEAN_URLS) {                 // mirror: back just closes the open plane
+        if (closeActivePlane) closeActivePlane();
+        return;
+      }
+      const slug = currentSlug();
+      if (slug && openBySlug[slug]) {
+        // URL points at a plane: open it (swapping if a different one is open)
+        if (slug !== openSlug) {
+          if (closeActivePlane) closeActivePlane();
+          openBySlug[slug](true);        // fromRoute: don't stack another entry
+        }
+      } else if (openSlug) {
+        // URL is back at base (or an unknown slug) but a plane is open: close it
+        if (closeActivePlane) closeActivePlane();
+      }
     });
 
     // size a <pre> so cols*rows of monospace fill its box
@@ -729,21 +775,27 @@
         if (back) back.focus();
       }
 
-      function openPlane(projId, card) {
+      // fromRoute = opened by the router (deep link / back-forward), not a click:
+      // in that case the target history entry already exists, so replace it in
+      // place rather than pushing a duplicate.
+      function openPlane(projId, card, fromRoute) {
         const plane = document.getElementById("plane-" + projId);
         if (!plane || activePlane) return;
         showPlane(plane, card);
         // register a history entry so the back button/gesture closes the plane
-        // (navigateTo hops reuse showPlane, not openPlane, so they stay under this
-        // single entry — back returns to the page from anywhere in the session)
+        // and mirror the plane into the URL as a clean /slug (navigateTo hops
+        // reuse showPlane, not openPlane, so they stay under this single entry —
+        // back returns to the page from anywhere in the session)
         closeActivePlane = () => closePlane(true);     // true = came from popstate
-        history.pushState({ peachyPlane: true }, "");  // URL unchanged; just a back target
+        openSlug = slugOf(projId);
+        setUrl(openSlug, !!fromRoute);                 // push on click, replace on route
       }
 
       function closePlane(fromPopstate) {
         if (!activePlane) return;
         const plane = activePlane;
         activePlane = null;
+        openSlug = null;                 // URL no longer points at an open plane
 
         plane.classList.remove("is-open");
         plane.setAttribute("aria-hidden", "true");
@@ -804,6 +856,10 @@
         // "prev" enters from the side opposite the group's resting edge
         if (dir < 0) targetPlane.classList.add(mirror ? "plane--from-right" : "plane--from-left");
         showPlane(targetPlane, targetCard);                      // slides in over the current one
+        // mirror the hop into the URL; replace (not push) so prev/next stays
+        // under the single history entry openPlane created — back still = home
+        openSlug = slugOf(targetCard.dataset.project);
+        setUrl(openSlug, true);
         focusNav(targetPlane, dir);
         setTimeout(() => {
           retire(current);                                       // hide the now-covered old plane
@@ -814,6 +870,8 @@
 
       cards.forEach((card) => {
         const id = card.dataset.project;
+        // expose this plane to the URL router under its clean slug
+        openBySlug[slugOf(id)] = (fromRoute) => openPlane(id, card, fromRoute);
         card.addEventListener("click", (e) => { e.preventDefault(); openPlane(id, card); });
         card.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPlane(id, card); }
@@ -847,5 +905,21 @@
 
     createPlaneGroup($$(".card--link"), false);        // Work — slides in from the right
     createPlaneGroup($$(".post__link--plane"), true);  // Personal works — mirrored, slides in from the left
+
+    // Deep-link entry: if we loaded on a /slug (a shared link, restored pre-paint
+    // in index.html), open that plane. First pin a clean base entry behind it so
+    // the back button/gesture returns to the homepage rather than leaving the
+    // site. Unknown slugs just fall back to home. openBySlug is populated by the
+    // two groups above (module scope).
+    (function routeOnLoad() {
+      const slug = currentSlug();
+      // Only act on a slug we actually own. This leaves the URL untouched for the
+      // homepage, unknown slugs, and the github.io project-page mirror (whose
+      // first path segment is "noteliasweb", not a plane) — so we never rewrite
+      // that mirror's base path.
+      if (!slug || !openBySlug[slug]) return;
+      history.replaceState({}, "", "/");               // base entry behind the plane
+      openBySlug[slug](false);                          // push /slug on top → back = home
+    })();
   }
 })();

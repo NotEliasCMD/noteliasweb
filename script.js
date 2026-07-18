@@ -281,11 +281,13 @@
   }
   // Real audio track for the "lock in" egg. AFTER the page has fully loaded (so it
   // never competes with initial page load), stream the ENTIRE mp3 down in the
-  // background using fetch()'s chunked ReadableStream — read piece by piece, then
-  // stitch into one Blob and hand the Audio element a local object URL. Result: the
-  // whole ~7.8 MB track is prefetched in pieces, in the background, and playback is
-  // instant when the egg fires (no network wait), served from a blob: URL.
-  let lockinAudio = null;          // ready-to-play element (src = blob: URL) once fetched
+  // background using fetch()'s chunked ReadableStream — read piece by piece and
+  // stitch into one in-memory Blob. We deliberately hold only the Blob here and do
+  // NOT create any Audio element or blob: object URL until the egg actually fires
+  // (see playLockin): touching a media/blob resource at page load makes headless
+  // CI log a failed blob: request. Result: the ~7.8 MB track is prefetched in
+  // pieces in the background, and playback on the gesture is instant / network-free.
+  let lockinBlob = null;           // full track held in memory once prefetched
   let lockinReady = null;          // the in-flight prefetch promise (dedupes callers)
 
   function prefetchLockin() {
@@ -304,34 +306,22 @@
           });
         })();
       })
-      .then((blob) => {
-        // preload="none": the whole file is already in memory as `blob`, so the
-        // element has nothing to fetch ahead of time — it loads instantly from the
-        // in-memory blob: URL on .play(). (Eager preload would make the element
-        // issue a blob: request at page load, which headless CI flags as a failed
-        // request when no codec/decode is available and nothing ever plays it.)
-        const a = new Audio();
-        a.preload = "none";
-        a.src = URL.createObjectURL(blob);
-        lockinAudio = a;
-        return a;
-      })
+      .then((blob) => { lockinBlob = blob; return blob; })
       .catch(() => null);          // network/CORS failure: playLockin() falls back below
     return lockinReady;
   }
   // Kick the background download once the page is done loading.
   window.addEventListener("load", prefetchLockin);
 
+  // Built on the user gesture (Enter in the terminal), so nothing touches a
+  // blob:/media resource at page load. If the prefetch finished, play the
+  // in-memory copy for instant, network-free playback; otherwise stream from the
+  // URL (and make sure the background prefetch is running).
   function playLockin() {
-    if (lockinAudio) {             // fully prefetched → instant, offline playback
-      lockinAudio.currentTime = 0;
-      lockinAudio.play().catch(() => {});
-      return;
-    }
-    // Triggered before the prefetch finished: stream directly so it still plays.
-    const a = new Audio("aud/lockin.mp3");
+    const src = lockinBlob ? URL.createObjectURL(lockinBlob) : "aud/lockin.mp3";
+    const a = new Audio(src);
     a.play().catch(() => {});
-    prefetchLockin();              // ensure the cached copy is still being fetched
+    if (!lockinBlob) prefetchLockin();
   }
 
   // A short rising major arpeggio (C5–E5–G5–C6) — a little "ta-da".

@@ -226,12 +226,26 @@ img { max-width: 100%; display: block; }
 
 /* ---- terminal ---- */
 .terminal {
+  position: relative;                 /* anchor for the off-screen input below */
   background: #1c1a15; color: #ece7dc;
   border-radius: var(--radius);
   border: 1px solid #2c2920;
   box-shadow: 0 30px 60px -30px rgba(23, 21, 15, 0.45), 0 2px 0 rgba(255,255,255,0.02) inset;
   overflow: hidden;
   font-family: var(--font-mono);
+}
+/* Focusable-but-invisible input that captures typing (incl. the mobile soft
+   keyboard). Must stay focusable, so NOT display:none / visibility:hidden —
+   it's collapsed to 1px and transparent instead. font-size:16px stops iOS from
+   zooming on focus; pointer-events:none lets taps fall through to the terminal
+   (JS focuses it programmatically). */
+.terminal__kbd {
+  position: absolute; top: 0; left: 0;
+  width: 1px; height: 1px;
+  margin: 0; padding: 0; border: 0;
+  font-size: 16px;
+  opacity: 0; background: transparent; color: transparent; caret-color: transparent;
+  pointer-events: none;
 }
 .terminal__bar {
   display: flex; align-items: center; gap: 0.5rem;

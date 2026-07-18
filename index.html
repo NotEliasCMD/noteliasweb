@@ -149,6 +149,14 @@
             <button type="button" class="terminal__tab" data-tab="triage" tabindex="-1">triage.py</button>
           </div>
           <pre class="terminal__body"><code id="typed"></code><span id="terminalInput" class="tok-cmd"></span><span class="cursor" id="cursor">▍</span></pre>
+          <!-- Off-screen, focusable field that captures typing at the prompt. Tapping
+               the terminal focuses it, which summons the mobile soft keyboard; its
+               value is mirrored into #terminalInput. Decorative (terminal is
+               aria-hidden) and kept out of the tab order. -->
+          <input id="terminalKbd" class="terminal__kbd" type="text" tabindex="-1"
+                 aria-hidden="true" autocomplete="off" autocapitalize="off"
+                 autocorrect="off" spellcheck="false" inputmode="text"
+                 enterkeyhint="go" maxlength="40">
         </div>
       </div>
 

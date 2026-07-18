@@ -221,7 +221,8 @@
 
   const tabBtns = $$(".terminal__tab");
   const terminalEl = $(".terminal");
-  const inputEl = $("#terminalInput");   // where the visitor's keystrokes land
+  const inputEl = $("#terminalInput");   // where the visitor's keystrokes are shown
+  const kbdEl = $("#terminalKbd");        // off-screen field we focus to summon a keyboard
   let typeToken = 0;        // bump to cancel any in-flight typing chain
   const rendered = {};      // tab id -> true once fully typed (cache)
   let firstShow = true;     // only the first auto-type gets the paint lead-in
@@ -262,12 +263,21 @@
     finishActiveTab();
     inputActive = true;
     terminalEl.classList.add("terminal--input");
+    // Focus the off-screen field inside this tap gesture so mobile browsers raise
+    // the soft keyboard. preventScroll avoids a jump on desktop (ignored where
+    // unsupported). Desktop without a keyboard focus still works via the document
+    // keydown fallback below.
+    if (kbdEl) {
+      kbdEl.value = inputEl.textContent;
+      kbdEl.focus({ preventScroll: true });
+    }
   }
 
   function exitInputMode() {
     inputActive = false;
     if (inputEl) inputEl.textContent = "";
     if (terminalEl) terminalEl.classList.remove("terminal--input");
+    if (kbdEl) { kbdEl.value = ""; kbdEl.blur(); }   // dismiss the mobile keyboard
   }
 
   // Celebration sound — synthesized with Web Audio, no asset needed. Created
@@ -400,6 +410,29 @@
       document.addEventListener("click", (e) => {
         if (inputActive && !terminalEl.contains(e.target)) exitInputMode();
       });
+
+      // Primary input path (works with a soft keyboard on mobile and a physical
+      // one on desktop): keystrokes land in the focused off-screen field; mirror
+      // its value into the visible prompt. Enter submits; Escape/blur exits.
+      if (kbdEl) {
+        kbdEl.addEventListener("input", () => {
+          let v = kbdEl.value.replace(/\n/g, "");
+          if (v.length > MAX_INPUT) { v = v.slice(0, MAX_INPUT); kbdEl.value = v; }
+          inputEl.textContent = v;
+          typedEl.parentElement.scrollTop = typedEl.parentElement.scrollHeight;
+        });
+        kbdEl.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); submitInput(); kbdEl.value = ""; }
+          else if (e.key === "Escape") { e.preventDefault(); exitInputMode(); }
+        });
+        // Keyboard dismissed / focus lost → leave input mode (guard stops the
+        // blur we trigger inside exitInputMode from recursing).
+        kbdEl.addEventListener("blur", () => { if (inputActive) exitInputMode(); });
+      }
+
+      // Fallback for when the off-screen field isn't focused (e.g. focus() was
+      // blocked): capture typing at the document level. Bails when a real input is
+      // focused, so it never double-handles keystrokes that the field already got.
       document.addEventListener("keydown", (e) => {
         if (!inputActive) return;
         const ae = document.activeElement;

@@ -1,0 +1,25 @@
+name: postdeploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: read
+
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r tests/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Wait for saile.codes to serve this commit, then smoke it
+        env:
+          SMOKE_CHROME_CHANNEL: ""
+          GH_TOKEN: ${{ github.token }}
+        run: bash tests/postdeploy.sh

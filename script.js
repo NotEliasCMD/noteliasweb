@@ -109,8 +109,9 @@
   // `reaction()` returns [className, text] chunks (same format as TABS below),
   // so swapping the word or the celebration output is a one-line edit here —
   // no other code needs to change. Each egg also plays `playChime()` by default;
-  // set `sound: false` for a silent egg, or `sound: (ctx) => {…}` for a custom
-  // Web Audio effect.
+  // set `sound: false` for a silent egg, or `sound: (getCtx) => {…}` for a custom
+  // effect — `getCtx()` lazily returns the shared AudioContext, so an egg that
+  // doesn't need Web Audio (e.g. one that plays an <audio> file) never creates one.
   const MAX_INPUT = 40;   // max chars a visitor may type at the prompt;
                           // further keystrokes are silently ignored at the cap
   const EASTER_EGGS = [
@@ -289,6 +290,8 @@
   // pieces in the background, and playback on the gesture is instant / network-free.
   let lockinBlob = null;           // full track held in memory once prefetched
   let lockinReady = null;          // the in-flight prefetch promise (dedupes callers)
+  let lockinAudio = null;          // single reused <audio>, created on first gesture
+  let lockinUrl = null;            // object URL for the in-memory blob, created once
 
   function prefetchLockin() {
     if (lockinReady) return lockinReady;
@@ -307,21 +310,42 @@
         })();
       })
       .then((blob) => { lockinBlob = blob; return blob; })
-      .catch(() => null);          // network/CORS failure: playLockin() falls back below
+      .catch(() => { lockinReady = null; return null; }); // clear so a later trigger can retry
     return lockinReady;
   }
   // Kick the background download once the page is done loading.
   window.addEventListener("load", prefetchLockin);
 
-  // Built on the user gesture (Enter in the terminal), so nothing touches a
-  // blob:/media resource at page load. If the prefetch finished, play the
-  // in-memory copy for instant, network-free playback; otherwise stream from the
-  // URL (and make sure the background prefetch is running).
+  // Play `src` through ONE reused element (created here on the gesture — never at
+  // page load, which would make headless CI log a failed blob: request). Reusing
+  // the element + restarting from 0 stops repeat triggers from stacking overlapping
+  // copies and avoids leaking an <audio>/object URL per trigger.
+  function playLockinFrom(src) {
+    if (!lockinAudio) lockinAudio = new Audio();
+    if (lockinAudio.src !== src) lockinAudio.src = src;   // no reload if unchanged
+    // Restart a still-playing element from the top on a repeat trigger. Guarded on
+    // readyState so we never poke currentTime before media is loaded (fresh element
+    // is already at 0), which can throw InvalidStateError in strict browsers.
+    if (lockinAudio.readyState > 0) lockinAudio.currentTime = 0;
+    lockinAudio.play().catch(() => {});
+  }
   function playLockin() {
-    const src = lockinBlob ? URL.createObjectURL(lockinBlob) : "aud/lockin.mp3";
-    const a = new Audio(src);
-    a.play().catch(() => {});
-    if (!lockinBlob) prefetchLockin();
+    if (lockinBlob) {                                     // cached → instant, network-free
+      if (!lockinUrl) lockinUrl = URL.createObjectURL(lockinBlob);
+      playLockinFrom(lockinUrl);
+      return;
+    }
+    // Not cached yet: wait on the in-flight prefetch (or start it) rather than
+    // opening a second download of the same file. Only stream straight from the
+    // URL as a last resort, when the prefetch failed and there's nothing to await.
+    prefetchLockin().then((blob) => {
+      if (blob) {
+        if (!lockinUrl) lockinUrl = URL.createObjectURL(blob);
+        playLockinFrom(lockinUrl);
+      } else {
+        playLockinFrom("aud/lockin.mp3");
+      }
+    });
   }
 
   // A short rising major arpeggio (C5–E5–G5–C6) — a little "ta-da".
@@ -356,7 +380,7 @@
     if (egg) {
       egg.reaction().forEach(([cls, text]) => appendChunk(typedEl, cls, text));
       if (egg.sound !== false) {
-        if (typeof egg.sound === "function") egg.sound(getAudioCtx());
+        if (typeof egg.sound === "function") egg.sound(getAudioCtx);
         else playChime();
       }
     } else if (cmd) {

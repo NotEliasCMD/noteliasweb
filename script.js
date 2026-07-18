@@ -305,8 +305,14 @@
         })();
       })
       .then((blob) => {
-        const a = new Audio(URL.createObjectURL(blob));
-        a.preload = "auto";
+        // preload="none": the whole file is already in memory as `blob`, so the
+        // element has nothing to fetch ahead of time — it loads instantly from the
+        // in-memory blob: URL on .play(). (Eager preload would make the element
+        // issue a blob: request at page load, which headless CI flags as a failed
+        // request when no codec/decode is available and nothing ever plays it.)
+        const a = new Audio();
+        a.preload = "none";
+        a.src = URL.createObjectURL(blob);
         lockinAudio = a;
         return a;
       })

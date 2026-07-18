@@ -121,6 +121,13 @@
         ["tok-out", "you found it.\n"],
       ],
     },
+    {
+      trigger: "lock in",
+      reaction: () => [
+        ["tok-celebrate", "🔒 lock in to code\n"],
+      ],
+      sound: () => playLockin(),   // streams the prefetched mp3, not the chime
+    },
   ];
 
   // Each tab is { id, script } where script is an array of [className, text]
@@ -272,6 +279,55 @@
     if (audioCtx.state === "suspended") audioCtx.resume();
     return audioCtx;
   }
+  // Real audio track for the "lock in" egg. AFTER the page has fully loaded (so it
+  // never competes with initial page load), stream the ENTIRE mp3 down in the
+  // background using fetch()'s chunked ReadableStream — read piece by piece, then
+  // stitch into one Blob and hand the Audio element a local object URL. Result: the
+  // whole ~7.8 MB track is prefetched in pieces, in the background, and playback is
+  // instant when the egg fires (no network wait), served from a blob: URL.
+  let lockinAudio = null;          // ready-to-play element (src = blob: URL) once fetched
+  let lockinReady = null;          // the in-flight prefetch promise (dedupes callers)
+
+  function prefetchLockin() {
+    if (lockinReady) return lockinReady;
+    lockinReady = fetch("aud/lockin.mp3")
+      .then((res) => {
+        if (!res.ok || !res.body) return res.blob(); // fallback: whole-body blob
+        // Drain the stream chunk-by-chunk so the download is explicitly "in pieces".
+        const reader = res.body.getReader();
+        const chunks = [];
+        return (function pump() {
+          return reader.read().then(({ done, value }) => {
+            if (done) return new Blob(chunks, { type: "audio/mpeg" });
+            chunks.push(value);
+            return pump();
+          });
+        })();
+      })
+      .then((blob) => {
+        const a = new Audio(URL.createObjectURL(blob));
+        a.preload = "auto";
+        lockinAudio = a;
+        return a;
+      })
+      .catch(() => null);          // network/CORS failure: playLockin() falls back below
+    return lockinReady;
+  }
+  // Kick the background download once the page is done loading.
+  window.addEventListener("load", prefetchLockin);
+
+  function playLockin() {
+    if (lockinAudio) {             // fully prefetched → instant, offline playback
+      lockinAudio.currentTime = 0;
+      lockinAudio.play().catch(() => {});
+      return;
+    }
+    // Triggered before the prefetch finished: stream directly so it still plays.
+    const a = new Audio("aud/lockin.mp3");
+    a.play().catch(() => {});
+    prefetchLockin();              // ensure the cached copy is still being fetched
+  }
+
   // A short rising major arpeggio (C5–E5–G5–C6) — a little "ta-da".
   function playChime() {
     const ctx = getAudioCtx();

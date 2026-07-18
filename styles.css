@@ -238,9 +238,11 @@ img { max-width: 100%; display: block; }
    keyboard). Must stay focusable, so NOT display:none / visibility:hidden —
    it's collapsed to 1px and transparent instead. font-size:16px stops iOS from
    zooming on focus; pointer-events:none lets taps fall through to the terminal
-   (JS focuses it programmatically). */
+   (JS focuses it programmatically). Anchored to the BOTTOM (where the visible
+   prompt sits) so that mobile browsers ignoring focus({preventScroll}) scroll
+   the prompt into view rather than the terminal's top edge. */
 .terminal__kbd {
-  position: absolute; top: 0; left: 0;
+  position: absolute; bottom: 0; left: 0;
   width: 1px; height: 1px;
   margin: 0; padding: 0; border: 0;
   font-size: 16px;

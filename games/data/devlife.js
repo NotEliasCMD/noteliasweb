@@ -42,6 +42,18 @@
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var START_YEAR = 2016;
   function age(s) { return 22 + Math.floor(s.day / 365); }
+
+  // ---- experience tiers -----------------------------------------------------
+  // Years since graduating. Job offers are gated by YoE: no poaching early on,
+  // and the level you can be offered is tiered. You can get LUCKY (a stretch
+  // offer one tier up) — but taking it leaves you over-levelled / under-prepared.
+  function careerYears(s) { return Math.floor(s.day / 365); }
+  function expLevel(y) { return y < 2 ? 1 : y < 4 ? 2 : y < 7 ? 3 : y < 11 ? 4 : 5; }   // level your experience supports
+  function offerTierCap(y) { return y < 2 ? 0 : y < 4 ? 2 : y < 7 ? 3 : y < 11 ? 4 : 5; } // best level anyone will offer you
+  // "under-prepared": only after you take a LUCKY STRETCH offer (a role above your
+  // experience). It's a temporary window (~3 yrs) of being in over your head —
+  // NOT a penalty on earned promotions/exec seats.
+  function overLeveled(s) { return s.employed && !s.founder && s.stretchUntil && careerYears(s) < s.stretchUntil; }
   function dateLabel(s) {
     var y = START_YEAR + Math.floor(s.day / 365);
     var m = Math.min(11, Math.floor((s.day % 365) / 30.42));
@@ -166,6 +178,7 @@
     s.money += (take - living) * (weeks / 52);
     s.invest = Math.round(s.invest * Math.pow(1.05, weeks / 52));
     give(s, { morale: -0.5 * (weeks / 4), energy: 0.4 * (weeks / 4) });  // life goes stale; you recover slowly at rest
+    if (overLeveled(s)) give(s, { morale: -1.4 * (weeks / 4), energy: -0.6 * (weeks / 4) });  // in over your head: imposter stress
     if (chance(0.05 * weeks)) loseFriend(s);         // drift out of touch
     if (s.love) {
       s.love.close = clamp(s.love.close - 0.9 * (weeks / 4));
@@ -183,7 +196,7 @@
   // advance `weeks`, stepping in chunks so an event can interrupt. tag hints
   // context ("focus" → bug risk, "hunt" → job offers).
   function advance(s, weeks, tag) {
-    var elapsed = 0, step = 4;
+    var elapsed = 0, step = 8;
     while (elapsed < weeks) {
       var w = Math.min(step, weeks - elapsed);
       s.day += w * 7; elapsed += w;
@@ -213,10 +226,19 @@
   };
 
   /* ---- job offers ---------------------------------------------------------- */
+  // Build an offer gated by years of experience. Returns false when nobody's
+  // biting yet (employed with < 2 YoE). ~15% chance of a lucky "stretch" offer
+  // one tier above your experience — flagged so you know you'd be in deep.
   function makeOffer(s) {
-    var lvl = Math.max(s.employed ? s.level : 1, Math.min(5, 1 + Math.floor(s.skill / 16)));  // external offers top out at IC; exec seats come via exec_opening
+    var y = careerYears(s), cap = offerTierCap(y);
+    if (cap === 0 && s.employed) { s.offer = null; return false; }   // too green to be poached
+    var lucky = cap > 0 && chance(0.15);
+    var maxLvl = Math.min(5, (cap || 1) + (lucky ? 1 : 0));
+    var lvl = Math.min(maxLvl, Math.max(1, 1 + Math.floor(s.skill / 18)));
+    if (s.employed) lvl = Math.min(maxLvl, Math.max(lvl, s.level));  // at least a lateral move
     var co = pickOne(["a hot startup 🚀", "Google 🔎", "a unicorn 🦄", "a big bank 🏦", "a scale-up 📊", "a FAANG 🧠"]);
-    s.offer = { level: lvl, company: co, salary: Math.round(LEVELS[lvl].sal * (1 + rnd() * 0.35)) };
+    s.offer = { level: lvl, company: co, salary: Math.round(LEVELS[lvl].sal * (1 + rnd() * 0.35)), stretch: lvl > expLevel(y) };
+    return true;
   }
 
   /* ========================================================================= *
@@ -256,7 +278,7 @@
             { label: "Let it die and move on.", match: ["drop", "move", "ok", "2"],
               effect: act(1, null, function (st) { st.project = null; give(st, { rep: -3, morale: -6 }); log(st, WARN, "🗑️ Shelved. That stings, but you move on."); }), goto: nextScene }]);
       } },
-    { id: "recruiter", cat: "work", weight: 2, cool: 26, when: function (s) { return s.employed && !s.founder && s.skill >= 20; },
+    { id: "recruiter", cat: "work", weight: 2, cool: 26, when: function (s) { return s.employed && !s.founder && careerYears(s) >= 2 && s.skill >= 20; },
       build: function (s) { makeOffer(s); return offerScene(s, "📨 A recruiter slides into your inbox"); } },
     { id: "exec_opening", cat: "work", weight: 1, cool: 36, when: function (s) { return s.employed && !s.founder && s.level >= 5 && s.level < 7 && s.rep >= 38; },
       build: function (s) {
@@ -475,9 +497,10 @@
 
   function offerScene(s, title) {
     return ev(title,
-      [line(STR, s.offer.company + " — " + LEVELS[s.offer.level].name + " · $" + s.offer.salary + "k/yr.\n")],
+      [line(STR, s.offer.company + " — " + LEVELS[s.offer.level].name + " · $" + s.offer.salary + "k/yr.\n")].concat(
+        s.offer.stretch ? [line(WARN, "⚠️ That's above your experience — you'd be in over your head.\n")] : []),
       [{ label: "✅ Take it.", match: ["take", "accept", "yes", "1"],
-          effect: act(2, null, function (st) { st.employed = true; st.founder = false; st.level = st.offer.level; st.salary = st.offer.salary; st.project = null; give(st, { morale: 10, rep: 3 }); log(st, GOOD, "✅ You joined " + st.offer.company + " as " + LEVELS[st.offer.level].name + "."); st.offer = null; }), goto: nextScene },
+          effect: act(2, null, function (st) { st.employed = true; st.founder = false; st.level = st.offer.level; st.salary = st.offer.salary; st.project = null; st.stretchUntil = st.offer.stretch ? careerYears(st) + 3 : 0; give(st, { morale: 10, rep: 3 }); log(st, GOOD, "✅ You joined " + st.offer.company + " as " + LEVELS[st.offer.level].name + (st.offer.stretch ? " — deep end, here you come." : ".")); st.offer = null; }), goto: nextScene },
         { label: "🙅 Pass.", match: ["decline", "pass", "no", "2"],
           effect: act(0, null, function (st) { st.offer = null; }), goto: nextScene }]);
   }
@@ -494,18 +517,32 @@
   }
   // fire at most one event per advance step. Returns a scene id to route to, or null.
   function rollEvent(s, tag) {
-    if (tag === "focus" && s.project && chance(0.24)) {   // a bug surfaces mid-build
+    // over your head in a stretch role → you get managed out
+    if (overLeveled(s) && chance(0.06)) {
+      s.employed = false; var sev = Math.round(s.salary * 0.4); s.money += sev; s.project = null;
+      s.ev = ev("📉 Managed out",
+        [line(WARN, "You were promoted past your depth and it showed. You're let go, with $" + sev + "k.\n")],
+        [{ label: "Regroup and start job-hunting.", match: ["ok", "hunt", "1"], effect: act(1, null, function () {}), goto: nextScene }]);
+      return "event";
+    }
+    if (tag === "focus" && s.project && chance(overLeveled(s) ? 0.34 : 0.2)) {   // a bug surfaces mid-build
       s.project.bugs++;
       s.ev = ev("🐛 A bug surfaces",
         [line(WARN, "QA finds a nasty edge case in " + s.project.name + ".\n")],
         [{ label: "Stop and fix it properly (≈1 week).", match: ["fix", "1"],
-            effect: act(1, null, function (st) { st.project.bugs--; st.project.weeksNeeded += 1; give(st, { energy: -5 }); log(st, NOTE, "🔧 Fixed. A week gone, but it's clean."); }), goto: nextScene },
+            effect: act(2, null, function (st) { st.project.bugs--; st.project.weeksNeeded += 1; give(st, { energy: -5 }); log(st, NOTE, "🔧 Fixed. A couple weeks gone, but it's clean."); }), goto: nextScene },
           { label: "Ticket it for 'later'. Ship velocity!", match: ["defer", "later", "2"],
             effect: act(0, null, function (st) { st.project.quality -= 6; log(st, WARN, "🩹 Deferred. Quality slips a little."); }), goto: nextScene }]);
       return "event";
     }
-    if (tag === "hunt" && !s.founder && chance(0.6)) { makeOffer(s); s.ev = offerScene(s, "📨 An offer came in"); return "event"; }
-    if (!chance(0.12)) return null;
+    if (tag === "hunt" && !s.founder) {
+      if (chance(0.6)) {
+        if (makeOffer(s)) { s.ev = offerScene(s, "📨 An offer came in"); return "event"; }
+        log(s, INFO, "🔎 Too early in your career — nobody's biting yet. Keep building.");
+      }
+      return null;
+    }
+    if (!chance(0.06)) return null;
     var elig = EVENTS.filter(function (e) { return (!e.when || e.when(s)) && !onCooldown(s, e); });
     if (!elig.length) return null;
     var e = weightedPick(elig);
@@ -565,9 +602,9 @@
 
     if (s.founder) {
       c.push({ label: "🚀 Build the product.", match: ["build", "grind", "work"],
-        effect: act(3, null, function (st) { st.equity = Math.round(st.equity * (1.12 + st.skill / 400) + 5); give(st, { energy: -10, skill: 2 }); react(st, RX.build); }), goto: nextScene });
+        effect: act(8, null, function (st) { st.equity = Math.round(st.equity * (1.12 + st.skill / 400) + 5); give(st, { energy: -10, skill: 2 }); react(st, RX.build); }), goto: nextScene });
       c.push({ label: "📈 Raise a round.", match: ["raise", "round", "fund"],
-        effect: act(2, null, function (st) {
+        effect: act(5, null, function (st) {
           if (chance(0.7)) { st.equity = Math.round(st.equity * (1.8 + rnd() * 1.6)); st.money += 60; give(st, { morale: 6 }); log(st, GOOD, "🤝 Round closed. Equity ~" + money$(st.equity) + ", +$60k salary."); }
           else { st.equity = Math.round(st.equity * 0.7); give(st, { morale: -12 }); log(st, WARN, "🧊 Down round. Equity ~" + money$(st.equity) + "."); }
         }), goto: nextScene });
@@ -576,34 +613,34 @@
     } else if (s.employed) {
       if (s.project) {
         c.push({ label: "🎯 Focus on " + s.project.name + ".", match: ["focus", "work", "grind"],
-          effect: act(6, "focus", function (st) { var nm = st.project.name; focusProject(st, 6); react(st, RX.focus, { proj: nm }); }), goto: nextScene });
+          effect: act(10, "focus", function (st) { var nm = st.project.name; focusProject(st, 10); react(st, RX.focus, { proj: nm }); }), goto: nextScene });
         if (s.project.weeksDone >= s.project.weeksNeeded) c.push({ label: "🚀 Ship " + s.project.name + "!", match: ["ship", "release", "launch"],
-          effect: act(1, null, function (st) { shipProject(st); }), goto: nextScene });
+          effect: act(2, null, function (st) { shipProject(st); }), goto: nextScene });
       } else {
         c.push({ label: "🎯 Take on a new project.", match: ["project", "new", "pick"],
-          effect: act(1, null, function (st) { startProject(st); }), goto: nextScene });
+          effect: act(3, null, function (st) { startProject(st); }), goto: nextScene });
       }
-      c.push({ label: "🔎 Quietly look for a better job.", match: ["hunt", "job", "interview"], effect: act(4, "hunt", function (st) { react(st, RX.hunt); }), goto: nextScene });
+      c.push({ label: "🔎 Quietly look for a better job.", match: ["hunt", "job", "interview"], effect: act(10, "hunt", function (st) { react(st, RX.hunt); }), goto: nextScene });
     } else {
       c.push({ label: "🔎 Job-hunt hard — you need an income.", match: ["hunt", "job", "interview"],
-        effect: act(4, "hunt", function (st) { give(st, { morale: -3 }); react(st, RX.hunt); }), goto: nextScene });
+        effect: act(10, "hunt", function (st) { give(st, { morale: -3 }); react(st, RX.hunt); }), goto: nextScene });
     }
 
     // universal life actions
-    c.push({ label: "🛋️ Rest and recharge.", match: ["rest", "recharge", "sleep"], effect: act(2, null, function (st) { give(st, { energy: 22, morale: 6 }); react(st, RX.rest); }), goto: nextScene });
+    c.push({ label: "🛋️ Rest and recharge.", match: ["rest", "recharge", "sleep"], effect: act(6, null, function (st) { give(st, { energy: 22, morale: 6 }); react(st, RX.rest); }), goto: nextScene });
     c.push({ label: "🧑‍🤝‍🧑 See friends / go out.", match: ["friends", "social", "socialise", "out"],
-      effect: act(1, null, function (st) { addFriend(st); give(st, { morale: 11, energy: 8, money: -4 }); if (!st.love && chance(0.25)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 44, stage: "dating" }; log(st, GOOD, "💕 You met " + pp.name + " — you're seeing each other now."); } else { react(st, RX.social); } }), goto: nextScene });
-    c.push({ label: "📚 Upskill — a course / side project.", match: ["upskill", "learn", "study", "course"], effect: act(3, null, function (st) { give(st, { skill: 10, energy: -7, money: -2, morale: -1 }); react(st, RX.upskill); }), goto: nextScene });
+      effect: act(8, null, function (st) { addFriend(st); give(st, { morale: 11, energy: 8, money: -4 }); if (!st.love && chance(0.25)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 44, stage: "dating" }; log(st, GOOD, "💕 You met " + pp.name + " — you're seeing each other now."); } else { react(st, RX.social); } }), goto: nextScene });
+    c.push({ label: "📚 Upskill — a course / side project.", match: ["upskill", "learn", "study", "course"], effect: act(10, null, function (st) { give(st, { skill: 10, energy: -7, money: -2, morale: -1 }); react(st, RX.upskill); }), goto: nextScene });
     if (s.love) c.push({ label: "💗 Invest in things with " + s.love.name + ".", match: ["love", "relationship", "nurture", "partner"],
-      effect: act(1, null, function (st) { var nm = st.love.name; st.love.close = clamp(st.love.close + 16); give(st, { morale: 10, energy: 6, money: -5 }); react(st, RX.love, { name: nm }); }), goto: nextScene });
+      effect: act(8, null, function (st) { var nm = st.love.name; st.love.close = clamp(st.love.close + 16); give(st, { morale: 10, energy: 6, money: -5 }); react(st, RX.love, { name: nm }); }), goto: nextScene });
     else c.push({ label: "💘 Put yourself out there (dating).", match: ["date", "dating", "romance"],
-      effect: act(2, null, function (st) { if (chance(0.5)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 42, stage: "dating" }; give(st, { morale: 10, energy: 4 }); log(st, GOOD, "💕 You hit it off with " + pp.name + "."); } else { give(st, { morale: -3 }); react(st, RX.date); } }), goto: nextScene });
+      effect: act(10, null, function (st) { if (chance(0.5)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 42, stage: "dating" }; give(st, { morale: 10, energy: 4 }); log(st, GOOD, "💕 You hit it off with " + pp.name + "."); } else { give(st, { morale: -3 }); react(st, RX.date); } }), goto: nextScene });
     if (s.money > 15) c.push({ label: "💸 Invest your savings.", match: ["invest", "stocks", "market"],
-      effect: act(1, null, function (st) { var amt = Math.round((st.money - 10) * 0.7); st.money -= amt; st.invest += amt; log(st, NOTE, "💸 Moved $" + amt + "k into investments."); }), goto: nextScene });
-    if (s.money >= 12) c.push({ label: "🌴 Take a proper holiday.", match: ["holiday", "vacation", "travel"], effect: act(3, null, function (st) { give(st, { energy: 30, morale: 18, money: -14 }); react(st, RX.holiday); }), goto: nextScene });
+      effect: act(2, null, function (st) { var amt = Math.round((st.money - 10) * 0.7); st.money -= amt; st.invest += amt; log(st, NOTE, "💸 Moved $" + amt + "k into investments."); }), goto: nextScene });
+    if (s.money >= 12) c.push({ label: "🌴 Take a proper holiday.", match: ["holiday", "vacation", "travel"], effect: act(8, null, function (st) { give(st, { energy: 30, morale: 18, money: -14 }); react(st, RX.holiday); }), goto: nextScene });
 
     // coast through quiet time (a big jump; events still interrupt)
-    c.push({ label: "⏭️ Let time pass — get on with life.", match: ["coast", "continue", "wait", "pass"], effect: act(48, null, function (st) { react(st, RX.coast); }), goto: nextScene });
+    c.push({ label: "⏭️ Let time pass — get on with life.", match: ["coast", "continue", "wait", "pass"], effect: act(104, null, function (st) { react(st, RX.coast); }), goto: nextScene });
 
     // retire when eligible (age, or financially independent → retire early)
     if (age(s) >= 45 || (s.money + s.invest) >= 2500) c.push({ label: "🏁 Call it a career — retire.", match: ["retire", "finish", "end"], effect: function () {}, goto: function (st) { return retireEnding(st); } });
@@ -639,7 +676,7 @@
         energy: 75, morale: 70,
         friendsM: 10, friendsW: 10, love: null,
         project: null, pending: [], cool: {},
-        offer: null, fraudFlag: false, exited: false, debtWeeks: 0, forcedEnd: null,
+        offer: null, fraudFlag: false, exited: false, stretchUntil: 0, debtWeeks: 0, forcedEnd: null,
         ev: null, log: []
       };
     },

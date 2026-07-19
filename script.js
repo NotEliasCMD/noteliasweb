@@ -395,6 +395,14 @@
     const cmd = raw.trim().toLowerCase();
     if (raw.length) appendChunk(typedEl, "tok-cmd", raw + "\n");
     inputEl.textContent = "";
+    // `play` launches the full-screen text-game arcade (see games/text-game.js).
+    if (cmd === "play" && window.TextGame) {
+      exitInputMode();
+      appendChunk(typedEl, "tok-out", "booting the arcade…\n");
+      appendChunk(typedEl, "tok-prompt", ">>> ");        // leave a clean prompt behind
+      window.TextGame.open();
+      return;
+    }
     const egg = EASTER_EGGS.find((e) => e.trigger === cmd);
     if (egg) {
       egg.reaction().forEach(([cls, text]) => appendChunk(typedEl, cls, text));

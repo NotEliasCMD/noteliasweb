@@ -1,0 +1,66 @@
+/* =============================================================================
+ * text-game.css — styling for the full-screen text-game view (.plane--game)
+ * -----------------------------------------------------------------------------
+ * The view reuses the site's .plane machinery (fixed overlay, slide-in, page
+ * dim/lock, reduced-motion) from styles.css — this file only lays out the
+ * game-specific chrome: header + a full-height terminal + footer, and nothing
+ * else. Everything flows through design tokens, so dark mode flips for free.
+ * ========================================================================== */
+
+/* Column layout: header (sticky) · terminal (grows) · footer (bottom). */
+.plane--game {
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+}
+
+/* Header reuses .plane__bar; the brand sits where the back button normally is. */
+.game__bar { flex: none; }
+.game__brand {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  color: var(--ink); text-decoration: none;
+}
+.game__brand .nav__logo { width: 26px; height: 26px; display: inline-flex; }
+.game__brand .nav__logo svg { width: 100%; height: 100%; }
+.game__crumb { /* inherits .plane__crumb */ }
+.game__exit { cursor: pointer; padding: 0.5rem 0.85rem; font-size: 0.8rem; }
+
+/* Terminal stage: centres the terminal and lets it grow to fill the viewport
+   between the sticky header and the footer. */
+.game__stage {
+  flex: 1 1 auto;
+  display: flex;
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 2.5rem) var(--gutter);
+  min-height: 0;                 /* allow the terminal to own the scroll */
+}
+
+/* Full-height variant of the shared .terminal look. */
+.terminal--game {
+  display: flex; flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+}
+.terminal--game .terminal__body {
+  flex: 1 1 auto;
+  height: auto;                  /* override the hero terminal's fixed frame */
+  min-height: 320px;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+/* A slim footer echoing the site footer's base row; the .footer padding is
+   trimmed since it's a single line here. */
+.game__footer { flex: none; padding: 1.1rem 0; }
+
+/* Reduced motion: the shared styles.css block already zeroes the plane slide
+   and the caret blink — nothing extra needed here. */
+
+@media (max-width: 720px) {
+  .game__stage { padding: 0.9rem var(--gutter) 1.2rem; }
+  .terminal--game .terminal__body { font-size: 0.84rem; min-height: 260px; }
+  .game__crumb { display: none; }
+}

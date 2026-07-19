@@ -18,6 +18,7 @@
 
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="side-projects/ds-charts.css" />
+  <link rel="stylesheet" href="games/text-game.css" />
   <!-- Favicon: the Gaussian bell-curve brand mark. Rendered in isolation (no page
        CSS), so colors are hardcoded; a prefers-color-scheme rule keeps the stroke
        legible on both light and dark browser tab bars. -->
@@ -1959,6 +1960,13 @@
   <script src="anim/txnstream.js"></script>
   <script src="anim/swanflight.js"></script>
   <script src="anim/buyfunnel.js"></script>
+
+  <!-- Text-game engine (window.TextGame) + game data modules. Loaded BEFORE
+       script.js so the terminal's `play` command can launch a game, and so the
+       theme-toggle binding in script.js picks up the toggle the engine builds. -->
+  <script src="games/text-game.js"></script>
+  <script src="games/data/datatrail.js"></script>
+
   <script src="script.js"></script>
 
   <!-- Personal-works data stories: DS_SIDE data modules, then the chart toolkit -->

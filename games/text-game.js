@@ -231,8 +231,19 @@
 
   var pendingChunks = null;   // remaining chunks when finishTyping fast-forwards
 
+  // Gameplay cadence: every line is written out character-by-character, then a
+  // beat at each line break, so scenes read like the hero terminal typing itself
+  // out line by line. Tunable here.
+  var CHAR_MS = 14;     // per-character delay (+ a little jitter)
+  var LINE_MS = 90;     // extra pause after a line completes (ends in "\n")
+  var GAP_MS = 16;      // pause between chunks that share a line
+
   // Type a set of chunks, then run done(). Instant under reduced motion.
-  function typeOut(chunks, done) {
+  // opts.fast → paint quickly (used for the decorative intro banner, which is
+  // art rather than prose so it shouldn't drag).
+  function typeOut(chunks, done, opts) {
+    opts = opts || {};
+    var fast = !!opts.fast;
     if (!chunks.length) { if (done) done(); return; }
     if (reduceMotion) {
       chunks.forEach(function (c) { appendChunk(els.typed, c[0], c[1]); });
@@ -245,19 +256,21 @@
     var seg = 0, i = 0, span = null;
     pendingChunks = { chunks: chunks, done: done };
 
-    function finishSeg() { seg++; i = 0; span = null; setTimeout(step, 40); }
     function step() {
       if (token !== typeToken) return;             // cancelled
       if (seg >= chunks.length) { typing = false; pendingChunks = null; if (done) done(); return; }
       var cls = chunks[seg][0], text = chunks[seg][1];
-      // output-ish lines render fast; anything "spoken" types a touch slower
-      var fast = cls === "tok-out" || cls === "tok-comment" || cls === "tok-prompt";
       if (span === null) span = appendChunk(els.typed, cls, "");
       if (i < text.length) {
         span.textContent += text[i++];
         scrollToEnd();
-        setTimeout(step, fast ? 3 : 12 + Math.random() * 22);
-      } else { finishSeg(); }
+        setTimeout(step, fast ? 4 : CHAR_MS + Math.random() * 10);
+      } else {
+        // chunk done — longer beat when it ended a line (line-by-line rhythm)
+        var endedLine = text.charAt(text.length - 1) === "\n";
+        seg++; i = 0; span = null;
+        setTimeout(step, fast ? 22 : (endedLine ? LINE_MS : GAP_MS));
+      }
     }
     step();
   }
@@ -276,14 +289,14 @@
   }
 
   // Print typed output then show the "> " prompt and read one line.
-  function ask(block, onLine) {
+  function ask(block, onLine, opts) {
     typeOut(toChunks(block), function () {
       appendChunk(els.typed, "tok-prompt", "> ");
       scrollToEnd();
       inputActive = true;
       lineHandler = onLine;
       try { els.kbd.focus({ preventScroll: true }); } catch (e) {}
-    });
+    }, opts);
   }
 
   /* ---------------------------------------------------------- the game loop */
@@ -392,7 +405,9 @@
     chunks.push(["tok-out", "\n"]);
     chunks.push(["tok-kw", intro.start || "press ENTER to begin"]);
     chunks.push(["tok-out", "\n"]);
-    ask(chunks, function () { go(current.start); });
+    // The intro is decorative art + a one-line prompt → paint it quickly; the
+    // deliberate line-by-line typing is reserved for gameplay.
+    ask(chunks, function () { go(current.start); }, { fast: true });
   }
 
   function startGame() {

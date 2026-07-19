@@ -151,18 +151,27 @@
       els.input.textContent = v;
       scrollToEnd();
     });
+    // The focused field is the PRIMARY key path: it owns Enter (skip if mid-type,
+    // else submit), Space (skip if mid-type), and Escape. It must fully handle
+    // these so the document fallback below can safely ignore kbd-sourced events —
+    // otherwise a single submitting Enter would bubble up and immediately skip the
+    // NEXT scene that submit() just started typing (making post-answer text appear
+    // at once instead of typing out).
     els.kbd.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") { e.preventDefault(); submit(); els.kbd.value = ""; }
-      else if (e.key === "Escape") { e.preventDefault(); close(false); }
+      if (e.key === "Escape") { e.preventDefault(); close(false); return; }
+      if ((e.key === "Enter" || e.key === " ") && typing) { e.preventDefault(); finishTyping(); return; }
+      if (e.key === "Enter") { e.preventDefault(); submit(); els.kbd.value = ""; return; }
     });
 
-    // Fallback for when the off-screen field can't hold focus (desktop): capture
-    // typing at the document level, but only while OUR prompt is active and no
-    // real input elsewhere is focused. The hero terminal's own fallback bails
-    // whenever its inputActive is false (which it is while the game is open), so
-    // the two never double-handle a keystroke.
+    // Fallback for when the off-screen field can't hold focus (desktop with focus
+    // blocked): capture typing at the document level. Bails on events sourced from
+    // our own kbd (the handler above owns those) and while any real input is
+    // focused, so keystrokes are never double-handled. The hero terminal's own
+    // fallback bails whenever its inputActive is false (which it is while the game
+    // is open), so the two never collide either.
     document.addEventListener("keydown", function (e) {
       if (!open) return;
+      if (e.target === els.kbd) return;   // primary handler above already dealt with it
       if (e.key === "Escape") { e.preventDefault(); close(false); return; }
       if (typing) {
         // let the player skip the typing animation with Enter/Space
@@ -253,39 +262,47 @@
     }
     typing = true;
     var token = ++typeToken;
-    var seg = 0, i = 0, span = null;
-    pendingChunks = { chunks: chunks, done: done };
+    // Progress is tracked on the shared `st` object so finishTyping() can pick up
+    // exactly where the animation is and complete IN PLACE — without wiping the
+    // already-rendered content above (prior lines and earlier scenes).
+    var st = { chunks: chunks, done: done, seg: 0, i: 0, span: null };
+    pendingChunks = st;
 
     function step() {
       if (token !== typeToken) return;             // cancelled
-      if (seg >= chunks.length) { typing = false; pendingChunks = null; if (done) done(); return; }
-      var cls = chunks[seg][0], text = chunks[seg][1];
-      if (span === null) span = appendChunk(els.typed, cls, "");
-      if (i < text.length) {
-        span.textContent += text[i++];
+      if (st.seg >= chunks.length) { typing = false; pendingChunks = null; if (done) done(); return; }
+      var cls = chunks[st.seg][0], text = chunks[st.seg][1];
+      if (st.span === null) st.span = appendChunk(els.typed, cls, "");
+      if (st.i < text.length) {
+        st.span.textContent += text[st.i++];
         scrollToEnd();
         setTimeout(step, fast ? 4 : CHAR_MS + Math.random() * 10);
       } else {
         // chunk done — longer beat when it ended a line (line-by-line rhythm)
         var endedLine = text.charAt(text.length - 1) === "\n";
-        seg++; i = 0; span = null;
+        st.seg++; st.i = 0; st.span = null;
         setTimeout(step, fast ? 22 : (endedLine ? LINE_MS : GAP_MS));
       }
     }
     step();
   }
 
-  // Dump whatever's left of the current type chain instantly (skip animation).
+  // Skip the animation: finish the current type chain instantly, in place. Fills
+  // the in-progress chunk, appends any remaining chunks, and leaves everything
+  // already on screen untouched (so the scrolling transcript is preserved).
   function finishTyping() {
     if (!typing || !pendingChunks) return;
+    var st = pendingChunks;
     typeToken++;                                   // stop the running chain
-    var chunks = pendingChunks.chunks, done = pendingChunks.done;
-    // wipe partial render of the current run and re-emit it whole
-    // (simpler and visually clean vs. resuming mid-character)
-    els.typed.textContent = "";
-    chunks.forEach(function (c) { appendChunk(els.typed, c[0], c[1]); });
+    if (st.span !== null && st.seg < st.chunks.length) {
+      st.span.textContent = st.chunks[st.seg][1];  // complete the partial chunk
+      st.seg++;
+    }
+    for (var k = st.seg; k < st.chunks.length; k++) {
+      appendChunk(els.typed, st.chunks[k][0], st.chunks[k][1]);
+    }
     typing = false; pendingChunks = null; scrollToEnd();
-    if (done) done();
+    if (st.done) st.done();
   }
 
   // Print typed output then show the "> " prompt and read one line.

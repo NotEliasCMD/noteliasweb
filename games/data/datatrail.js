@@ -79,7 +79,6 @@
 
   window.TextGame.register({
     id: "datatrail",
-    defaultForPlay: true,               // /play opens this one
     fileLabel: "elias@analysis — datatrail.py",
 
     intro: {

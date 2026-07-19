@@ -223,8 +223,10 @@
 
   function clearScreen() { els.typed.textContent = ""; els.input.textContent = ""; scrollToEnd(); }
 
-  // Normalise a "block" into an array of [class, text] chunks.
-  // Accepts a string, an array of strings/[cls,text] pairs, or a function(state).
+  // Normalise a "block" into an array of [class, text, instant?] chunks.
+  // Accepts a string, an array of strings/[cls,text(,instant)] items, or a
+  // function(state). A truthy 3rd element renders that chunk instantly (no
+  // char-by-char typing) — handy for status readouts / bulk output amid prose.
   function toChunks(block) {
     if (typeof block === "function") block = block(state);
     if (block == null) return [];
@@ -233,7 +235,7 @@
     for (var i = 0; i < block.length; i++) {
       var item = block[i];
       if (typeof item === "string") out.push([null, item + "\n"]);
-      else out.push([item[0], item[1]]);   // already [cls, text]
+      else out.push([item[0], item[1], item[2]]);   // already [cls, text(, instant)]
     }
     return out;
   }
@@ -271,8 +273,14 @@
     function step() {
       if (token !== typeToken) return;             // cancelled
       if (st.seg >= chunks.length) { typing = false; pendingChunks = null; if (done) done(); return; }
-      var cls = chunks[st.seg][0], text = chunks[st.seg][1];
+      var cls = chunks[st.seg][0], text = chunks[st.seg][1], instant = chunks[st.seg][2];
       if (st.span === null) st.span = appendChunk(els.typed, cls, "");
+      if (instant) {                               // render this chunk at once
+        st.span.textContent = text; scrollToEnd();
+        st.seg++; st.i = 0; st.span = null;
+        setTimeout(step, fast ? 12 : GAP_MS);
+        return;
+      }
       if (st.i < text.length) {
         st.span.textContent += text[st.i++];
         scrollToEnd();
@@ -320,7 +328,9 @@
   // A scene is data:
   //   { text, choices?, goto?, onEnter?, end? }
   //   text    : string | string[] | [cls,text][] | (state) => any of those
-  //   choices : [{ match:[..], label, goto, effect? }]   (goto: id | (state)=>id)
+  //   choices : [{ match:[..], label, goto, effect? }] OR (state) => that array
+  //             (a function lets a scene show state-dependent options — e.g. a
+  //              life-sim hub whose menu changes with the player's situation)
   //   goto    : id | (state)=>id   (no choices → "press Enter to continue")
   //   onEnter : (state) => void    (run before text is printed)
   //   end     : true               (terminal scene → offer replay/exit)
@@ -333,7 +343,7 @@
     var head = [];
     if (current.status) {
       var s = current.status(state);
-      if (s) head.push(["tok-comment", s + "\n"]);
+      if (s) head.push(["tok-comment", s + "\n", true]);   // HUD renders instantly
     }
     var bodyChunks = head.concat(toChunks(scene.text));
 
@@ -350,9 +360,12 @@
       return;
     }
 
-    if (scene.choices && scene.choices.length) {
-      var menu = bodyChunks.concat(renderChoices(scene.choices));
-      askChoice(menu, scene.choices);
+    // Resolve choices once (a function is called with state) so the displayed
+    // menu and the number-matching use the exact same list.
+    var choices = typeof scene.choices === "function" ? scene.choices(state) : scene.choices;
+    if (choices && choices.length) {
+      var menu = bodyChunks.concat(renderChoices(choices));
+      askChoice(menu, choices);
       return;
     }
 

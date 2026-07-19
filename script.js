@@ -129,6 +129,19 @@
       ],
       sound: () => playLockin(),   // streams the prefetched mp3, not the chime
     },
+    {
+      // Discoverability: unknown commands nudge "(try 'help')"; help lists the
+      // real commands but only *hints* at the secret rather than naming its
+      // trigger word (which would spoil the footer's treasure hunt).
+      trigger: "help",
+      reaction: () => [
+        ["tok-out", "commands:\n"],
+        ["tok-cmd", "  play"], ["tok-out", "      launch the arcade\n"],
+        ["tok-cmd", "  lock in"], ["tok-out", "   …you'll see\n"],
+        ["tok-comment", "and yes — there's a secret. keep looking.\n"],
+      ],
+      sound: false,
+    },
   ];
 
   // Each tab is { id, script } where script is an array of [className, text]
@@ -411,7 +424,7 @@
         else playChime();
       }
     } else if (cmd) {
-      appendChunk(typedEl, "tok-comment", "command not found: " + cmd + "\n");
+      appendChunk(typedEl, "tok-comment", "command not found: " + cmd + " (try 'help')\n");
     }
     appendChunk(typedEl, "tok-prompt", ">>> ");
     typedEl.parentElement.scrollTop = typedEl.parentElement.scrollHeight;

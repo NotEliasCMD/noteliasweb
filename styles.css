@@ -274,8 +274,7 @@ img { max-width: 100%; display: block; }
 .terminal__body {
   margin: 0; padding: 1.2rem 1.3rem 1.5rem;
   font-size: 0.82rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
-  min-height: 300px;
-  max-height: 340px;      /* cap the window so content scrolls instead of growing the page */
+  height: 445px;          /* fixed frame: window opens at full height, text types into it; fits the tallest base tab (tv, 18 lines), only easter-egg overflow scrolls */
   overflow-y: auto;
   scrollbar-width: thin; scrollbar-color: #4a463a transparent;
 }

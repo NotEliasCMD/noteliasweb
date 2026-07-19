@@ -68,6 +68,33 @@
   function log(s, cls, msg) { (s.log = s.log || []).push([cls, msg]); }
   var GOOD = "tok-celebrate", WARN = "tok-num", NOTE = "tok-out", INFO = "tok-comment", STR = "tok-str";
 
+  // Pending log lines (reactions + event outcomes) drawn at the top of the next
+  // scene — hub OR event — so you get a response to EVERY action.
+  function drainLog(s) {
+    var out = [];
+    if (s.log && s.log.length) { s.log.forEach(function (m) { out.push([m[0], m[1] + "\n"]); }); out.push([null, "\n"]); s.log = []; }
+    return out;
+  }
+  // A flavour reaction to a plain action (so nothing ever happens silently).
+  // {proj}/{name}/{city} are filled in when relevant.
+  function react(s, arr, sub) {
+    var t = pickOne(arr);
+    if (sub) for (var k in sub) if (sub[k] != null) t = t.split("{" + k + "}").join(sub[k]);
+    log(s, INFO, t);
+  }
+  var RX = {
+    rest:   ["🛋️ You switch off for a while — the fog lifts.", "😴 Proper sleep, no alarms. You feel human again.", "🌿 A slow stretch away from the screen. Recharged."],
+    focus:  ["🎯 Heads-down on {proj}. Real progress.", "⌨️ Deep work — {proj} takes shape.", "🧠 A focused sprint on {proj}."],
+    social: ["🍻 A great night out with the crew — just what you needed.", "🧑‍🤝‍🧑 Long lunches and belly-laughs. Good for the soul.", "🎳 A daft evening with friends. Batteries topped up."],
+    upskill:["📚 A course clicks — you're sharper.", "🧪 A weekend side-project teaches you plenty.", "🎓 You go deep on something new and come out better."],
+    holiday:["🌴 A proper holiday — sun, no Slack. Bliss.", "✈️ Two weeks away and you come back new.", "🏖️ You actually unplug. Rare. Restorative."],
+    love:   ["❤️ Quality time with {name} — you both needed it.", "🍷 A lovely evening in with {name}.", "💑 You and {name} just click lately."],
+    hunt:   ["🔎 Applications out, LeetCode grinded. Tiring.", "💼 A week of back-to-back interviews.", "📞 Recruiter calls and take-home tests."],
+    coast:  ["⏭️ The months roll quietly by.", "🗓️ Life ticks along without much drama.", "☕ An uneventful, ordinary stretch."],
+    build:  ["🚀 You ship features at founder pace.", "🌙 Nights and weekends, building.", "⚙️ The product inches forward."],
+    date:   ["😐 A few dead-end dates. Ah well.", "📱 Lots of swiping, not much spark.", "🥴 One truly awful date. Good story, at least."]
+  };
+
   /* ---- people / project pools --------------------------------------------- */
   var MNAMES = ["Marcus", "Raj", "Tom", "Chen", "Diego", "Omar", "Liam", "Noah", "Ivan", "Kwame", "Sam", "Theo"];
   var WNAMES = ["Priya", "Sara", "Mia", "Lena", "Aisha", "Nina", "Zoe", "Emma", "Yuki", "Fatima", "Cara", "Ada"];
@@ -330,6 +357,48 @@
             { label: "Bury yourself in work instead.", match: ["ignore", "work", "2"],
               effect: act(1, null, function (st) { st.love.close = clamp(st.love.close - 20); give(st, { skill: 2 }); log(st, WARN, "🧊 Things with " + nm + " get colder."); }), goto: nextScene }]);
       } },
+    // ---- relationships going wrong ----
+    { id: "heartbreak", cat: "romance", weight: 2, cool: 26, when: function (s) { return s.love; },
+      build: function (s) {
+        var nm = s.love.name, cheated = chance(0.5);
+        return ev("💔 Heartbreak",
+          [line(WARN, cheated ? "You find out " + nm + " has been seeing someone else.\n" : nm + " says they're done — you were never really there.\n")],
+          [{ label: "Let them go, and grieve.", match: ["let", "go", "1"],
+              effect: act(1, null, function (st) { st.love = null; give(st, { morale: -20, energy: -4 }); log(st, WARN, "💔 It's over with " + nm + "."); }), goto: nextScene },
+            { label: "Beg for another chance.", match: ["beg", "fight", "2"],
+              effect: act(1, null, function (st) { if (chance(0.35)) { st.love.close = clamp(st.love.close - 12); give(st, { morale: -6 }); log(st, INFO, "🥺 " + nm + " agrees to try again — shakily."); } else { st.love = null; give(st, { morale: -24, energy: -6 }); log(st, WARN, "🚪 " + nm + " walks anyway. That one really hurt."); } }), goto: nextScene }]);
+      } },
+    { id: "partner_ultimatum", cat: "romance", weight: 2, cool: 28, when: function (s) { return s.love && s.love.stage !== "married" && s.love.close < 78; },
+      build: function (s) {
+        var nm = s.love.name;
+        return ev("⏳ " + nm + " wants more",
+          [line(WARN, nm + " is tired of coming second to your job. Something has to give.\n")],
+          [{ label: "Recommit — really show up for them.", match: ["commit", "show", "1"],
+              effect: act(2, null, function (st) { st.love.close = clamp(st.love.close + 22); give(st, { morale: 8, energy: -4, money: -4 }); log(st, GOOD, "❤️ You show up, properly. " + nm + " softens."); }), goto: nextScene },
+            { label: "Work has to come first right now.", match: ["work", "no", "2"],
+              effect: act(0, null, function (st) { if (chance(0.6)) { st.love = null; give(st, { morale: -16 }); log(st, WARN, "🚪 " + nm + " had enough, and left."); } else { st.love.close = clamp(st.love.close - 18); give(st, { morale: -6 }); log(st, INFO, "🧊 " + nm + " stays — for now — but colder."); } }), goto: nextScene }]);
+      } },
+    { id: "friend_betrayal", cat: "social", weight: 2, cool: 22, when: function (s) { return friends(s) >= 5; },
+      build: function (s) {
+        var p = person(), kind = pickOne(["took credit for your work", "ghosted you when you needed them", "aired something private about you", "borrowed money and vanished"]);
+        return ev("😞 A friend lets you down",
+          [line(WARN, p.name + " " + kind + ".\n")],
+          [{ label: "Cut them off.", match: ["cut", "drop", "1"],
+              effect: act(0, null, function (st) { loseFriend(st); give(st, { morale: -8 }); log(st, WARN, "✂️ You cut " + p.name + " out — cleaner, but lonelier."); }), goto: nextScene },
+            { label: "Swallow it and keep the peace.", match: ["keep", "swallow", "2"],
+              effect: act(0, null, function (st) { give(st, { morale: -11 }); log(st, INFO, "😶 You let it slide. It gnaws at you."); }), goto: nextScene }]);
+      } },
+    { id: "friend_moves", cat: "social", weight: 1, cool: 30, when: function (s) { return friends(s) >= 6; },
+      build: function (s) {
+        var p = person();
+        return ev("✈️ A friend moves away",
+          [line(null, p.name + " is moving abroad for work — one less familiar face around.\n")],
+          [{ label: "Throw them a proper send-off.", match: ["party", "send", "1"],
+              effect: act(1, null, function (st) { loseFriend(st); give(st, { morale: 2, money: -3, energy: 5 }); log(st, NOTE, "🥂 A great send-off for " + p.name + ". Bittersweet."); }), goto: nextScene },
+            { label: "Just a quick goodbye.", match: ["bye", "quick", "2"],
+              effect: act(0, null, function (st) { loseFriend(st); give(st, { morale: -5 }); log(st, INFO, "👋 " + p.name + " is gone. The group feels smaller."); }), goto: nextScene }]);
+      } },
+
     // ---- finance ----
     { id: "market", cat: "finance", weight: 3, cool: 10, when: function (s) { return s.invest >= 20 || s.money >= 40; },
       build: function (s) {
@@ -496,7 +565,7 @@
 
     if (s.founder) {
       c.push({ label: "🚀 Build the product.", match: ["build", "grind", "work"],
-        effect: act(3, null, function (st) { st.equity = Math.round(st.equity * (1.12 + st.skill / 400) + 5); give(st, { energy: -10, skill: 2 }); }), goto: nextScene });
+        effect: act(3, null, function (st) { st.equity = Math.round(st.equity * (1.12 + st.skill / 400) + 5); give(st, { energy: -10, skill: 2 }); react(st, RX.build); }), goto: nextScene });
       c.push({ label: "📈 Raise a round.", match: ["raise", "round", "fund"],
         effect: act(2, null, function (st) {
           if (chance(0.7)) { st.equity = Math.round(st.equity * (1.8 + rnd() * 1.6)); st.money += 60; give(st, { morale: 6 }); log(st, GOOD, "🤝 Round closed. Equity ~" + money$(st.equity) + ", +$60k salary."); }
@@ -507,34 +576,34 @@
     } else if (s.employed) {
       if (s.project) {
         c.push({ label: "🎯 Focus on " + s.project.name + ".", match: ["focus", "work", "grind"],
-          effect: act(6, "focus", function (st) { focusProject(st, 6); }), goto: nextScene });
+          effect: act(6, "focus", function (st) { var nm = st.project.name; focusProject(st, 6); react(st, RX.focus, { proj: nm }); }), goto: nextScene });
         if (s.project.weeksDone >= s.project.weeksNeeded) c.push({ label: "🚀 Ship " + s.project.name + "!", match: ["ship", "release", "launch"],
           effect: act(1, null, function (st) { shipProject(st); }), goto: nextScene });
       } else {
         c.push({ label: "🎯 Take on a new project.", match: ["project", "new", "pick"],
           effect: act(1, null, function (st) { startProject(st); }), goto: nextScene });
       }
-      c.push({ label: "🔎 Quietly look for a better job.", match: ["hunt", "job", "interview"], effect: act(4, "hunt"), goto: nextScene });
+      c.push({ label: "🔎 Quietly look for a better job.", match: ["hunt", "job", "interview"], effect: act(4, "hunt", function (st) { react(st, RX.hunt); }), goto: nextScene });
     } else {
       c.push({ label: "🔎 Job-hunt hard — you need an income.", match: ["hunt", "job", "interview"],
-        effect: act(4, "hunt", function (st) { give(st, { morale: -3 }); }), goto: nextScene });
+        effect: act(4, "hunt", function (st) { give(st, { morale: -3 }); react(st, RX.hunt); }), goto: nextScene });
     }
 
     // universal life actions
-    c.push({ label: "🛋️ Rest and recharge.", match: ["rest", "recharge", "sleep"], effect: act(2, null, function (st) { give(st, { energy: 22, morale: 6 }); }), goto: nextScene });
+    c.push({ label: "🛋️ Rest and recharge.", match: ["rest", "recharge", "sleep"], effect: act(2, null, function (st) { give(st, { energy: 22, morale: 6 }); react(st, RX.rest); }), goto: nextScene });
     c.push({ label: "🧑‍🤝‍🧑 See friends / go out.", match: ["friends", "social", "socialise", "out"],
-      effect: act(1, null, function (st) { addFriend(st); give(st, { morale: 11, energy: -4, money: -4 }); if (!st.love && chance(0.25)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 44, stage: "dating" }; log(st, GOOD, "💕 You met " + pp.name + " — you're seeing each other now."); } }), goto: nextScene });
-    c.push({ label: "📚 Upskill — a course / side project.", match: ["upskill", "learn", "study", "course"], effect: act(3, null, function (st) { give(st, { skill: 10, energy: -7, money: -2, morale: -1 }); }), goto: nextScene });
+      effect: act(1, null, function (st) { addFriend(st); give(st, { morale: 11, energy: 8, money: -4 }); if (!st.love && chance(0.25)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 44, stage: "dating" }; log(st, GOOD, "💕 You met " + pp.name + " — you're seeing each other now."); } else { react(st, RX.social); } }), goto: nextScene });
+    c.push({ label: "📚 Upskill — a course / side project.", match: ["upskill", "learn", "study", "course"], effect: act(3, null, function (st) { give(st, { skill: 10, energy: -7, money: -2, morale: -1 }); react(st, RX.upskill); }), goto: nextScene });
     if (s.love) c.push({ label: "💗 Invest in things with " + s.love.name + ".", match: ["love", "relationship", "nurture", "partner"],
-      effect: act(1, null, function (st) { st.love.close = clamp(st.love.close + 16); give(st, { morale: 10, energy: -3, money: -5 }); }), goto: nextScene });
+      effect: act(1, null, function (st) { var nm = st.love.name; st.love.close = clamp(st.love.close + 16); give(st, { morale: 10, energy: 6, money: -5 }); react(st, RX.love, { name: nm }); }), goto: nextScene });
     else c.push({ label: "💘 Put yourself out there (dating).", match: ["date", "dating", "romance"],
-      effect: act(2, null, function (st) { if (chance(0.5)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 42, stage: "dating" }; give(st, { morale: 10 }); log(st, GOOD, "💕 You hit it off with " + pp.name + "."); } else { give(st, { morale: -3, energy: -2 }); log(st, INFO, "😐 A few dead-end dates. Ah well."); } }), goto: nextScene });
+      effect: act(2, null, function (st) { if (chance(0.5)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 42, stage: "dating" }; give(st, { morale: 10, energy: 4 }); log(st, GOOD, "💕 You hit it off with " + pp.name + "."); } else { give(st, { morale: -3 }); react(st, RX.date); } }), goto: nextScene });
     if (s.money > 15) c.push({ label: "💸 Invest your savings.", match: ["invest", "stocks", "market"],
       effect: act(1, null, function (st) { var amt = Math.round((st.money - 10) * 0.7); st.money -= amt; st.invest += amt; log(st, NOTE, "💸 Moved $" + amt + "k into investments."); }), goto: nextScene });
-    if (s.money >= 12) c.push({ label: "🌴 Take a proper holiday.", match: ["holiday", "vacation", "travel"], effect: act(3, null, function (st) { give(st, { energy: 30, morale: 18, money: -14 }); }), goto: nextScene });
+    if (s.money >= 12) c.push({ label: "🌴 Take a proper holiday.", match: ["holiday", "vacation", "travel"], effect: act(3, null, function (st) { give(st, { energy: 30, morale: 18, money: -14 }); react(st, RX.holiday); }), goto: nextScene });
 
     // coast through quiet time (a big jump; events still interrupt)
-    c.push({ label: "⏭️ Let time pass — get on with life.", match: ["coast", "continue", "wait", "pass"], effect: act(48, null), goto: nextScene });
+    c.push({ label: "⏭️ Let time pass — get on with life.", match: ["coast", "continue", "wait", "pass"], effect: act(48, null, function (st) { react(st, RX.coast); }), goto: nextScene });
 
     // retire when eligible (age, or financially independent → retire early)
     if (age(s) >= 45 || (s.money + s.invest) >= 2500) c.push({ label: "🏁 Call it a career — retire.", match: ["retire", "finish", "end"], effect: function () {}, goto: function (st) { return retireEnding(st); } });
@@ -588,18 +657,13 @@
 
     scenes: {
       hub: {
-        text: function (s) {
-          var out = [];
-          if (s.log && s.log.length) { s.log.forEach(function (m) { out.push([m[0], m[1] + "\n"]); }); out.push([null, "\n"]); s.log = []; }
-          out.push([null, "What do you do? ⏳"]);
-          return out;
-        },
+        text: function (s) { return drainLog(s).concat([[null, "What do you do? ⏳"]]); },
         choices: hubChoices
       },
 
-      // a fired event renders from s.ev
+      // a fired event renders from s.ev (after any pending action reactions)
       event: {
-        text: function (s) { return (s.ev && s.ev.text) ? [[STR, s.ev.title + "\n"]].concat(s.ev.text) : [[null, "..."]]; },
+        text: function (s) { return drainLog(s).concat((s.ev && s.ev.text) ? [[STR, s.ev.title + "\n"]].concat(s.ev.text) : [[null, "..."]]); },
         choices: function (s) { return (s.ev && s.ev.choices) ? s.ev.choices : [{ label: "Continue.", match: ["ok", "1"], effect: function () {}, goto: "hub" }]; }
       },
 

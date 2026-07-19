@@ -270,6 +270,12 @@
     if (kbdEl) {
       kbdEl.value = inputEl.textContent;
       kbdEl.focus({ preventScroll: true });
+      // Some mobile browsers (iOS Safari) ignore preventScroll and scroll the
+      // focused field into view anyway. Nudge the actual prompt into view on the
+      // next frame; block:"nearest" is a no-op when it's already visible (desktop).
+      requestAnimationFrame(() => {
+        inputEl.scrollIntoView({ block: "nearest", inline: "nearest" });
+      });
     }
   }
 

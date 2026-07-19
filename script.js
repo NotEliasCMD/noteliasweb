@@ -260,6 +260,7 @@
 
   function enterInputMode() {
     if (!typedEl || !terminalEl || !inputEl) return;
+    prefetchLockin();          // start buffering the egg track on first terminal use
     finishActiveTab();
     inputActive = true;
     terminalEl.classList.add("terminal--input");
@@ -296,8 +297,10 @@
     if (audioCtx.state === "suspended") audioCtx.resume();
     return audioCtx;
   }
-  // Real audio track for the "lock in" egg. AFTER the page has fully loaded (so it
-  // never competes with initial page load), stream the ENTIRE mp3 down in the
+  // Real audio track for the "lock in" egg. Prefetched only on the FIRST terminal
+  // interaction (see enterInputMode) — never on page load, so visitors who never
+  // open the terminal (the only path to any egg) don't pay for the ~7.8 MB track.
+  // On that first click we stream the ENTIRE mp3 down in the
   // background using fetch()'s chunked ReadableStream — read piece by piece and
   // stitch into one in-memory Blob. We deliberately hold only the Blob here and do
   // NOT create any Audio element or blob: object URL until the egg actually fires
@@ -329,8 +332,8 @@
       .catch(() => { lockinReady = null; return null; }); // clear so a later trigger can retry
     return lockinReady;
   }
-  // Kick the background download once the page is done loading.
-  window.addEventListener("load", prefetchLockin);
+  // The background download is kicked on first terminal interaction, not on page
+  // load — see the prefetchLockin() call in enterInputMode.
 
   // Play `src` through ONE reused element (created here on the gesture — never at
   // page load, which would make headless CI log a failed blob: request). Reusing

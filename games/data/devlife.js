@@ -115,14 +115,17 @@
       give(s, { rep: 2, morale: 3 });
       log(s, NOTE, "🐢 Shipped " + p.name + " — late, but it works. Small win.");
     } else {
-      give(s, { rep: -7, morale: -7 });
-      log(s, WARN, "🐛 Shipped " + p.name + " buggy" + (onTime ? "" : " and late") + ". Reputation took a hit.");
+      give(s, { rep: -11, morale: -9 });
+      log(s, WARN, "🧨 " + p.name + " flopped — too buggy, shelved after launch. Reputation took a real hit.");
     }
   }
   function maybePromote(s) {
-    if (s.founder || !s.employed || s.level >= 7) return;
-    var needSkill = 12 + s.level * 8, needRep = 10 + s.level * 7;
-    if (s.skill >= needSkill && s.rep >= needRep && chance(0.6)) {
+    // Normal promotions cap at Principal (level 5 — the top IC rung). Director/VP
+    // (6/7) are scarce EXEC seats reached only via the rare "exec_opening" event,
+    // so most careers plateau as senior ICs (→ stealth wealth) and VP is rare.
+    if (s.founder || !s.employed || s.level >= 5) return;
+    var needSkill = 12 + s.level * 9, needRep = 10 + s.level * 8;
+    if (s.skill >= needSkill && s.rep >= needRep && chance(Math.max(0.35, 0.6 - s.level * 0.05))) {
       s.level++; s.salary = LEVELS[s.level].sal + Math.round(rnd() * 20);
       give(s, { morale: 12, rep: -3 });
       log(s, GOOD, "📈 Promoted to " + LEVELS[s.level].name + "! Salary now $" + s.salary + "k.");
@@ -184,7 +187,7 @@
 
   /* ---- job offers ---------------------------------------------------------- */
   function makeOffer(s) {
-    var lvl = Math.max(s.employed ? s.level : 1, Math.min(6, 1 + Math.floor(s.skill / 16)));
+    var lvl = Math.max(s.employed ? s.level : 1, Math.min(5, 1 + Math.floor(s.skill / 16)));  // external offers top out at IC; exec seats come via exec_opening
     var co = pickOne(["a hot startup 🚀", "Google 🔎", "a unicorn 🦄", "a big bank 🏦", "a scale-up 📊", "a FAANG 🧠"]);
     s.offer = { level: lvl, company: co, salary: Math.round(LEVELS[lvl].sal * (1 + rnd() * 0.35)) };
   }
@@ -214,8 +217,30 @@
               effect: act(1, null, function (st) { give(st, { rep: -4, energy: -1 }); log(st, INFO, "😴 Not your problem tonight. A colleague grumbles."); }), goto: nextScene }
           ]);
       } },
+    { id: "project_killed", cat: "work", weight: 2, cool: 26, when: function (s) { return s.employed && !s.founder && s.project; },
+      build: function (s) {
+        return ev("🗑️ Priorities shift",
+          [line(WARN, "Leadership reshuffles the roadmap and your project — " + s.project.name + " — is on the chopping block before it ships.\n")],
+          [{ label: "Fight to keep it alive.", match: ["fight", "keep", "1"],
+              effect: act(2, null, function (st) {
+                if (chance(0.35 + st.rep / 250)) { give(st, { rep: 4, energy: -6 }); log(st, GOOD, "🛡️ You made the case and saved it."); }
+                else { st.project = null; give(st, { rep: -5, morale: -9, energy: -6 }); log(st, WARN, "🪫 You fought and lost. Months of work, dead."); }
+              }), goto: nextScene },
+            { label: "Let it die and move on.", match: ["drop", "move", "ok", "2"],
+              effect: act(1, null, function (st) { st.project = null; give(st, { rep: -3, morale: -6 }); log(st, WARN, "🗑️ Shelved. That stings, but you move on."); }), goto: nextScene }]);
+      } },
     { id: "recruiter", cat: "work", weight: 2, cool: 26, when: function (s) { return s.employed && !s.founder && s.skill >= 20; },
       build: function (s) { makeOffer(s); return offerScene(s, "📨 A recruiter slides into your inbox"); } },
+    { id: "exec_opening", cat: "work", weight: 1, cool: 36, when: function (s) { return s.employed && !s.founder && s.level >= 5 && s.level < 7 && s.rep >= 38; },
+      build: function (s) {
+        var next = LEVELS[s.level + 1].name.replace(/ 👑/, "");
+        return ev("🪜 A leadership seat opens up",
+          [line(STR, "The org offers you a step up to " + next + " — more scope, more money, and far less actual coding.\n")],
+          [{ label: "Stay hands-on — the code is where the joy is.", match: ["stay", "decline", "ic", "no", "1"],
+              effect: act(1, null, function (st) { give(st, { morale: 4 }); log(st, NOTE, "🛠️ You turn it down and stay a builder."); }), goto: nextScene },
+            { label: "Take the seat — climb into management. 👔", match: ["step", "exec", "lead", "climb", "seat", "2"],
+              effect: act(1, null, function (st) { st.level++; st.salary = LEVELS[st.level].sal + Math.round(rnd() * 30); give(st, { morale: 8, energy: -6, rep: -3 }); log(st, GOOD, "👔 You're now " + LEVELS[st.level].name.replace(/ 👑/, "") + "! Salary $" + st.salary + "k."); }), goto: nextScene }]);
+      } },
     { id: "reorg", cat: "work", weight: 2, cool: 30, when: function (s) { return s.employed && !s.founder; },
       build: function (s) {
         return ev("🏢 Reorg",

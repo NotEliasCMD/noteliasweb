@@ -275,7 +275,12 @@ img { max-width: 100%; display: block; }
   margin: 0; padding: 1.2rem 1.3rem 1.5rem;
   font-size: 0.82rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
   min-height: 300px;
+  max-height: 340px;      /* cap the window so content scrolls instead of growing the page */
+  overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: #4a463a transparent;
 }
+.terminal__body::-webkit-scrollbar { width: 8px; }
+.terminal__body::-webkit-scrollbar-thumb { background: #4a463a; border-radius: 8px; }
 .terminal__body .tok-prompt  { color: #E79CB6; }
 .terminal__body .tok-comment { color: #6f6a5b; }
 .terminal__body .tok-kw      { color: #d4b25a; }

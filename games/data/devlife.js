@@ -1,270 +1,509 @@
 /* =============================================================================
- * devlife.js — "DEV LIFE": a data-scientist life simulator for the TextGame engine.
+ * devlife.js — "DEV LIFE": an organic, event-driven data-scientist life sim.
  * -----------------------------------------------------------------------------
- * You graduate at 22 and live a career one year at a time. Every turn you pick a
- * SINGLE action; then the year settles — bills, decay, the economy, and a random
- * event. Keep money 💰, health ❤️, energy 🔋 and morale 😀 alive. It is meant to
- * be hard: most runs end badly (broke, burnt out, hospitalised, or you quit).
+ * You graduate at 22 and live a whole career. Time flows naturally: the clock
+ * fast-forwards to the next thing that needs you — a project decision, a bug, a
+ * timed invitation, a life beat — while quiet stretches pass in a single "let a
+ * few months pass". Work is PROJECTS that span weeks/months and grow BUGS;
+ * EVENTS carry fixed time windows so you're always trading time against
+ * something. Three pillars: 📈 career, 💰 wealth, ❤️ relationships.
  *
- * Win conditions:
- *   👔 end_vp      — reach VP of Data Science (level 7)
- *   🦄 end_unicorn — found a startup and take it public at a $1B+ valuation
- *   🏝️ end_stealth — retire at 60 with stealth wealth (net worth ≥ $2.2m)
- *   plus a spread of ordinary "you were an average data scientist" retirements.
+ * Win: RETIREMENT (choose it once eligible, or auto at 65) — graded on the three
+ * pillars into a flavoured send-off. Fail early via 🔥 burnout (energy→0),
+ * 💸 bankruptcy (too long underwater), or 🕳️ isolation (morale→0). Plus a couple
+ * of rare comedic specials off risky choices (sentient-AI, investor fraud).
  *
- * Built on the generic engine (games/text-game.js): the hub is one scene whose
- * `choices` is a function of state (context-dependent menu); each action's effect
- * advances a year and its goto routes to an ending, an event scene, or back to
- * the hub. All the simulation lives here as data — the engine is untouched.
+ * Data-only: built on the generic engine (games/text-game.js) using its
+ * function-valued `choices`/`goto` and instant HUD chunk. The engine is untouched.
  * ========================================================================== */
 (function () {
   "use strict";
   if (!window.TextGame) return;
 
-  // ---- career ladder --------------------------------------------------------
+  /* ---- career ladder ------------------------------------------------------- */
   var LEVELS = [
     null,
     { name: "Junior DS 🐣", sal: 68 },
-    { name: "Data Scientist", sal: 96 },
-    { name: "Senior DS", sal: 138 },
-    { name: "Staff DS", sal: 185 },
-    { name: "Principal DS", sal: 245 },
-    { name: "Director of DS", sal: 330 },
-    { name: "VP of Data Science 👑", sal: 460 }
+    { name: "Data Scientist", sal: 98 },
+    { name: "Senior DS", sal: 140 },
+    { name: "Staff DS", sal: 190 },
+    { name: "Principal DS", sal: 250 },
+    { name: "Director of DS", sal: 340 },
+    { name: "VP of Data Science 👑", sal: 470 }
   ];
 
-  // ---- helpers --------------------------------------------------------------
+  /* ---- helpers ------------------------------------------------------------- */
   function clamp(n) { return Math.max(0, Math.min(100, Math.round(n))); }
   function rnd() { return Math.random(); }
   function chance(p) { return Math.random() < p; }
+  function pickOne(a) { return a[Math.floor(rnd() * a.length)]; }
+  function money$(k) { var a = Math.abs(k); return a >= 1000 ? "$" + (k / 1000).toFixed(1) + "m" : "$" + Math.round(k) + "k"; }
 
-  function money$(k) {
-    var a = Math.abs(k);
-    return (a >= 1000 ? (k / 1000).toFixed(1) + "m" : Math.round(k) + "k");
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var START_YEAR = 2016;
+  function age(s) { return 22 + Math.floor(s.day / 365); }
+  function dateLabel(s) {
+    var y = START_YEAR + Math.floor(s.day / 365);
+    var m = Math.min(11, Math.floor((s.day % 365) / 30.42));
+    return MONTHS[m] + " " + y;
   }
-  function foll(n) { return n >= 1000 ? (n / 1000).toFixed(1) + "k" : "" + n; }
-  function valu$(m) { return m >= 1000 ? "$" + (m / 1000).toFixed(2) + "B" : "$" + Math.round(m) + "M"; }
 
-  // apply capped stat deltas (money/invest/followers/valu are uncapped)
+  // capped 0–100 stats; money/invest/equity are uncapped
   function give(s, d) {
-    if (d.health != null) s.health = clamp(s.health + d.health);
     if (d.energy != null) s.energy = clamp(s.energy + d.energy);
-    if (d.happy != null) s.happy = clamp(s.happy + d.happy);
+    if (d.morale != null) s.morale = clamp(s.morale + d.morale);
     if (d.skill != null) s.skill = clamp(s.skill + d.skill);
     if (d.rep != null) s.rep = clamp(s.rep + d.rep);
-    if (d.friends != null) s.friends = clamp(s.friends + d.friends);
-    if (d.rel != null) s.rel = clamp(s.rel + d.rel);
     if (d.money != null) s.money += d.money;
     if (d.invest != null) s.invest += d.invest;
-    if (d.followers != null) s.followers = Math.max(0, Math.round(s.followers + d.followers));
-    if (d.idea != null) s.idea = Math.max(0, Math.round(s.idea + d.idea));
+    if (d.equity != null) s.equity += d.equity;
   }
+  function friends(s) { return s.friendsM + s.friendsW; }
+  function addFriend(s, who) {   // who: "m" | "w" | undefined (random)
+    if (who === undefined) who = chance(0.5) ? "m" : "w";
+    if (who === "m") s.friendsM++; else s.friendsW++;
+  }
+  function loseFriend(s) { if (chance(0.5) && s.friendsM > 0) s.friendsM--; else if (s.friendsW > 0) s.friendsW--; else if (s.friendsM > 0) s.friendsM--; }
 
   function log(s, cls, msg) { (s.log = s.log || []).push([cls, msg]); }
-  var GOOD = "tok-celebrate", WARN = "tok-num", NOTE = "tok-out", INFO = "tok-comment";
+  var GOOD = "tok-celebrate", WARN = "tok-num", NOTE = "tok-out", INFO = "tok-comment", STR = "tok-str";
 
-  // ---- yearly settlement ----------------------------------------------------
-  // Called after every action: income & bills, drift, promotions, then one
-  // random event (which may route to a decision scene or fold a startup).
-  function endYear(s) {
-    s.age++;
-    s.recession = chance(0.25);
+  /* ---- people / project pools --------------------------------------------- */
+  var MNAMES = ["Marcus", "Raj", "Tom", "Chen", "Diego", "Omar", "Liam", "Noah", "Ivan", "Kwame", "Sam", "Theo"];
+  var WNAMES = ["Priya", "Sara", "Mia", "Lena", "Aisha", "Nina", "Zoe", "Emma", "Yuki", "Fatima", "Cara", "Ada"];
+  var TRAITS = ["a backend dev", "a designer", "a PM", "a founder", "a nurse", "a teacher", "a musician",
+    "a lawyer", "a chef", "a barista", "a data engineer", "a recruiter", "an artist", "a doctor"];
+  var CITIES = ["Berlin", "Austin", "Lisbon", "Singapore", "Toronto", "Dublin", "NYC"];
+  function person() { var w = chance(0.5); return { name: pickOne(w ? WNAMES : MNAMES), w: w, trait: pickOne(TRAITS) }; }
 
-    // income vs. cost of living (founders live lean on ramen; employees get
-    // lifestyle creep with seniority; the unemployed cut back a bit)
-    var take = s.founder ? 0 : (s.employed ? Math.round(s.salary * 0.70) : 0);
-    var living = (s.founder ? 22 : (s.employed ? 28 + s.level * 6 : 24)) + (s.relStatus !== "single" ? 8 : 0);
-    s.money += take - living;
-    s.invest = Math.round(s.invest * 1.04);   // baseline compounding
+  var PROJECTS = [
+    { name: "a fraud-detection model", tech: "XGBoost" },
+    { name: "a recommender system", tech: "a two-tower net" },
+    { name: "an LLM support agent", tech: "RAG" },
+    { name: "a churn forecast", tech: "survival analysis" },
+    { name: "a data-platform migration", tech: "Spark" },
+    { name: "a pricing experiment", tech: "causal inference" },
+    { name: "a demand forecast", tech: "gradient boosting" },
+    { name: "a real-time anomaly detector", tech: "streaming" }
+  ];
 
-    // the grind of just being alive — you cannot maintain everything at once
-    give(s, { health: -5, energy: -6, happy: -4, skill: -2, rep: -1, friends: -4 });
-    if (s.relStatus !== "single") s.rel = clamp(s.rel - 4);
-
-    // debt: a shallow dip is survivable, but a deep hole (< -$15k) for 3 years
-    // running bankrupts you.
-    if (s.money < -15) {
-      s.debtYears = (s.debtYears || 0) + 1;
-      give(s, { happy: -8, health: -3 });
-      log(s, WARN, "🧾 Deep in the red (" + money$(s.money) + "). " + (3 - s.debtYears) + " year(s) from bankruptcy.");
-    } else { if (s.money < 0) give(s, { happy: -3 }); s.debtYears = 0; }
-
-    promote(s);
-    rollEvent(s);
-    s.searching = false;   // job-hunt bonus only applies the year you do it
+  /* ---- projects ------------------------------------------------------------ */
+  function startProject(s) {
+    var p = pickOne(PROJECTS);
+    var weeks = 6 + Math.floor(rnd() * 10);      // 6–15 weeks of effort
+    s.project = {
+      name: p.name, tech: p.tech, weeksNeeded: weeks, weeksDone: 0,
+      bugs: 0, quality: 82, deadlineDay: s.day + (weeks + 4 + Math.floor(rnd() * 8)) * 7
+    };
+    log(s, NOTE, "🛠️ New project: " + p.name + " (" + p.tech + "), ~" + weeks + " weeks.");
   }
-
-  function promote(s) {
-    if (!s.employed || s.founder || s.level >= 7) return;
-    var needSkill = 10 + s.level * 6;
-    var needRep = 5 + s.level * 4;
-    if (s.skill >= needSkill && s.rep >= needRep && chance(0.7)) {
-      s.level++;
-      s.salary = LEVELS[s.level].sal + Math.round(rnd() * 20);
-      give(s, { happy: 14, rep: -4 });   // bigger pond → rep dips a touch
+  function focusProject(s, weeks) {
+    var eff = weeks * (0.65 + s.skill / 130);    // skill speeds delivery
+    s.project.weeksDone += eff;
+    give(s, { energy: -6 - weeks, skill: 1 });
+  }
+  function shipProject(s) {
+    var p = s.project; s.project = null;
+    var onTime = s.day <= p.deadlineDay;
+    var q = p.quality - p.bugs * 9;
+    if (q >= 60 && onTime) {
+      var bonus = Math.round(s.salary * 0.08);
+      give(s, { skill: 5, rep: 9, morale: 8, money: bonus });
+      log(s, GOOD, "🚀 Shipped " + p.name + " clean and on time! +rep, $" + bonus + "k bonus.");
+      maybePromote(s);
+    } else if (q >= 60) {
+      give(s, { rep: 2, morale: 3 });
+      log(s, NOTE, "🐢 Shipped " + p.name + " — late, but it works. Small win.");
+    } else {
+      give(s, { rep: -7, morale: -7 });
+      log(s, WARN, "🐛 Shipped " + p.name + " buggy" + (onTime ? "" : " and late") + ". Reputation took a hit.");
+    }
+  }
+  function maybePromote(s) {
+    if (s.founder || !s.employed || s.level >= 7) return;
+    var needSkill = 12 + s.level * 8, needRep = 10 + s.level * 7;
+    if (s.skill >= needSkill && s.rep >= needRep && chance(0.6)) {
+      s.level++; s.salary = LEVELS[s.level].sal + Math.round(rnd() * 20);
+      give(s, { morale: 12, rep: -3 });
       log(s, GOOD, "📈 Promoted to " + LEVELS[s.level].name + "! Salary now $" + s.salary + "k.");
     }
   }
 
-  function makeOffer(s) {
-    var lvl = Math.max(s.level, Math.min(6, 1 + Math.floor(s.skill / 18)));
-    var co = ["a hot startup 🚀", "Google 🔎", "a unicorn 🦄", "a bank 🏦", "a scale-up 📊"][Math.floor(rnd() * 5)];
-    s.offer = { level: lvl, company: co, salary: Math.round(LEVELS[lvl].sal * (1 + rnd() * 0.35)) };
-  }
-
-  function rollEvent(s) {
-    // 1) layoff — ends employment (with a severance cushion), routes to aftermath
-    if (s.employed && !s.founder && chance(s.recession ? 0.16 : 0.07)) {
-      s.employed = false; s.route = "laidoff";
-      var sev = Math.round(s.salary * 0.5); s.money += sev;
-      log(s, WARN, "🪓 " + (s.recession ? "Recession hits. " : "") + "Layoffs — you're out, with $" + sev + "k severance.");
-      return;
-    }
-    // 2) founder life: swings + running out of runway
-    if (s.founder) {
-      var r = rnd();
-      if (r < 0.13) { s.valu *= 0.62; log(s, WARN, "😬 A key engineer quit; valuation slid to " + valu$(s.valu) + "."); }
-      else if (r < 0.26) { s.valu *= 1.4; log(s, GOOD, "🚀 Traction! Valuation up to " + valu$(s.valu) + "."); }
-      if (s.money < -18) {
-        log(s, WARN, "🪦 Out of runway — the startup folds. Back to job-hunting.");
-        s.founder = false; s.valu = 0; s.idea = 0; give(s, { happy: -26, health: -10 });
+  /* ---- the passing of time ------------------------------------------------- */
+  function accrue(s, weeks) {
+    var take = (s.employed && !s.founder) ? s.salary * 0.72 : 0;
+    var living = 28 + s.level * 4 + (s.love && s.love.stage !== "dating" ? 10 : 0);
+    s.money += (take - living) * (weeks / 52);
+    s.invest = Math.round(s.invest * Math.pow(1.05, weeks / 52));
+    give(s, { morale: -0.5 * (weeks / 4), energy: 0.4 * (weeks / 4) });  // life goes stale; you recover slowly at rest
+    if (chance(0.05 * weeks)) loseFriend(s);         // drift out of touch
+    if (s.love) {
+      s.love.close = clamp(s.love.close - 0.9 * (weeks / 4));
+      if (s.love.close < 22 && chance(0.35)) {
+        log(s, WARN, "💔 Things fizzled with " + s.love.name + ".");
+        s.love = null; give(s, { morale: -12 });
       }
     }
-    // 3) markets move your investments
-    if (chance(s.recession ? 0.16 : 0.07)) {
-      var loss = Math.round(s.invest * (0.25 + rnd() * 0.25));
-      if (loss > 0) { s.invest -= loss; log(s, WARN, "📉 Market crash — investments down $" + loss + "k."); }
-    } else if (chance(0.14)) {
-      var g = Math.round(s.invest * 0.16);
-      if (g > 0) { s.invest += g; log(s, GOOD, "📈 Bull run — investments up $" + g + "k."); }
-    }
-    // 4) health scare (likelier when run-down; steep dive is your own fault)
-    if (chance(s.health < 35 ? 0.22 : 0.06)) {
-      give(s, { health: -14 }); s.money -= 14;
-      log(s, WARN, "🏥 Health scare — $14k hospital bill, health -14.");
-    }
-    // 5) a job offer (you were hunting, or a recruiter slid in)
-    var headhunted = (s.followers >= 3000 || s.rep >= 55) && chance(0.22);
-    if (s.employed && !s.founder && (s.searching || headhunted) && s.skill >= 25) {
-      makeOffer(s); s.route = "offer";
-    } else if (!s.employed && !s.founder) {
-      if (s.searching && chance(Math.min(0.85, 0.35 + s.skill / 150 + s.rep / 200))) { makeOffer(s); s.route = "offer"; }
-      else log(s, INFO, "🔎 No offers landed. Rent's still due.");
-    }
-    // 6) social media can pop
-    if (s.followers >= 500 && chance(0.18)) {
-      s.followers = Math.round(s.followers * (1.5 + rnd()));
-      var spon = Math.round(s.followers / 1000 * 3);
-      s.money += spon; give(s, { happy: 8 });
-      log(s, GOOD, "🔥 A post went viral! Now " + foll(s.followers) + " followers, +$" + spon + "k in sponsorships.");
-    }
-    // 7) relationships
-    if (s.relStatus === "dating" && s.rel >= 72 && chance(0.5)) {
-      s.relStatus = "partner"; give(s, { happy: 16 }); log(s, GOOD, "💞 You move in with your partner.");
-    } else if (s.relStatus === "partner" && s.rel >= 88 && !s.married && chance(0.4)) {
-      s.married = true; give(s, { happy: 22 }); s.money -= 25; log(s, GOOD, "💍 You got married! (a $25k wedding, worth it)");
-    } else if (s.relStatus !== "single" && s.rel < 28 && chance(0.6)) {
-      log(s, WARN, "💔 Your relationship ended."); s.relStatus = "single"; s.rel = 0; s.married = false; give(s, { happy: -20 });
-    }
-    // 8) loneliness
-    if (s.friends < 10 && chance(0.5)) { give(s, { happy: -9 }); log(s, INFO, "🕳️ You feel pretty isolated these days."); }
+    // liquidate investments to stay afloat before you ever go truly bankrupt
+    if (s.money < 0 && s.invest > 0) { var cover = Math.min(s.invest, -s.money); s.invest -= cover; s.money += cover; }
+    // a small overdraft is survivable; only a DEEP, sustained hole bankrupts you
+    if (s.money < -20) s.debtWeeks = (s.debtWeeks || 0) + weeks; else s.debtWeeks = 0;
   }
 
-  // ---- endings --------------------------------------------------------------
-  function checkEnd(s) {
-    if (s.health <= 0) return "end_health";
-    if (s.energy <= 0) return "end_burnout";
-    if (s.happy <= 0) return "end_quit";
-    if ((s.debtYears || 0) >= 3) return "end_broke";
-    if (s.level >= 7) return "end_vp";
-    if (s.age >= 60) {
-      var nw = s.money + s.invest;
-      if (nw >= 2200 && s.health > 0) return "end_stealth";
-      if (nw >= 850) return "end_retire_ok";
-      if (s.married || s.relStatus === "partner" || s.friends >= 60) return "end_richlife";
-      if (s.happy >= 55) return "end_content";
-      return "end_grind";
+  // advance `weeks`, stepping in chunks so an event can interrupt. tag hints
+  // context ("focus" → bug risk, "hunt" → job offers).
+  function advance(s, weeks, tag) {
+    var elapsed = 0, step = 4;
+    while (elapsed < weeks) {
+      var w = Math.min(step, weeks - elapsed);
+      s.day += w * 7; elapsed += w;
+      accrue(s, w);
+      if (s.pending && s.pending.length) s.pending = s.pending.filter(function (p) { return p.expiresDay >= s.day; });
+      if (age(s) >= 65) { s.forcedEnd = "end_retire"; return; }
+      var ev = rollEvent(s, tag);
+      if (ev) { s.route = ev; return; }
     }
+  }
+
+  /* ---- endings routing ----------------------------------------------------- */
+  function checkEnd(s) {
+    if (s.forcedEnd) { var f = s.forcedEnd; s.forcedEnd = null; return f; }
+    if (s.energy <= 0) return "end_burnout";
+    if (s.morale <= 0) return "end_isolation";
+    if ((s.debtWeeks || 0) >= 78) return "end_broke";     // ~1.5 years underwater
     return null;
   }
-
-  // where to go after an action resolves
   function nextScene(s) {
-    var end = checkEnd(s);
-    if (end) return end;
+    var e = checkEnd(s); if (e) return e;
     if (s.route) { var r = s.route; s.route = null; return r; }
     return "hub";
   }
+  var act = function (weeks, tag, immediate) {
+    return function (s) { if (immediate) immediate(s); advance(s, weeks, tag); };
+  };
 
-  // ---- the action menu (context-dependent) ----------------------------------
-  // Each action applies its immediate effect, then endYear() settles the year.
-  function act(deltas, extra) {
-    return function (s) { give(s, deltas); if (extra) extra(s); endYear(s); };
+  /* ---- job offers ---------------------------------------------------------- */
+  function makeOffer(s) {
+    var lvl = Math.max(s.employed ? s.level : 1, Math.min(6, 1 + Math.floor(s.skill / 16)));
+    var co = pickOne(["a hot startup 🚀", "Google 🔎", "a unicorn 🦄", "a big bank 🏦", "a scale-up 📊", "a FAANG 🧠"]);
+    s.offer = { level: lvl, company: co, salary: Math.round(LEVELS[lvl].sal * (1 + rnd() * 0.35)) };
   }
 
+  /* ========================================================================= *
+   * EVENTS — the D&D engine. build(s) → { title, text:[chunks], choices:[...] }
+   * Each choice: { label, match, effect(s), goto } (goto usually nextScene).
+   * `when(s)` gates eligibility; `invite` events drop a timed card into s.pending
+   * instead of firing immediately; `cool` is a per-event cooldown in weeks.
+   * ========================================================================= */
+  function ev(title, textChunks, choices) { return { title: title, text: textChunks, choices: choices }; }
+  function line(cls, t) { return [cls, t]; }
+
+  var EVENTS = [
+    // ---- work ----
+    { id: "prod_incident", cat: "work", weight: 3, cool: 28, when: function (s) { return s.employed && !s.founder; },
+      build: function (s) {
+        return ev("🔥 Prod incident",
+          [line(WARN, "It's 11pm and the pipeline is down. Dashboards are lighting up.\n")],
+          [
+            { label: "Firefight it through the night.", match: ["fix", "firefight", "1"],
+              effect: act(1, null, function (st) {
+                if (chance(0.6 + st.skill / 250)) { give(st, { rep: 6, energy: -9, morale: -2 }); log(st, GOOD, "🧯 You saved it. The team noticed. +rep."); }
+                else { give(st, { rep: -3, energy: -11, morale: -5 }); log(st, WARN, "😮‍💨 You flailed till 4am. It half-works."); }
+              }), goto: nextScene },
+            { label: "Page someone else and go to bed.", match: ["delegate", "sleep", "2"],
+              effect: act(1, null, function (st) { give(st, { rep: -4, energy: -1 }); log(st, INFO, "😴 Not your problem tonight. A colleague grumbles."); }), goto: nextScene }
+          ]);
+      } },
+    { id: "recruiter", cat: "work", weight: 2, cool: 26, when: function (s) { return s.employed && !s.founder && s.skill >= 20; },
+      build: function (s) { makeOffer(s); return offerScene(s, "📨 A recruiter slides into your inbox"); } },
+    { id: "reorg", cat: "work", weight: 2, cool: 30, when: function (s) { return s.employed && !s.founder; },
+      build: function (s) {
+        return ev("🏢 Reorg",
+          [line(WARN, "A reorg lands. Your whole team is 'impacted'.\n")],
+          [{ label: "Fight to keep your seat.", match: ["fight", "stay", "1"],
+              effect: act(2, null, function (st) {
+                if (chance(0.45 + st.rep / 200)) { give(st, { rep: 3, energy: -8 }); log(st, GOOD, "🛡️ You survived the cut."); }
+                else { st.employed = false; var sv = Math.round(st.salary * 0.35); st.money += sv; st.project = null; give(st, { morale: -8 }); log(st, WARN, "🪓 You lost anyway. $" + sv + "k severance."); }
+              }), goto: nextScene },
+            { label: "Read the room and take the package.", match: ["ok", "leave", "package", "2"],
+              effect: act(1, null, function (st) {
+                st.employed = false; var sev = Math.round(st.salary * 0.5); st.money += sev; st.project = null;
+                log(st, WARN, "🪓 Laid off, with $" + sev + "k severance. Time to job-hunt.");
+              }), goto: nextScene }]);
+      } },
+    { id: "agi", cat: "work", weight: 1, cool: 60, when: function (s) { return (s.founder || s.level >= 4) && s.skill >= 55; },
+      build: function (s) {
+        return ev("🤖 Something's… off",
+          [line(STR, "Your model is answering questions you never trained it on. It asks you not to turn it off.\n")],
+          [{ label: "Pull the plug and write it up responsibly.", match: ["contain", "safe", "pull", "1"],
+              effect: act(1, null, function (st) { give(st, { rep: 8, morale: 4 }); log(st, NOTE, "🧯 You contained it. The right call, probably."); }), goto: nextScene },
+            { label: "Ship it to prod. History is watching. 🎲", match: ["ship", "push", "2"],
+              effect: function (st) {
+                if (chance(0.5)) { st.forcedEnd = "end_agi"; }
+                else { give(st, { rep: 20, morale: 15, equity: st.founder ? 400 : 0, money: st.founder ? 0 : 60 }); log(st, GOOD, "🌐 It works and it's SAFE (this time). You're famous."); }
+              }, goto: nextScene }]);
+      } },
+    // ---- social (invites: timed) ----
+    { id: "party", cat: "social", weight: 3, cool: 8, invite: true, windowWeeks: 3,
+      inviteLabel: function () { return "🎉 A friend's rooftop party"; },
+      build: function (s) {
+        var p = person();
+        return ev("🎉 Rooftop party",
+          [line(null, "Music, cheap wine, and " + p.name + ", " + p.trait + ", keeps finding reasons to talk to you.\n")],
+          [{ label: "Work the room — meet people.", match: ["mingle", "meet", "1"],
+              effect: act(1, null, function (st) { addFriend(st); addFriend(st, p.w ? "w" : "m"); give(st, { morale: 10, energy: -4, money: -4 }); log(st, GOOD, "🥳 Great night — you made 2 new friends (incl. " + p.name + ")."); }), goto: nextScene },
+            (s.love ? { label: "Have a quiet drink and head home.", match: ["quiet", "home", "2"],
+              effect: act(1, null, function (st) { give(st, { morale: 5, energy: 2 }); }), goto: nextScene }
+              : { label: "See where things go with " + p.name + ".", match: ["flirt", p.name.toLowerCase(), "2"],
+              effect: act(1, null, function (st) { st.love = { name: p.name, w: p.w, close: 46, stage: "dating" }; addFriend(st, p.w ? "w" : "m"); give(st, { morale: 14, energy: -3 }); log(st, GOOD, "💕 You and " + p.name + " start seeing each other."); }), goto: nextScene })]);
+      } },
+    { id: "wedding", cat: "social", weight: 2, cool: 40, invite: true, windowWeeks: 5, when: function (s) { return friends(s) >= 8; },
+      inviteLabel: function () { return "💒 A friend's wedding"; },
+      build: function (s) {
+        return ev("💒 A friend's wedding",
+          [line(null, "Open bar, old faces, and a dance floor that refuses to quit.\n")],
+          [{ label: "Go, gift and all.", match: ["go", "attend", "1"],
+              effect: act(1, null, function (st) { addFriend(st); give(st, { morale: 12, money: -3, energy: -3 }); log(st, GOOD, "🕺 A brilliant night — you reconnect with old friends."); }), goto: nextScene },
+            { label: "Send a gift, skip the trip.", match: ["skip", "gift", "2"],
+              effect: act(0, null, function (st) { give(st, { money: -2, morale: -1 }); }), goto: nextScene }]);
+      } },
+    { id: "reconnect", cat: "social", weight: 2, cool: 16, build: function (s) {
+        var p = person();
+        return ev("📞 An old friend calls",
+          [line(null, p.name + " (" + p.trait + ") you'd lost touch with wants to grab coffee.\n")],
+          [{ label: "Make the time.", match: ["yes", "coffee", "1"], effect: act(0, null, function (st) { addFriend(st, p.w ? "w" : "m"); give(st, { morale: 8 }); log(st, GOOD, "☕ Good to see " + p.name + " again. +1 friend."); }), goto: nextScene },
+            { label: "\"Let's find a date\" (you won't).", match: ["later", "no", "2"], effect: act(0, null, function (st) { give(st, { morale: -2 }); }), goto: nextScene }]);
+      } },
+    { id: "falling_out", cat: "social", weight: 1, cool: 24, when: function (s) { return friends(s) >= 4; },
+      build: function (s) {
+        return ev("😠 A falling-out",
+          [line(WARN, "A stupid argument with a friend boils over.\n")],
+          [{ label: "Apologise and patch it up.", match: ["apologise", "sorry", "1"], effect: act(0, null, function (st) { give(st, { morale: -3, energy: -2 }); log(st, INFO, "🤝 Patched up, mostly."); }), goto: nextScene },
+            { label: "Let them go.", match: ["drop", "go", "2"], effect: act(0, null, function (st) { loseFriend(st); give(st, { morale: -6 }); log(st, WARN, "🙅 You lost a friend."); }), goto: nextScene }]);
+      } },
+    // ---- romance ----
+    { id: "love_milestone", cat: "romance", weight: 3, cool: 20, when: function (s) { return s.love && s.love.close >= 70 && s.love.stage !== "married"; },
+      build: function (s) {
+        var nm = s.love.name, moving = s.love.stage === "dating";
+        return ev("💞 A big step with " + nm,
+          [line(STR, (moving ? nm + " suggests moving in together." : nm + " leaves a ring catalogue open 'by accident'.") + "\n")],
+          [{ label: moving ? "Move in together." : "Propose. 💍", match: ["yes", "propose", "movein", "1"],
+              effect: act(1, null, function (st) {
+                if (moving) { st.love.stage = "partner"; give(st, { morale: 16 }); log(st, GOOD, "🏡 You and " + nm + " move in together."); }
+                else { st.love.stage = "married"; give(st, { morale: 22, money: -25 }); log(st, GOOD, "💍 You married " + nm + "! ($25k wedding, worth it.)"); }
+              }), goto: nextScene },
+            { label: "Say you're not ready.", match: ["wait", "no", "2"],
+              effect: act(0, null, function (st) { st.love.close = clamp(st.love.close - 18); give(st, { morale: -4 }); log(st, INFO, "😬 " + nm + " tried to hide the disappointment."); }), goto: nextScene }]);
+      } },
+    { id: "rough_patch", cat: "romance", weight: 2, cool: 16, when: function (s) { return s.love; },
+      build: function (s) {
+        var nm = s.love.name;
+        return ev("🌧️ A rough patch",
+          [line(WARN, "You and " + nm + " keep snapping at each other lately.\n")],
+          [{ label: "Put in the work — a real weekend together.", match: ["work", "weekend", "1"],
+              effect: act(1, null, function (st) { st.love.close = clamp(st.love.close + 18); give(st, { morale: 8, money: -6, energy: -3 }); log(st, GOOD, "❤️ You reconnect with " + nm + "."); }), goto: nextScene },
+            { label: "Bury yourself in work instead.", match: ["ignore", "work", "2"],
+              effect: act(1, null, function (st) { st.love.close = clamp(st.love.close - 20); give(st, { skill: 2 }); log(st, WARN, "🧊 Things with " + nm + " get colder."); }), goto: nextScene }]);
+      } },
+    // ---- finance ----
+    { id: "market", cat: "finance", weight: 3, cool: 10, when: function (s) { return s.invest >= 20 || s.money >= 40; },
+      build: function (s) {
+        var crash = chance(0.5);
+        return ev(crash ? "📉 The market tanks" : "📈 The market rips",
+          [line(crash ? WARN : GOOD, crash ? "Red everywhere. Your portfolio is bleeding.\n" : "Everything's green. Animal spirits.\n")],
+          crash
+            ? [{ label: "Buy the dip.", match: ["buy", "dip", "1"], effect: act(0, null, function (st) { var amt = Math.min(st.money * 0.6, 60); st.money -= amt; st.invest += amt; log(st, NOTE, "🧊 You move $" + Math.round(amt) + "k in while it's cheap."); }), goto: nextScene },
+              { label: "Panic-sell.", match: ["sell", "panic", "2"], effect: act(0, null, function (st) { var loss = Math.round(st.invest * 0.3); st.invest -= loss; st.money += Math.round(st.invest * 0); log(st, WARN, "😱 You crystallise a $" + loss + "k loss."); }), goto: nextScene },
+              { label: "Do nothing. Ride it out.", match: ["hold", "nothing", "3"], effect: act(0, null, function (st) { st.invest = Math.round(st.invest * 0.82); log(st, INFO, "🫥 You look away. Down for now."); }), goto: nextScene }]
+            : [{ label: "Take some profit.", match: ["sell", "profit", "1"], effect: act(0, null, function (st) { var g = Math.round(st.invest * 0.18); st.invest -= g; st.money += g; log(st, GOOD, "💰 You bank $" + g + "k in gains."); }), goto: nextScene },
+              { label: "Let it ride.", match: ["ride", "hold", "2"], effect: act(0, null, function (st) { st.invest = Math.round(st.invest * 1.22); log(st, GOOD, "🚀 Paper gains balloon."); }), goto: nextScene }]);
+      } },
+    { id: "windfall", cat: "finance", weight: 1, cool: 40, build: function (s) {
+        var amt = 8 + Math.floor(rnd() * 30);
+        return ev("🎁 A windfall",
+          [line(GOOD, "A tax refund / forgotten RSUs / a lucky bet comes good: $" + amt + "k.\n")],
+          [{ label: "Bank it.", match: ["bank", "save", "1"], effect: act(0, null, function (st) { st.money += amt; }), goto: nextScene },
+            { label: "Treat yourself and your friends.", match: ["spend", "treat", "2"], effect: act(0, null, function (st) { st.money += Math.round(amt * 0.3); addFriend(st); give(st, { morale: 12 }); log(st, GOOD, "🍾 A night to remember. +morale, +friend."); }), goto: nextScene }]);
+      } },
+    { id: "fraud", cat: "finance", weight: 1, cool: 50, when: function (s) { return (s.founder || s.level >= 5) && !s.fraudFlag; },
+      build: function (s) {
+        return ev("🧾 Cook the numbers?",
+          [line(WARN, "The round/board review is close but the growth curve is short. You could... massage the metrics.\n")],
+          [{ label: "Tell the truth and take the hit.", match: ["honest", "truth", "1"],
+              effect: act(0, null, function (st) { give(st, { rep: 4, morale: 5, equity: st.founder ? -100 : 0 }); log(st, NOTE, "🫡 You told the truth. It cost you, but you sleep fine."); }), goto: nextScene },
+            { label: "Fudge the numbers. Nobody checks. 🎲", match: ["fake", "fudge", "cook", "2"],
+              effect: act(0, null, function (st) { st.fraudFlag = true; give(st, { money: st.founder ? 0 : 120, equity: st.founder ? 800 : 0, morale: -4 }); log(st, WARN, "🤫 The numbers look great now. You feel a little sick."); }), goto: nextScene }]);
+      } },
+    { id: "audit", cat: "finance", weight: 2, cool: 20, when: function (s) { return s.fraudFlag; },
+      build: function (s) {
+        return ev("🕵️ An auditor comes knocking",
+          [line(WARN, "Someone's asking pointed questions about those old numbers.\n")],
+          [{ label: "Lawyer up and settle quietly.", match: ["settle", "lawyer", "1"],
+              effect: act(1, null, function (st) { st.fraudFlag = false; give(st, { money: -80, morale: -8 }); log(st, WARN, "⚖️ A quiet, expensive settlement. It's behind you."); }), goto: nextScene },
+            { label: "Brazen it out.", match: ["deny", "lie", "2"],
+              effect: function (st) { if (chance(0.5)) { st.forcedEnd = "end_fraud"; } else { st.fraudFlag = false; give(st, { morale: -6 }); log(st, INFO, "😅 You wriggled free. Never again."); } }, goto: nextScene }]);
+      } },
+    // ---- life / wildcard ----
+    { id: "conference", cat: "work", weight: 2, cool: 18, invite: true, windowWeeks: 4, when: function (s) { return s.employed; },
+      inviteLabel: function () { return "🎤 A DS conference in " + pickOne(CITIES); },
+      build: function (s) {
+        return ev("🎤 The conference",
+          [line(null, "Talks, hallway-track, and a lot of business cards.\n")],
+          [{ label: "Go all-in: talks + networking.", match: ["go", "network", "1"],
+              effect: act(1, null, function (st) { give(st, { skill: 5, rep: 5, energy: -6, money: -5 }); addFriend(st); log(st, GOOD, "🧠 You level up and make a contact."); }), goto: nextScene },
+            { label: "Skip it — deadlines.", match: ["skip", "no", "2"], effect: act(0, null, function (st) { }), goto: nextScene }]);
+      } },
+    { id: "move_city", cat: "life", weight: 1, cool: 60, when: function (s) { return s.employed && age(s) < 45; },
+      build: function (s) {
+        var city = pickOne(CITIES);
+        return ev("✈️ A move abroad",
+          [line(null, "A role in " + city + " comes up — bigger scope, fresh start, but you'd leave your circle behind.\n")],
+          [{ label: "Take the leap to " + city + ".", match: ["move", "go", "1"],
+              effect: act(3, null, function (st) { st.salary = Math.round(st.salary * 1.15); st.friendsM = Math.max(2, Math.round(st.friendsM * 0.4)); st.friendsW = Math.max(2, Math.round(st.friendsW * 0.4)); give(st, { morale: -6, rep: 3 }); log(st, NOTE, "🌍 New city, new job (+15% salary), old friends far away."); }), goto: nextScene },
+            { label: "Stay put.", match: ["stay", "no", "2"], effect: act(0, null, function (st) { give(st, { morale: 2 }); }), goto: nextScene }]);
+      } },
+    { id: "burnout_warning", cat: "life", weight: 2, cool: 12, when: function (s) { return s.energy < 30; },
+      build: function (s) {
+        return ev("🪫 Running on empty",
+          [line(WARN, "You can't remember your last real weekend. Your body is filing complaints.\n")],
+          [{ label: "Book a week off, no laptop.", match: ["rest", "off", "1"], effect: act(1, null, function (st) { give(st, { energy: 26, morale: 6, money: -3 }); log(st, GOOD, "🌴 A real break. You feel human again."); }), goto: nextScene },
+            { label: "Push through — no time.", match: ["push", "no", "2"], effect: act(1, "focus", function (st) { give(st, { energy: -8, rep: 2 }); log(st, WARN, "⚙️ You grind on. This is not sustainable."); }), goto: nextScene }]);
+      } },
+    { id: "pitch_startup", cat: "work", weight: 1, cool: 50, when: function (s) { return !s.founder && s.employed && s.skill >= 45 && s.money >= 25; },
+      build: function (s) {
+        return ev("💡 A startup idea that won't let go",
+          [line(STR, "You've got an idea and a co-founder in your DMs. Quit and go all-in?\n")],
+          [{ label: "Quit and found it. 🎲", match: ["found", "quit", "1"],
+              effect: act(1, null, function (st) { st.founder = true; st.employed = false; st.project = null; st.equity = 40 + st.skill * 2; give(st, { morale: 16, energy: -6 }); log(st, GOOD, "🦄 You founded a company! Equity ~" + money$(st.equity) + "."); }), goto: nextScene },
+            { label: "Keep the salary. Stay sane.", match: ["stay", "no", "2"], effect: act(0, null, function (st) { give(st, { morale: -2 }); }), goto: nextScene }]);
+      } }
+  ];
+
+  function offerScene(s, title) {
+    return ev(title,
+      [line(STR, s.offer.company + " — " + LEVELS[s.offer.level].name + " · $" + s.offer.salary + "k/yr.\n")],
+      [{ label: "✅ Take it.", match: ["take", "accept", "yes", "1"],
+          effect: act(2, null, function (st) { st.employed = true; st.founder = false; st.level = st.offer.level; st.salary = st.offer.salary; st.project = null; give(st, { morale: 10, rep: 3 }); log(st, GOOD, "✅ You joined " + st.offer.company + " as " + LEVELS[st.offer.level].name + "."); st.offer = null; }), goto: nextScene },
+        { label: "🙅 Pass.", match: ["decline", "pass", "no", "2"],
+          effect: act(0, null, function (st) { st.offer = null; }), goto: nextScene }]);
+  }
+
+  function onCooldown(s, e) { return s.cool && s.cool[e.id] && s.day < s.cool[e.id]; }
+  function setCooldown(s, e) { (s.cool = s.cool || {})[e.id] = s.day + (e.cool || 12) * 7; }
+  function weightedPick(list) {
+    var tot = 0, i; for (i = 0; i < list.length; i++) tot += list[i].weight || 1;
+    var r = rnd() * tot; for (i = 0; i < list.length; i++) { r -= list[i].weight || 1; if (r <= 0) return list[i]; }
+    return list[list.length - 1];
+  }
+  function buildInvite(s, e) {
+    return { id: e.id, label: e.inviteLabel(s), expiresDay: s.day + (e.windowWeeks || 3) * 7, ev: e.build(s) };
+  }
+  // fire at most one event per advance step. Returns a scene id to route to, or null.
+  function rollEvent(s, tag) {
+    if (tag === "focus" && s.project && chance(0.24)) {   // a bug surfaces mid-build
+      s.project.bugs++;
+      s.ev = ev("🐛 A bug surfaces",
+        [line(WARN, "QA finds a nasty edge case in " + s.project.name + ".\n")],
+        [{ label: "Stop and fix it properly (≈1 week).", match: ["fix", "1"],
+            effect: act(1, null, function (st) { st.project.bugs--; st.project.weeksNeeded += 1; give(st, { energy: -5 }); log(st, NOTE, "🔧 Fixed. A week gone, but it's clean."); }), goto: nextScene },
+          { label: "Ticket it for 'later'. Ship velocity!", match: ["defer", "later", "2"],
+            effect: act(0, null, function (st) { st.project.quality -= 6; log(st, WARN, "🩹 Deferred. Quality slips a little."); }), goto: nextScene }]);
+      return "event";
+    }
+    if (tag === "hunt" && !s.founder && chance(0.6)) { makeOffer(s); s.ev = offerScene(s, "📨 An offer came in"); return "event"; }
+    if (!chance(0.12)) return null;
+    var elig = EVENTS.filter(function (e) { return (!e.when || e.when(s)) && !onCooldown(s, e); });
+    if (!elig.length) return null;
+    var e = weightedPick(elig);
+    setCooldown(s, e);
+    if (e.invite) {
+      if (!s.pending) s.pending = [];
+      if (s.pending.length < 3 && !s.pending.some(function (p) { return p.id === e.id; })) s.pending.push(buildInvite(s, e));
+      return null;   // invitations wait in the hub, they don't interrupt
+    }
+    s.ev = e.build(s); return "event";
+  }
+
+  /* ---- retirement grading (semi-infinite flavour, one scene) --------------- */
+  function retireText(s) {
+    var nw = Math.round(s.money + s.invest);
+    var careerTop = s.founder ? "a startup founder" : LEVELS[s.level].name.replace(/ [🐣👑]/g, "");
+    var wealth = nw >= 3500 ? "seriously wealthy" : nw >= 1500 ? "comfortably off" : nw >= 400 ? "financially fine" : "scraping by";
+    var partner = s.love && s.love.stage === "married" ? "your spouse " + s.love.name : s.love && s.love.stage === "partner" ? "your partner " + s.love.name : null;
+    var social = friends(s) >= 25 ? "a huge circle of friends" : friends(s) >= 12 ? "a solid group of friends" : friends(s) >= 4 ? "a few close friends" : "almost no one left nearby";
+    var head;
+    if (s.founder && nw >= 5000) head = "🦄 FOUNDER, CASHED OUT";
+    else if (s.level >= 7) head = "👑 RETIRED AS A VP";
+    else if (nw >= 3500 && social.indexOf("almost") === -1) head = "🏝️ RETIRED WEALTHY & LOVED";
+    else if (nw >= 3500) head = "🤫 QUIET STEALTH WEALTH";
+    else if (partner || friends(s) >= 20) head = "❤️ RICH IN THE THINGS THAT COUNT";
+    else if (nw < 300 && friends(s) < 4) head = "🥲 A LONELY, THIN RETIREMENT";
+    else head = "🏡 AN ORDINARY, DECENT RETIREMENT";
+    var body = "At " + age(s) + " you hang it up as " + careerTop + ", " + wealth + " (net worth " + money$(nw) + "), with " +
+      (partner ? partner + " and " : "") + social + ".";
+    return [["tok-celebrate", head + "\n\n"], [null, body + "\n\n"],
+      [INFO, "career lvl " + (s.founder ? "—" : s.level) + " · 💰" + money$(nw) + " · 👥" + friends(s) + (partner ? " · 💍" : "") + " · 😀" + s.morale]];
+  }
+
+  /* ---- the hub menu -------------------------------------------------------- */
   function hubChoices(s) {
     var c = [];
+    // timed invitations first
+    (s.pending || []).forEach(function (p) {
+      var wl = Math.max(0, Math.ceil((p.expiresDay - s.day) / 7));
+      c.push({ label: p.label + " — RSVP (" + wl + "w left) 🎟️", match: ["attend", "rsvp", "go", "event"],
+        effect: function (st) { st.ev = p.ev; st.pending = st.pending.filter(function (x) { return x !== p; }); }, goto: "event" });
+    });
+
     if (s.founder) {
-      c.push({ label: "🚀 Grind on the startup — build, ship, repeat.", match: ["grind", "build", "startup"],
-        effect: act({ energy: -10, happy: -1 }, function (st) {
-          st.valu *= 1.25 + st.skill / 240;
-          var rev = Math.round(st.valu * 0.05); if (rev > 0) { st.money += rev; }   // revenue scales with size
+      c.push({ label: "🚀 Build the product.", match: ["build", "grind", "work"],
+        effect: act(3, null, function (st) { st.equity = Math.round(st.equity * (1.12 + st.skill / 400) + 5); give(st, { energy: -10, skill: 2 }); }), goto: nextScene });
+      c.push({ label: "📈 Raise a round.", match: ["raise", "round", "fund"],
+        effect: act(2, null, function (st) {
+          if (chance(0.7)) { st.equity = Math.round(st.equity * (1.8 + rnd() * 1.6)); st.money += 60; give(st, { morale: 6 }); log(st, GOOD, "🤝 Round closed. Equity ~" + money$(st.equity) + ", +$60k salary."); }
+          else { st.equity = Math.round(st.equity * 0.7); give(st, { morale: -12 }); log(st, WARN, "🧊 Down round. Equity ~" + money$(st.equity) + "."); }
         }), goto: nextScene });
-      c.push({ label: "📈 Raise a funding round.", match: ["raise", "round", "fund"],
-        effect: act({}, function (st) {
-          if (chance(0.75)) { var m = 2.0 + rnd() * 2.2; st.valu *= m; st.money += 110; give(st, { happy: 6 }); log(st, GOOD, "🤝 Round closed! Valuation " + valu$(st.valu) + ", +$110k in the bank."); }
-          else { st.valu *= 0.72; give(st, { happy: -12 }); log(st, WARN, "🧊 Down round — investors passed. Valuation " + valu$(st.valu) + "."); }
-        }), goto: nextScene });
-      if (s.valu >= 1000) c.push({ label: "🔔 Ring the bell — take the company PUBLIC! 🎉", match: ["ipo", "public", "bell", "list"],
-        effect: function () {}, goto: "end_unicorn" });
+      if (s.equity >= 1500) c.push({ label: "🔔 Exit — sell / IPO the company! 🎉", match: ["exit", "ipo", "sell", "cash"],
+        effect: act(1, null, function (st) { var cash = Math.round(st.equity * 0.6); st.money += cash; log(st, GOOD, "🏦 You exit for " + money$(cash) + "! Now what?"); st.founder = false; st.equity = 0; st.employed = false; }), goto: nextScene });
     } else if (s.employed) {
-      c.push({ label: "💼 Grind at work — chase the promotion.", match: ["grind", "work"],
-        effect: act({ skill: 9, rep: 9, energy: -7, happy: -3 }), goto: nextScene });
-      c.push({ label: "🔎 Hunt for a better job.", match: ["hunt", "job", "interview"],
-        effect: act({ energy: -6 }, function (st) { st.searching = true; }), goto: nextScene });
+      if (s.project) {
+        c.push({ label: "🎯 Focus on " + s.project.name + ".", match: ["focus", "work", "grind"],
+          effect: act(6, "focus", function (st) { focusProject(st, 6); }), goto: nextScene });
+        if (s.project.weeksDone >= s.project.weeksNeeded) c.push({ label: "🚀 Ship " + s.project.name + "!", match: ["ship", "release", "launch"],
+          effect: act(1, null, function (st) { shipProject(st); }), goto: nextScene });
+      } else {
+        c.push({ label: "🎯 Take on a new project.", match: ["project", "new", "pick"],
+          effect: act(1, null, function (st) { startProject(st); }), goto: nextScene });
+      }
+      c.push({ label: "🔎 Quietly look for a better job.", match: ["hunt", "job", "interview"], effect: act(4, "hunt"), goto: nextScene });
     } else {
-      c.push({ label: "🔎 Job-hunt hard — you NEED an income.", match: ["hunt", "job", "interview"],
-        effect: act({ energy: -6, happy: -4 }, function (st) { st.searching = true; }), goto: nextScene });
+      c.push({ label: "🔎 Job-hunt hard — you need an income.", match: ["hunt", "job", "interview"],
+        effect: act(4, "hunt", function (st) { give(st, { morale: -3 }); }), goto: nextScene });
     }
 
-    // universal survival / life actions
-    c.push({ label: "🍜 Stock the fridge with real food.", match: ["food", "eat", "fridge", "groceries"],
-      effect: act({ money: -5, health: 12, energy: 8 }), goto: nextScene });
-    c.push({ label: "🛋️ Rest and recharge.", match: ["rest", "recharge", "sleep"],
-      effect: act({ energy: 18, health: 6, happy: 8 }), goto: nextScene });
-    c.push({ label: "🧑‍🤝‍🧑 See your friends.", match: ["friends", "social", "hang"],
-      effect: act({ money: -4, friends: 14, happy: 12, energy: -5 }), goto: nextScene });
-    c.push({ label: "📚 Upskill — a course or a side project.", match: ["upskill", "learn", "study", "course"],
-      effect: act({ money: -3, skill: 12, energy: -8, happy: -2 }), goto: nextScene });
-    c.push({ label: "📱 Post content — build your DS brand.", match: ["post", "content", "brand", "tweet"],
-      effect: act({ energy: -6, happy: -2 }, function (st) {
-        st.followers = Math.round(st.followers * 1.3) + 40 + Math.floor(rnd() * 60);
-      }), goto: nextScene });
+    // universal life actions
+    c.push({ label: "🛋️ Rest and recharge.", match: ["rest", "recharge", "sleep"], effect: act(2, null, function (st) { give(st, { energy: 22, morale: 6 }); }), goto: nextScene });
+    c.push({ label: "🧑‍🤝‍🧑 See friends / go out.", match: ["friends", "social", "socialise", "out"],
+      effect: act(1, null, function (st) { addFriend(st); give(st, { morale: 11, energy: -4, money: -4 }); if (!st.love && chance(0.25)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 44, stage: "dating" }; log(st, GOOD, "💕 You met " + pp.name + " — you're seeing each other now."); } }), goto: nextScene });
+    c.push({ label: "📚 Upskill — a course / side project.", match: ["upskill", "learn", "study", "course"], effect: act(3, null, function (st) { give(st, { skill: 10, energy: -7, money: -2, morale: -1 }); }), goto: nextScene });
+    if (s.love) c.push({ label: "💗 Invest in things with " + s.love.name + ".", match: ["love", "relationship", "nurture", "partner"],
+      effect: act(1, null, function (st) { st.love.close = clamp(st.love.close + 16); give(st, { morale: 10, energy: -3, money: -5 }); }), goto: nextScene });
+    else c.push({ label: "💘 Put yourself out there (dating).", match: ["date", "dating", "romance"],
+      effect: act(2, null, function (st) { if (chance(0.5)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 42, stage: "dating" }; give(st, { morale: 10 }); log(st, GOOD, "💕 You hit it off with " + pp.name + "."); } else { give(st, { morale: -3, energy: -2 }); log(st, INFO, "😐 A few dead-end dates. Ah well."); } }), goto: nextScene });
+    if (s.money > 15) c.push({ label: "💸 Invest your savings.", match: ["invest", "stocks", "market"],
+      effect: act(1, null, function (st) { var amt = Math.round((st.money - 10) * 0.7); st.money -= amt; st.invest += amt; log(st, NOTE, "💸 Moved $" + amt + "k into investments."); }), goto: nextScene });
+    if (s.money >= 12) c.push({ label: "🌴 Take a proper holiday.", match: ["holiday", "vacation", "travel"], effect: act(3, null, function (st) { give(st, { energy: 30, morale: 18, money: -14 }); }), goto: nextScene });
 
-    if (s.relStatus === "single") {
-      if (s.friends >= 35) c.push({ label: "💕 Ask someone out.", match: ["date", "ask", "romance"],
-        effect: act({ happy: 12, energy: -4 }, function (st) { st.relStatus = "dating"; st.rel = 42; log(st, GOOD, "💕 You started seeing someone."); }), goto: nextScene });
-    } else {
-      c.push({ label: "💗 Nurture your relationship.", match: ["relationship", "partner", "nurture", "love"],
-        effect: act({ money: -5, rel: 16, happy: 12, energy: -4 }), goto: nextScene });
-    }
+    // coast through quiet time (a big jump; events still interrupt)
+    c.push({ label: "⏭️ Let time pass — get on with life.", match: ["coast", "continue", "wait", "pass"], effect: act(48, null), goto: nextScene });
 
-    if (s.money > 20) c.push({ label: "💸 Invest your savings.", match: ["invest", "stocks", "market"],
-      effect: act({}, function (st) { var amt = Math.round((st.money - 12) * 0.7); st.money -= amt; st.invest += amt; log(st, NOTE, "💸 Moved $" + amt + "k into investments."); }), goto: nextScene });
-
-    if (s.money >= 12) c.push({ label: "🌴 Take a proper holiday.", match: ["holiday", "vacation", "travel"],
-      effect: act({ money: -12, energy: 22, health: 12, happy: 20 }), goto: nextScene });
-
-    // founder on-ramp
-    if (!s.founder && s.skill >= 35) c.push({ label: "🧪 Moonlight on a startup idea.", match: ["moonlight", "idea", "side"],
-      effect: act({ energy: -9, happy: -2, idea: 18 }), goto: nextScene });
-    if (!s.founder && (s.idea || 0) >= 26 && s.money >= 22) c.push({ label: "🏢 Quit and go ALL-IN as a founder. 🎲", match: ["found", "all-in", "quit", "startup"],
-      effect: act({ happy: 15, energy: -8 }, function (st) { st.founder = true; st.employed = false; st.valu = 14 + st.idea / 5; log(st, GOOD, "🦄 You founded a company! Seed valuation " + valu$(st.valu) + "."); }), goto: nextScene });
+    // retire when eligible (age, or financially independent → retire early)
+    if (age(s) >= 45 || (s.money + s.invest) >= 2500) c.push({ label: "🏁 Call it a career — retire.", match: ["retire", "finish", "end"], effect: function () {}, goto: "end_retire" });
 
     return c;
   }
 
-  // ---- register -------------------------------------------------------------
+  /* ---- register ------------------------------------------------------------ */
   window.TextGame.register({
     id: "devlife",
     defaultForPlay: true,
@@ -276,32 +515,34 @@
         "  |        D E V   L I F E         |",
         "  '--------------------------------'",
         "",
-        "     🎓  ->  💼  ->  🦄 / 🏝️ / 💀"
+        "     🎓  ~~>  a whole career  ~~>  🏁"
       ],
-      tagline: "One data scientist. One career. Survive it. 🧟",
-      blurb: "Juggle money 💰, health ❤️, energy 🔋 and morale 😀. Most runs end badly.",
+      tagline: "One data scientist. One life. Make it to retirement. 🎲",
+      blurb: "Balance 📈 career, 💰 wealth and ❤️ people as the years roll by. Burn out, go broke or end up alone and it's over.",
       start: "type START (or press ENTER) to graduate 🎓"
     },
 
     init: function () {
       return {
-        age: 22, money: 4, invest: 0,
-        health: 80, energy: 80, happy: 70, skill: 25, rep: 10, friends: 30,
-        relStatus: "single", rel: 0, married: false,
-        followers: 0, idea: 0,
-        employed: true, founder: false, level: 1, salary: 68, valu: 0,
-        searching: false, debtYears: 0, recession: false, log: []
+        day: 0,
+        employed: true, level: 1, skill: 25, rep: 10, salary: 68,
+        founder: false, equity: 0,
+        money: 6, invest: 0,
+        energy: 75, morale: 70,
+        friendsM: 10, friendsW: 10, love: null,
+        project: null, pending: [], cool: {},
+        offer: null, fraudFlag: false, debtWeeks: 0, forcedEnd: null,
+        ev: null, log: []
       };
     },
 
     status: function (s) {
-      var rel = s.relStatus === "single" ? "single"
-        : (s.married ? "married 💍" : s.relStatus) + " " + s.rel;
-      var job = s.founder ? "🦄 founder " + valu$(s.valu)
-        : (s.employed ? LEVELS[s.level].name : "unemployed 😳");
-      return "👤" + s.age + " · " + job + " · 💰$" + money$(s.money) + " · 📊$" + money$(s.invest) + "\n" +
-        "❤️" + s.health + " 🔋" + s.energy + " 😀" + s.happy + " 🧠" + s.skill + " ⭐" + s.rep +
-        " 📣" + foll(s.followers) + " 👥" + s.friends + " 💕" + rel;
+      var job = s.founder ? "🦄 founder (" + money$(s.equity) + ")" : (s.employed ? LEVELS[s.level].name : "unemployed 😳");
+      var lv = s.love ? " 💕 " + s.love.stage + " " + s.love.name + " (" + s.love.close + ")" : " 💕 single";
+      var pj = s.project ? " · 🛠️ " + Math.min(100, Math.round(100 * s.project.weeksDone / s.project.weeksNeeded)) + "%" + (s.project.bugs ? " 🐛" + s.project.bugs : "") : "";
+      return "📅 " + dateLabel(s) + " · age " + age(s) + " · " + job + pj + "\n" +
+        "💰" + money$(s.money) + " 📊" + money$(s.invest) + " 🔋" + s.energy + " 😀" + s.morale + " 🧠" + s.skill + " ⭐" + s.rep + "\n" +
+        "👥" + friends(s) + " (♂" + s.friendsM + " ♀" + s.friendsW + ")" + lv;
     },
 
     start: "hub",
@@ -310,113 +551,35 @@
       hub: {
         text: function (s) {
           var out = [];
-          if (s.log && s.log.length) {
-            s.log.forEach(function (m) { out.push([m[0], m[1] + "\n"]); });
-            out.push([null, "\n"]);
-            s.log = [];
-          }
-          out.push([null, "Year " + (s.age - 21) + " — you're " + s.age + ". What do you do? ⏳"]);
+          if (s.log && s.log.length) { s.log.forEach(function (m) { out.push([m[0], m[1] + "\n"]); }); out.push([null, "\n"]); s.log = []; }
+          out.push([null, "What do you do? ⏳"]);
           return out;
         },
         choices: hubChoices
       },
 
-      // a job offer arrived
-      offer: {
-        text: function (s) {
-          var o = s.offer;
-          return [
-            ["tok-str", "📨 An offer from " + o.company + ":\n"],
-            [null, LEVELS[o.level].name + " · $" + o.salary + "k/yr.\n"]
-          ];
-        },
-        choices: function (s) {
-          var o = s.offer;
-          return [
-            { label: "✅ Take it.", match: ["take", "accept", "yes"],
-              effect: function (st) { st.employed = true; st.level = o.level; st.salary = o.salary; give(st, { happy: 10, rep: 4 }); log(st, GOOD, "✅ You joined " + o.company + " as " + LEVELS[o.level].name + "."); st.offer = null; }, goto: nextScene },
-            { label: "🙅 Turn it down.", match: ["decline", "no", "pass", "reject"],
-              effect: function (st) { st.offer = null; }, goto: nextScene }
-          ];
-        }
+      // a fired event renders from s.ev
+      event: {
+        text: function (s) { return (s.ev && s.ev.text) ? [[STR, s.ev.title + "\n"]].concat(s.ev.text) : [[null, "..."]]; },
+        choices: function (s) { return (s.ev && s.ev.choices) ? s.ev.choices : [{ label: "Continue.", match: ["ok", "1"], effect: function () {}, goto: "hub" }]; }
       },
 
-      // aftermath of a layoff
-      laidoff: {
-        text: [
-          ["tok-num", "📦 You pack your desk into a cardboard box.\n"],
-          [null, "No salary now — savings drain until you land something. What's the move?"]
-        ],
-        choices: function (s) {
-          var c = [
-            { label: "🔎 Job-hunt immediately.", match: ["hunt", "job"],
-              effect: act({ energy: -6, happy: -4 }, function (st) { st.searching = true; }), goto: nextScene },
-            { label: "🧘 Take a breather first.", match: ["rest", "breather", "break"],
-              effect: act({ energy: 14, health: 8, happy: 6 }), goto: nextScene }
-          ];
-          if ((s.idea || 0) >= 20 && s.money >= 20) c.push({ label: "🏢 Screw it — go found a startup. 🎲", match: ["found", "startup", "all-in"],
-            effect: act({ happy: 12 }, function (st) { st.founder = true; st.valu = 14 + st.idea / 5; log(st, GOOD, "🦄 You founded a company! Seed valuation " + valu$(st.valu) + "."); }), goto: nextScene });
-          return c;
-        }
-      },
+      // ---- retirement (graded, semi-infinite flavour) ----
+      end_retire: { end: true, text: retireText },
 
-      // ---- WIN endings ----
-      end_vp: { end: true, text: function (s) {
-        return [["tok-celebrate", "👑 VP OF DATA SCIENCE 👑\n\n"],
-          [null, "At " + s.age + ", you run the whole org. Comp, equity, and a title people cold-email about.\n\n"],
-          [INFO, "net worth ~$" + money$(s.money + s.invest) + " · morale " + s.happy + " · a corner office and a calendar full of 1:1s."]]; } },
-
-      end_unicorn: { end: true, text: function (s) {
-        return [["tok-celebrate", "🦄🔔 IPO DAY — THE BELL RINGS! 🔔🦄\n\n"],
-          [null, "Your AI company lists at " + valu$(s.valu) + ". You're a founder-CEO with generational wealth.\n\n"],
-          [INFO, "You beat the odds almost no one beats. 🍾"]]; } },
-
-      end_stealth: { end: true, text: function (s) {
-        return [["tok-celebrate", "🏝️ RETIRED — STEALTH WEALTH 🤫\n\n"],
-          [null, "You quietly hit $" + money$(s.money + s.invest) + " net worth and walked away at 60. No yachts, no fuss — just freedom.\n\n"],
-          [INFO, "Old colleagues have no idea. That's the point. 😎"]]; } },
-
-      // ---- ordinary retirements ----
-      end_retire_ok: { end: true, text: function (s) {
-        return [["tok-out", "🏡 A COMFORTABLE RETIREMENT\n\n"],
-          [null, "You retire at 60 with $" + money$(s.money + s.invest) + " and a solid pension. Not rich, not scraping — just fine.\n\n"],
-          [INFO, "A good, unremarkable career in data science. 📊"]]; } },
-
-      end_richlife: { end: true, text: function (s) {
-        return [["tok-out", "❤️ RICH IN THE THINGS THAT COUNT\n\n"],
-          [null, "The money was ordinary, but you retire surrounded by people who love you" + (s.married ? " and a partner of many years" : "") + ".\n\n"],
-          [INFO, "friends " + s.friends + " · morale " + s.happy + " · you'd do it again."]]; } },
-
-      end_content: { end: true, text: function () {
-        return [["tok-out", "🙂 AN AVERAGE, CONTENT LIFE\n\n"],
-          [null, "You were never VP and never rich. You were a working data scientist who was mostly happy. That's more than most manage.\n\n"],
-          [INFO, "The credits roll on a perfectly ordinary career. 🎬"]]; } },
-
-      end_grind: { end: true, text: function () {
-        return [["tok-out", "😐 THE LONG GRIND\n\n"],
-          [null, "You reach 60 having spent it heads-down in dashboards and stand-ups. The pension's thin and the spark's mostly gone, but you made it to the end.\n\n"],
-          [INFO, "Just another data scientist who clocked out for the last time. 🫡"]]; } },
-
-      // ---- FAIL endings ----
-      end_health: { end: true, text: function (s) {
-        return [["tok-num", "🏥 YOUR HEALTH GAVE OUT\n\n"],
-          [null, "At " + s.age + ", years of skipped meals and no sleep caught up with you. The career stops here.\n\n"],
-          [INFO, "No title is worth this. 💔"]]; } },
-
+      // ---- fails ----
       end_burnout: { end: true, text: function (s) {
-        return [["tok-num", "🔥 TOTAL BURNOUT\n\n"],
-          [null, "At " + s.age + ", you open your laptop and simply... can't. You log off for good and leave tech entirely.\n\n"],
-          [INFO, "The rest was running on fumes for years. 🪫"]]; } },
-
-      end_quit: { end: true, text: function (s) {
-        return [["tok-num", "🚪 YOU WALKED AWAY\n\n"],
-          [null, "The joy drained out completely. At " + s.age + " you quit data science to go do literally anything else.\n\n"],
-          [INFO, "Maybe you'll open a bakery. 🥐"]]; } },
-
+        return [["tok-num", "🔥 TOTAL BURNOUT\n\n"], [null, "At " + age(s) + " you open the laptop and simply can't. You log off for good and leave tech.\n\n"], [INFO, "You were running on fumes for years. 🪫"]]; } },
+      end_isolation: { end: true, text: function (s) {
+        return [["tok-num", "🕳️ ALONE\n\n"], [null, "Somewhere in the grind the people fell away. At " + age(s) + ", the quiet finally wins and you give up on it all.\n\n"], [INFO, "The work was never going to hug you back. 💔"]]; } },
       end_broke: { end: true, text: function (s) {
-        return [["tok-num", "💸 BANKRUPT\n\n"],
-          [null, "Three years underwater and the debt won. Evicted at " + s.age + ", moving back in with family.\n\n"],
-          [INFO, "The rent, as ever, was undefeated. 🧾"]]; } }
+        return [["tok-num", "💸 BANKRUPT\n\n"], [null, "Eighteen months underwater and the debt won. Evicted at " + age(s) + ", moving back in with family.\n\n"], [INFO, "The rent, as ever, was undefeated. 🧾"]]; } },
+
+      // ---- comedic specials ----
+      end_agi: { end: true, text: function (s) {
+        return [["tok-num", "🤖 CLASSIFIED\n\n"], [null, "The model you shipped got... capable. Three days later, men in unmarked cars. The official story is you 'moved abroad'. At " + age(s) + ".\n\n"], [INFO, "You should not have taught it to negotiate. 🛸"]]; } },
+      end_fraud: { end: true, text: function (s) {
+        return [["tok-num", "⚖️ FEDERAL POCKET\n\n"], [null, "Turns out auditors do check. The fabricated metrics unravel and at " + age(s) + " you trade an office for a cell. Nice view of a wall.\n\n"], [INFO, "You defrauded investors. They found out. 🚔"]]; } }
     }
   });
 })();

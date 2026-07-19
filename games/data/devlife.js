@@ -159,7 +159,7 @@
       s.day += w * 7; elapsed += w;
       accrue(s, w);
       if (s.pending && s.pending.length) s.pending = s.pending.filter(function (p) { return p.expiresDay >= s.day; });
-      if (age(s) >= 65) { s.forcedEnd = "end_retire"; return; }
+      if (age(s) >= 65) { s.forcedEnd = retireEnding(s); return; }
       var ev = rollEvent(s, tag);
       if (ev) { s.route = ev; return; }
     }
@@ -424,25 +424,39 @@
     s.ev = e.build(s); return "event";
   }
 
-  /* ---- retirement grading (semi-infinite flavour, one scene) --------------- */
-  function retireText(s) {
-    var nw = Math.round(s.money + s.invest);
-    var careerTop = s.founder ? "a startup founder" : LEVELS[s.level].name.replace(/ [🐣👑]/g, "");
-    var wealth = nw >= 3500 ? "seriously wealthy" : nw >= 1500 ? "comfortably off" : nw >= 400 ? "financially fine" : "scraping by";
-    var partner = s.love && s.love.stage === "married" ? "your spouse " + s.love.name : s.love && s.love.stage === "partner" ? "your partner " + s.love.name : null;
-    var social = friends(s) >= 25 ? "a huge circle of friends" : friends(s) >= 12 ? "a solid group of friends" : friends(s) >= 4 ? "a few close friends" : "almost no one left nearby";
-    var head;
-    if (s.founder && nw >= 5000) head = "🦄 FOUNDER, CASHED OUT";
-    else if (s.level >= 7) head = "👑 RETIRED AS A VP";
-    else if (nw >= 3500 && social.indexOf("almost") === -1) head = "🏝️ RETIRED WEALTHY & LOVED";
-    else if (nw >= 3500) head = "🤫 QUIET STEALTH WEALTH";
-    else if (partner || friends(s) >= 20) head = "❤️ RICH IN THE THINGS THAT COUNT";
-    else if (nw < 300 && friends(s) < 4) head = "🥲 A LONELY, THIN RETIREMENT";
-    else head = "🏡 AN ORDINARY, DECENT RETIREMENT";
-    var body = "At " + age(s) + " you hang it up as " + careerTop + ", " + wealth + " (net worth " + money$(nw) + "), with " +
-      (partner ? partner + " and " : "") + social + ".";
-    return [["tok-celebrate", head + "\n\n"], [null, body + "\n\n"],
-      [INFO, "career lvl " + (s.founder ? "—" : s.level) + " · 💰" + money$(nw) + " · 👥" + friends(s) + (partner ? " · 💍" : "") + " · 😀" + s.morale]];
+  /* ---- retirement: which distinct ending you earned ------------------------ */
+  // Precedence: 🦄 unicorn (your COMPANY made it) → 👑 VP (you got the TITLE, and
+  // wealth with it) → 🤫 stealth wealth (top IC, quietly rich, no title) →
+  // ordinary graded retirement (flavoured by wealth + relationships).
+  function netWorth(s) { return Math.round(s.money + s.invest); }
+  function retireEnding(s) {
+    if (s.exited || (s.founder && s.equity >= 1500)) return "end_unicorn";
+    if (s.level >= 6) return "end_vp";
+    if (netWorth(s) >= 2500) return "end_stealth";
+    return "end_retire";
+  }
+  function partnerLabel(s) {
+    return s.love && s.love.stage === "married" ? "your spouse " + s.love.name
+      : s.love && s.love.stage === "partner" ? "your partner " + s.love.name : null;
+  }
+  function socialLabel(s) {
+    return friends(s) >= 25 ? "a huge circle of friends" : friends(s) >= 12 ? "a solid group of friends"
+      : friends(s) >= 4 ? "a few close friends" : "almost no one left nearby";
+  }
+  function statLine(s) {
+    return [INFO, "net worth 💰" + money$(netWorth(s)) + " · 👥" + friends(s) + (partnerLabel(s) ? " · 💍" : "") + " · 😀" + s.morale];
+  }
+  function retireOrdinaryText(s) {
+    var nw = netWorth(s), partner = partnerLabel(s), social = socialLabel(s), head;
+    if (partner && friends(s) >= 20) head = "❤️ RICH IN THE THINGS THAT COUNT";
+    else if (nw >= 1200) head = "🏡 A COMFORTABLE RETIREMENT";
+    else if (nw < 250 && friends(s) < 4 && !partner) head = "🥲 A LONELY, THIN RETIREMENT";
+    else if (partner || friends(s) >= 12) head = "🙂 A GOOD, ORDINARY RETIREMENT";
+    else head = "😐 A QUIET, MODEST RETIREMENT";
+    var wealth = nw >= 1200 ? "comfortably off" : nw >= 300 ? "financially fine" : "on a thin pension";
+    return [["tok-out", head + "\n\n"],
+      [null, "At " + age(s) + " you hang it up as " + LEVELS[s.level].name.replace(/ [🐣👑]/g, "") + ", " + wealth +
+        ", with " + (partner ? partner + " and " : "") + social + ".\n\n"], statLine(s)];
   }
 
   /* ---- the hub menu -------------------------------------------------------- */
@@ -464,7 +478,7 @@
           else { st.equity = Math.round(st.equity * 0.7); give(st, { morale: -12 }); log(st, WARN, "🧊 Down round. Equity ~" + money$(st.equity) + "."); }
         }), goto: nextScene });
       if (s.equity >= 1500) c.push({ label: "🔔 Exit — sell / IPO the company! 🎉", match: ["exit", "ipo", "sell", "cash"],
-        effect: act(1, null, function (st) { var cash = Math.round(st.equity * 0.6); st.money += cash; log(st, GOOD, "🏦 You exit for " + money$(cash) + "! Now what?"); st.founder = false; st.equity = 0; st.employed = false; }), goto: nextScene });
+        effect: act(1, null, function (st) { var cash = Math.round(st.equity * 0.6); st.money += cash; st.exited = true; log(st, GOOD, "🏦 You exit for " + money$(cash) + "! Now what?"); st.founder = false; st.equity = 0; st.employed = false; }), goto: nextScene });
     } else if (s.employed) {
       if (s.project) {
         c.push({ label: "🎯 Focus on " + s.project.name + ".", match: ["focus", "work", "grind"],
@@ -498,7 +512,7 @@
     c.push({ label: "⏭️ Let time pass — get on with life.", match: ["coast", "continue", "wait", "pass"], effect: act(48, null), goto: nextScene });
 
     // retire when eligible (age, or financially independent → retire early)
-    if (age(s) >= 45 || (s.money + s.invest) >= 2500) c.push({ label: "🏁 Call it a career — retire.", match: ["retire", "finish", "end"], effect: function () {}, goto: "end_retire" });
+    if (age(s) >= 45 || (s.money + s.invest) >= 2500) c.push({ label: "🏁 Call it a career — retire.", match: ["retire", "finish", "end"], effect: function () {}, goto: function (st) { return retireEnding(st); } });
 
     return c;
   }
@@ -531,7 +545,7 @@
         energy: 75, morale: 70,
         friendsM: 10, friendsW: 10, love: null,
         project: null, pending: [], cool: {},
-        offer: null, fraudFlag: false, debtWeeks: 0, forcedEnd: null,
+        offer: null, fraudFlag: false, exited: false, debtWeeks: 0, forcedEnd: null,
         ev: null, log: []
       };
     },
@@ -564,8 +578,19 @@
         choices: function (s) { return (s.ev && s.ev.choices) ? s.ev.choices : [{ label: "Continue.", match: ["ok", "1"], effect: function () {}, goto: "hub" }]; }
       },
 
-      // ---- retirement (graded, semi-infinite flavour) ----
-      end_retire: { end: true, text: retireText },
+      // ---- retirement: three distinct marquee ends + the ordinary graded one ----
+      end_unicorn: { end: true, text: function (s) {
+        return [["tok-celebrate", "🦄 THE COMPANY MADE IT\n\n"],
+          [null, "You bet a chunk of your life on a startup — and it actually worked. An exit, a place in the 'remember when they were tiny' stories, and at " + age(s) + " you never have to work again.\n\n"],
+          [null, "You didn't just get rich. You built something that mattered. 🍾\n\n"], statLine(s)]; } },
+      end_vp: { end: true, text: function (s) {
+        return [["tok-celebrate", "👑 RETIRED AS " + (s.level >= 7 ? "A VP" : "AN EXEC") + "\n\n"],
+          [null, "You climbed the whole ladder to " + LEVELS[s.level].name.replace(/ 👑/, "") + " — a title people cold-email about, and (quietly) wealthy with it. You step down at " + age(s) + " on your own terms.\n\n"], statLine(s)]; } },
+      end_stealth: { end: true, text: function (s) {
+        return [["tok-celebrate", "🤫 STEALTH WEALTH\n\n"],
+          [null, "No corner office, no fancy title — you stayed a top engineer (" + LEVELS[s.level].name.replace(/ [🐣]/g, "") + ") and quietly got rich on salary and index funds. You retire at " + age(s) + " on 💰" + money$(netWorth(s)) + ", and nobody at the barbecue has the faintest idea.\n\n"],
+          [null, "The best-kept secret in the room. 😎\n\n"], statLine(s)]; } },
+      end_retire: { end: true, text: retireOrdinaryText },
 
       // ---- fails ----
       end_burnout: { end: true, text: function (s) {

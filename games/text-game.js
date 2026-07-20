@@ -332,6 +332,12 @@
     if (!vv || !open || !els) return;
     els.plane.style.setProperty("--game-vh", Math.round(vv.height) + "px");
     els.plane.style.top = Math.round(vv.offsetTop || 0) + "px";   // iOS shifts the visual viewport
+    // Soft keyboard up? The layout viewport (clientHeight) doesn't shrink for the
+    // keyboard, so a big gap to the visual viewport means it's open. Flag it so CSS
+    // can hide the footer and give that space back to the terminal. 150px clears
+    // URL-bar jitter and sits well below any real keyboard.
+    var docH = document.documentElement.clientHeight || vv.height;
+    els.plane.classList.toggle("is-kbd", (docH - vv.height) > 150);
     if (inputActive) {
       scrollToEnd();
       try { els.input.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch (e) {}
@@ -341,7 +347,11 @@
   // Reset the inline overrides so the plane returns to its CSS default height.
   function clearViewportFit() {
     if (!els) return;
-    try { els.plane.style.removeProperty("--game-vh"); els.plane.style.top = ""; } catch (e) {}
+    try {
+      els.plane.style.removeProperty("--game-vh");
+      els.plane.style.top = "";
+      els.plane.classList.remove("is-kbd");
+    } catch (e) {}
   }
 
   function clearScreen() { els.typed.textContent = ""; els.input.textContent = ""; scrollToEnd(); }

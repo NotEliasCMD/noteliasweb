@@ -49,10 +49,11 @@
 
   /* --------------------------------------------------------- ending stats */
   // Persist a per-game tally of how many times each ending was reached, so the
-  // arcade gains a light sense of progression across runs. One JSON entry,
-  // shaped { [gameId]: { [endingId]: count } }, mirroring the site's existing
-  // `"theme"` localStorage precedent (always try/catch-guarded so private mode
-  // or disabled storage never breaks the game).
+  // arcade gains a light sense of progression across runs. One JSON entry, now
+  // VERSION-BUCKETED — { [gameId]: { [version]: { [endingId]: count } } } — so a
+  // record from an older game version is never silently credited to a new one.
+  // Mirrors the site's existing `"theme"` localStorage precedent (always
+  // try/catch-guarded so private mode or disabled storage never breaks the game).
   var STATS_KEY = "arcadeStats";
 
   function loadStats() {
@@ -63,11 +64,38 @@
     } catch (e) { return {}; }
   }
 
-  function recordEnding(gameId, endingId) {
+  // Migrate the OLD flat shape ({ endingId: count }) — detected by any value
+  // being a number — into the versioned shape under bucket "1" (everything
+  // recorded before versioning existed is, by definition, version 1). Idempotent
+  // for data that's already versioned.
+  function normalizeGameStats(g) {
+    if (!g || typeof g !== "object") return {};
+    for (var k in g) {
+      if (Object.prototype.hasOwnProperty.call(g, k) && typeof g[k] === "number") return { "1": g };
+    }
+    return g;
+  }
+  // Ordered oldest→newest version list a game declares; the readout shows the
+  // last 2. Falls back sensibly for games that declare nothing.
+  function versionsOf(def) {
+    if (def && def.versions && def.versions.length) return def.versions.slice();
+    if (def && def.version) return [def.version];
+    return ["1"];
+  }
+  function currentVersion(def) {
+    if (def && def.version) return def.version;
+    var vs = versionsOf(def);
+    return vs[vs.length - 1];
+  }
+
+  function recordEnding(def, endingId) {
     try {
       var all = loadStats();
-      var g = all[gameId] || (all[gameId] = {});
-      g[endingId] = (g[endingId] || 0) + 1;
+      var g = normalizeGameStats(all[def.id] || {});
+      var ver = currentVersion(def);
+      var bucket = g[ver] || (g[ver] = {});
+      bucket[endingId] = (bucket[endingId] || 0) + 1;
+      all[def.id] = g;
       localStorage.setItem(STATS_KEY, JSON.stringify(all));
     } catch (e) { /* storage unavailable — skip silently */ }
   }
@@ -78,22 +106,31 @@
   // recolours for free in dark mode.
   function statsChunks(def) {
     if (!def) return null;
-    var counts = loadStats()[def.id] || {};
+    var g = normalizeGameStats(loadStats()[def.id] || {});
     var list = def.endings || [];               // ordered [{id,label}]
-    var rows = [];
-    var total = 0;
-    for (var i = 0; i < list.length; i++) {
-      var n = counts[list[i].id] || 0;
-      if (n > 0) { rows.push({ label: list[i].label || list[i].id, n: n }); total += n; }
-    }
-    // Also count any recorded endings the label list forgot (defensive), so the
-    // run total is always truthful even if `endings` drifts out of sync.
+    var show = versionsOf(def).slice(-2);        // only the last 2 versions are shown
     var known = {};
     for (var k = 0; k < list.length; k++) known[list[k].id] = true;
-    for (var key in counts) {
-      if (Object.prototype.hasOwnProperty.call(counts, key) && !known[key]) total += counts[key] || 0;
+
+    // Build a section per shown version (newest first). Discovered-only: endings
+    // never reached are omitted. Older versions' buckets stay in storage but are
+    // neither displayed nor counted in the total.
+    var sections = [], total = 0;
+    for (var vi = show.length - 1; vi >= 0; vi--) {
+      var counts = g[show[vi]] || {};
+      var rows = [], sub = 0;
+      for (var i = 0; i < list.length; i++) {
+        var n = counts[list[i].id] || 0;
+        if (n > 0) { rows.push({ label: list[i].label || list[i].id, n: n }); sub += n; }
+      }
+      // Defensively fold any recorded ending the label list forgot into the
+      // subtotal so counts stay truthful even if `endings` drifts out of sync.
+      for (var key in counts) {
+        if (Object.prototype.hasOwnProperty.call(counts, key) && !known[key]) sub += counts[key] || 0;
+      }
+      if (rows.length) { sections.push({ ver: show[vi], rows: rows, sub: sub }); total += sub; }
     }
-    if (!rows.length) return null;
+    if (!sections.length) return null;
 
     var name = def.statsName || (def.id || "").toUpperCase();
     var runword = total === 1 ? "run" : "runs";
@@ -101,14 +138,21 @@
       ["tok-kw", "\n" + name + " — your record", true],
       ["tok-comment", "  ·  " + total + " " + runword + "\n\n", true]
     ];
-    // Dot-leader alignment: pad each label out to a fixed column with dots.
-    var WIDTH = 26;
-    for (var r = 0; r < rows.length; r++) {
-      var label = rows[r].label;
-      var dots = WIDTH - strWidth(label);
-      if (dots < 1) dots = 1;
-      out.push(["tok-out", "  " + label + " " + repeat(".", dots) + " ", true]);
-      out.push(["tok-num", String(rows[r].n) + "\n", true]);
+    // With >1 version to show, head each block with a version tag and indent its
+    // rows; with a single version, render exactly as before (no version header).
+    var multi = sections.length > 1;
+    var WIDTH = 26, indent = multi ? "    " : "  ";
+    for (var si = 0; si < sections.length; si++) {
+      var sec = sections[si];
+      if (multi) out.push(["tok-comment", "  v" + sec.ver + "  (" + sec.sub + ")\n", true]);
+      for (var r = 0; r < sec.rows.length; r++) {
+        var label = sec.rows[r].label;
+        var dots = WIDTH - strWidth(label) - (multi ? 2 : 0);
+        if (dots < 1) dots = 1;
+        out.push(["tok-out", indent + label + " " + repeat(".", dots) + " ", true]);
+        out.push(["tok-num", String(sec.rows[r].n) + "\n", true]);
+      }
+      if (multi && si < sections.length - 1) out.push(["tok-out", "\n", true]);
     }
     return out;
   }
@@ -467,7 +511,7 @@
     var bodyChunks = head.concat(toChunks(scene.text));
 
     if (scene.end) {
-      recordEnding(current.id, id);   // tally this ending BEFORE we render, so the
+      recordEnding(current, id);      // tally this ending BEFORE we render, so the
                                       // just-finished run is included below.
       typeOut(bodyChunks, function () {
         appendChunk(els.typed, "tok-out", "\n");
@@ -553,6 +597,7 @@
     var chunks = [];
     // ASCII banner (array of lines) in the brand accent.
     (intro.banner || []).forEach(function (row) { chunks.push(["tok-prompt", row + "\n"]); });
+    if (current.version) chunks.push(["tok-comment", "  v" + current.version + "\n"]);
     if (intro.tagline) chunks.push(["tok-out", "\n" + intro.tagline + "\n"]);
     if (intro.blurb) chunks.push(["tok-comment", intro.blurb + "\n"]);
     // Show the player's accumulated record on the start screen (only once they

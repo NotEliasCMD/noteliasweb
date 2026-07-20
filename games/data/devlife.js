@@ -23,14 +23,40 @@
   /* ---- career ladder ------------------------------------------------------- */
   var LEVELS = [
     null,
-    { name: "Junior DS 🐣", sal: 68 },
-    { name: "Data Scientist", sal: 98 },
-    { name: "Senior DS", sal: 140 },
-    { name: "Staff DS", sal: 190 },
-    { name: "Principal DS", sal: 250 },
-    { name: "Director of DS", sal: 340 },
-    { name: "VP of Data Science 👑", sal: 470 }
+    { name: "Junior DS 🐣", sal: 30 },
+    { name: "Data Scientist", sal: 48 },
+    { name: "Senior DS", sal: 78 },
+    { name: "Staff DS", sal: 120 },
+    { name: "Principal DS", sal: 175 },
+    { name: "Director of DS", sal: 250 },
+    { name: "VP of Data Science 👑", sal: 360 }
   ];
+  var RICH = 1500;   // net worth that counts as "made it" (stealth wealth / retire-early)
+
+  /* ---- employers: workload/growth varies by the KIND of company you're at ----
+   * startup → burns energy, grows you fast · unicorn (Google-ish) → medium, swings
+   * with team luck · blue-chip (bank) → easy to coast but you stagnate (no work
+   * skill/rep). Personal "upskill" still grows skill anywhere. */
+  var COMPANY_NAMES = ["a hot startup 🚀", "Google 🔎", "a unicorn 🦄", "a big bank 🏦", "a scale-up 📊", "a FAANG 🧠"];
+  function coType(name) {
+    if (/startup|scale-up/.test(name)) return "startup";
+    if (/bank/.test(name)) return "bluechip";
+    return "unicorn";
+  }
+  function makeCompany(name) {
+    var t = coType(name);
+    return { name: name, type: t, team: t === "unicorn" ? (0.8 + rnd() * 0.4) : 1 };
+  }
+  function coMods(s) {
+    var c = s.company, t = c ? c.type : "unicorn", team = (c && c.team) ? c.team : 1;
+    if (t === "startup") return { energyMult: 1.45, skillGain: 2, repMult: 1.2, drift: -0.5 };
+    if (t === "bluechip") return { energyMult: 0.6, skillGain: 0, repMult: 0, drift: 0.5 };
+    return { energyMult: 1.3 - 0.3 * team, skillGain: 1, repMult: team, drift: team - 1 };  // unicorn: team luck
+  }
+  function coTag(s) {
+    if (!s.company) return "";
+    return s.company.type === "startup" ? "🚀" : s.company.type === "bluechip" ? "🏦" : "🦄";
+  }
 
   /* ---- helpers ------------------------------------------------------------- */
   function clamp(n) { return Math.max(0, Math.min(100, Math.round(n))); }
@@ -48,8 +74,11 @@
   // and the level you can be offered is tiered. You can get LUCKY (a stretch
   // offer one tier up) — but taking it leaves you over-levelled / under-prepared.
   function careerYears(s) { return Math.floor(s.day / 365); }
-  function expLevel(y) { return y < 2 ? 1 : y < 4 ? 2 : y < 7 ? 3 : y < 11 ? 4 : 5; }   // level your experience supports
-  function offerTierCap(y) { return y < 2 ? 0 : y < 4 ? 2 : y < 7 ? 3 : y < 11 ? 4 : 5; } // best level anyone will offer you
+  // hard experience minimums: Data Scientist 1yr, Senior 3, Staff/Lead 7,
+  // Principal 10. Beyond Principal is exec-only (a rare event) — harder still.
+  function minYearsFor(lvl) { return lvl >= 5 ? 10 : lvl === 4 ? 7 : lvl === 3 ? 3 : lvl === 2 ? 1 : 0; }
+  function expLevel(y) { return y >= 10 ? 5 : y >= 7 ? 4 : y >= 3 ? 3 : y >= 1 ? 2 : 1; }   // level your experience supports
+  function offerTierCap(y) { return expLevel(y); }                                          // best level anyone will offer you
   // "under-prepared": only after you take a LUCKY STRETCH offer (a role above your
   // experience). It's a temporary window (~3 yrs) of being in over your head —
   // NOT a penalty on earned promotions/exec seats.
@@ -71,6 +100,17 @@
     if (d.equity != null) s.equity += d.equity;
   }
   function friends(s) { return s.friendsM + s.friendsW; }
+  // years spent in the current relationship (0 if none / start day unknown)
+  function relYears(s) { return (s.love && s.love.since != null) ? (s.day - s.love.since) / 365 : 0; }
+  // marriage odds: driven by TIME together and the relationship STRENGTH (close).
+  function proposeSuccessP(s) {
+    if (!s.love) return 0;
+    return Math.max(0.15, Math.min(0.95, 0.2 + (relYears(s) - 1) * 0.14 + (s.love.close - 50) / 110));
+  }
+  function homeEquity(s) { return s.house ? Math.max(0, Math.round(s.house.value - s.house.debt)) : 0; }
+  // mortality: from 50 on, each year carries a rising chance of death — you might
+  // not make it to retirement, no matter how well things are going.
+  function mortalityP(s) { var a = age(s); return a >= 50 ? (a - 50) * 0.006 + 0.003 : 0; }
   function addFriend(s, who) {   // who: "m" | "w" | undefined (random)
     if (who === undefined) who = chance(0.5) ? "m" : "w";
     if (who === "m") s.friendsM++; else s.friendsW++;
@@ -129,7 +169,7 @@
   /* ---- projects ------------------------------------------------------------ */
   function startProject(s) {
     var p = pickOne(PROJECTS);
-    var weeks = 6 + Math.floor(rnd() * 10);      // 6–15 weeks of effort
+    var weeks = 10 + Math.floor(rnd() * 14);     // 10–23 weeks of effort (projects are a slog)
     s.project = {
       name: p.name, tech: p.tech, weeksNeeded: weeks, weeksDone: 0,
       bugs: 0, quality: 82, deadlineDay: s.day + (weeks + 4 + Math.floor(rnd() * 8)) * 7
@@ -137,25 +177,38 @@
     log(s, NOTE, "🛠️ New project: " + p.name + " (" + p.tech + "), ~" + weeks + " weeks.");
   }
   function focusProject(s, weeks) {
-    var eff = weeks * (0.65 + s.skill / 130);    // skill speeds delivery
+    var m = coMods(s);
+    var eff = weeks * (0.5 + s.skill / 130);      // skill speeds delivery (slower base than before)
     s.project.weeksDone += eff;
-    give(s, { energy: -6 - weeks, skill: 1 });
+    give(s, { energy: -(6 + weeks) * m.energyMult, skill: m.skillGain });
+    if (chance(0.14)) { addFriend(s); s.workFriends = (s.workFriends || 0) + 1; log(s, GOOD, "🤝 You clicked with a colleague — a new work friend."); }
+    if ((s.workFriends || 0) > 0 && friends(s) > 0) give(s, { morale: 3 });   // work friends = social time (but no recharge)
   }
   function shipProject(s) {
     var p = s.project; s.project = null;
+    var m = coMods(s);
     var onTime = s.day <= p.deadlineDay;
     var q = p.quality - p.bugs * 9;
-    if (q >= 60 && onTime) {
-      var bonus = Math.round(s.salary * 0.08);
-      give(s, { skill: 5, rep: 9, morale: 8, money: bonus });
-      log(s, GOOD, "🚀 Shipped " + p.name + " clean and on time! +rep, $" + bonus + "k bonus.");
+    function repUp(n) { return Math.round(n * m.repMult); }   // positive rep gated by employer (0 at a blue-chip)
+    if (q >= 78 && onTime && chance(0.5)) {                    // 🌟 breakout
+      var big = Math.round(s.salary * 0.15);
+      give(s, { skill: 6, rep: repUp(14), morale: 14, money: big });
+      log(s, GOOD, "🌟 Breakout launch! " + p.name + " is a hit — $" + big + "k bonus" + (m.repMult ? ", reputation soars" : "") + ".");
       maybePromote(s);
-    } else if (q >= 60) {
-      give(s, { rep: 2, morale: 3 });
+    } else if (q >= 60 && onTime) {                            // 🚀 clean
+      var bonus = Math.round(s.salary * 0.08);
+      give(s, { skill: 5, rep: repUp(9), morale: 8, money: bonus });
+      log(s, GOOD, "🚀 Shipped " + p.name + " clean and on time! $" + bonus + "k bonus.");
+      maybePromote(s);
+    } else if (q >= 60) {                                      // 🐢 late but works
+      give(s, { rep: repUp(3), morale: 3 });
       log(s, NOTE, "🐢 Shipped " + p.name + " — late, but it works. Small win.");
-    } else {
-      give(s, { rep: -11, morale: -9 });
-      log(s, WARN, "🧨 " + p.name + " flopped — too buggy, shelved after launch. Reputation took a real hit.");
+    } else if (q >= 40) {                                      // 😕 underwhelming
+      give(s, { rep: -6, morale: -6 });
+      log(s, WARN, "😕 Shipped " + p.name + " rough — bugs in prod, a lukewarm reception.");
+    } else {                                                   // 🧨 disaster
+      give(s, { rep: -13, morale: -11, energy: -4 });
+      log(s, WARN, "🧨 " + p.name + " flopped hard — rolled back after launch. Reputation took a real hit.");
     }
   }
   function maybePromote(s) {
@@ -163,6 +216,7 @@
     // (6/7) are scarce EXEC seats reached only via the rare "exec_opening" event,
     // so most careers plateau as senior ICs (→ stealth wealth) and VP is rare.
     if (s.founder || !s.employed || s.level >= 5) return;
+    if (expLevel(careerYears(s)) < s.level + 1) return;   // not enough years on the clock for the next rung yet
     var needSkill = 12 + s.level * 9, needRep = 10 + s.level * 8;
     if (s.skill >= needSkill && s.rep >= needRep && chance(Math.max(0.35, 0.6 - s.level * 0.05))) {
       s.level++; s.salary = LEVELS[s.level].sal + Math.round(rnd() * 20);
@@ -174,12 +228,28 @@
   /* ---- the passing of time ------------------------------------------------- */
   function accrue(s, weeks) {
     var take = (s.employed && !s.founder) ? s.salary * 0.72 : 0;
-    var living = 28 + s.level * 4 + (s.love && s.love.stage !== "dating" ? 10 : 0);
+    var living = 13 + s.level * 3 + (s.love && s.love.stage !== "dating" ? 8 : 0) + (s.kids || 0) * 10;  // kids cost you
     s.money += (take - living) * (weeks / 52);
-    s.invest = Math.round(s.invest * Math.pow(1.05, weeks / 52));
+    // investments grow ~5%/yr, or ~17%/yr inside a post-recession recovery window
+    var growth = (s.boostUntil && s.day < s.boostUntil) ? 1.17 : 1.05;
+    s.invest = Math.round(s.invest * Math.pow(growth, weeks / 52));
+    // your market value slowly rusts while you're out of work → offers shrink
+    if (!s.employed && !s.founder) s.marketBump = Math.max(-0.3, (s.marketBump || 0) - 0.015 * (weeks / 8));
+    // mortgage: interest accrues on the debt, scheduled payments chip principal;
+    // if you can't cover them your cash goes underwater → bankruptcy (below).
+    if (s.house && s.house.debt > 0) {
+      var yr = weeks / 52;
+      var interest = s.house.debt * s.house.rate * yr;
+      var pay = s.house.pay * yr;
+      s.money -= pay;
+      s.house.debt = Math.max(0, s.house.debt - Math.max(0, pay - interest));
+      if (s.house.debt <= 0) s.house.pay = 0;        // paid off — you own it outright
+    }
+    if (s.house) s.house.value = Math.round(s.house.value * Math.pow(1.03, weeks / 52));  // slow appreciation → equity
     give(s, { morale: -0.5 * (weeks / 4), energy: 0.4 * (weeks / 4) });  // life goes stale; you recover slowly at rest
+    if (s.employed && !s.founder) give(s, { energy: coMods(s).drift * (weeks / 4) });  // startup grinds you; blue-chip is restful
     if (overLeveled(s)) give(s, { morale: -1.4 * (weeks / 4), energy: -0.6 * (weeks / 4) });  // in over your head: imposter stress
-    if (chance(0.05 * weeks)) loseFriend(s);         // drift out of touch
+    if (friends(s) === 0) give(s, { energy: -2.5 * (weeks / 4), morale: -0.8 * (weeks / 4) });  // no support network → the battery drains FAST
     if (s.love) {
       s.love.close = clamp(s.love.close - 0.9 * (weeks / 4));
       if (s.love.close < 22 && chance(0.35)) {
@@ -195,24 +265,59 @@
 
   // advance `weeks`, stepping in chunks so an event can interrupt. tag hints
   // context ("focus" → bug risk, "hunt" → job offers).
+  // Friendships age. When young they're easy to keep; at 30/40/50 life pulls
+  // ~half your circle apart (one-time), and the survivors are friends for life
+  // that drift only slowly. A turn spent being social (incl. working beside a
+  // work friend) skips the drift.
+  function ageFriendship(s, tag) {
+    var a = age(s);
+    [30, 40, 50].forEach(function (th) {
+      if (a >= th && !(s.culls && s.culls[th])) {
+        (s.culls = s.culls || {})[th] = 1;
+        var before = friends(s), keep = Math.round(before * (0.45 + rnd() * 0.15));
+        for (var i = before; i > keep; i--) loseFriend(s);
+        if (before - friends(s) > 0) log(s, INFO, "🌍 Life pulls people in different directions — your circle narrows to your closest " + friends(s) + ".");
+      }
+    });
+    var social = tag === "social" || (tag === "focus" && (s.workFriends || 0) > 0);
+    if (!social) {
+      var p = a < 30 ? 0.02 : a < 45 ? 0.05 : 0.025;
+      if (chance(p)) loseFriend(s);
+    }
+  }
+
   function advance(s, weeks, tag) {
+    // Each action is a "turn". Go 10 turns with NO friends and you quietly fade
+    // out of your own life — you need people to survive.
+    if (friends(s) === 0) {
+      s.noFriendsTurns = (s.noFriendsTurns || 0) + 1;
+      if (s.noFriendsTurns >= 10) { s.forcedEnd = "end_fade"; return; }
+    } else { s.noFriendsTurns = 0; }
+    ageFriendship(s, tag);
     var elapsed = 0, step = 8;
     while (elapsed < weeks) {
       var w = Math.min(step, weeks - elapsed);
       s.day += w * 7; elapsed += w;
       accrue(s, w);
       if (s.pending && s.pending.length) s.pending = s.pending.filter(function (p) { return p.expiresDay >= s.day; });
+      if (age(s) >= 50 && chance(mortalityP(s) * w / 52)) { s.forcedEnd = deathEnding(s); return; }  // it can happen to anyone
       if (age(s) >= 65) { s.forcedEnd = retireEnding(s); return; }
+      if (s.recessionDay && s.day >= s.recessionDay) { scheduleRecession(s); s.ev = recessionScene(s); s.route = "event"; return; }
       var ev = rollEvent(s, tag);
       if (ev) { s.route = ev; return; }
     }
   }
 
+  // recessions arrive every 7–15 years; a crash now, but a chance to buy cheap.
+  function scheduleRecession(s) { s.recessionDay = s.day + (7 + Math.floor(rnd() * 9)) * 365; }
+
   /* ---- endings routing ----------------------------------------------------- */
   function checkEnd(s) {
-    if (s.forcedEnd) { var f = s.forcedEnd; s.forcedEnd = null; return f; }
+    // burnout/isolation come first: a forced end (esp. the "fade away" one) should
+    // only land while you're otherwise still standing.
     if (s.energy <= 0) return "end_burnout";
     if (s.morale <= 0) return "end_isolation";
+    if (s.forcedEnd) { var f = s.forcedEnd; s.forcedEnd = null; return f; }
     if ((s.debtWeeks || 0) >= 78) return "end_broke";     // ~1.5 years underwater
     return null;
   }
@@ -231,13 +336,15 @@
   // one tier above your experience — flagged so you know you'd be in deep.
   function makeOffer(s) {
     var y = careerYears(s), cap = offerTierCap(y);
-    if (cap === 0 && s.employed) { s.offer = null; return false; }   // too green to be poached
-    var lucky = cap > 0 && chance(0.15);
-    var maxLvl = Math.min(5, (cap || 1) + (lucky ? 1 : 0));
-    var lvl = Math.min(maxLvl, Math.max(1, 1 + Math.floor(s.skill / 18)));
+    if (s.employed && y < 1) { s.offer = null; return false; }       // too green to be poached in year one
+    var lucky = s.skill >= 55 && chance(0.10);                       // a rare stretch offer — only if you're genuinely sharp
+    var maxLvl = Math.min(5, cap + (lucky ? 1 : 0));
+    var lvl = Math.min(maxLvl, Math.max(1, 1 + Math.floor(s.skill / 18)));  // skill decides how high they'll pitch you
     if (s.employed) lvl = Math.min(maxLvl, Math.max(lvl, s.level));  // at least a lateral move
-    var co = pickOne(["a hot startup 🚀", "Google 🔎", "a unicorn 🦄", "a big bank 🏦", "a scale-up 📊", "a FAANG 🧠"]);
-    s.offer = { level: lvl, company: co, salary: Math.round(LEVELS[lvl].sal * (1 + rnd() * 0.35)), stretch: lvl > expLevel(y) };
+    var co = pickOne(COMPANY_NAMES);
+    var sal = Math.round(LEVELS[lvl].sal * (1 + rnd() * 0.35) * (1 + (s.marketBump || 0)));  // hunting lifts future offers
+    if (s.employed) sal = Math.max(sal, Math.round(s.salary * 1.05));  // a move is always at least a small raise
+    s.offer = { level: lvl, company: co, salary: sal, stretch: lvl > expLevel(y) };
     return true;
   }
 
@@ -290,7 +397,19 @@
             { label: "Take the seat — climb into management. 👔", match: ["step", "exec", "lead", "climb", "seat", "2"],
               effect: act(1, null, function (st) { st.level++; st.salary = LEVELS[st.level].sal + Math.round(rnd() * 30); give(st, { morale: 8, energy: -6, rep: -3 }); log(st, GOOD, "👔 You're now " + LEVELS[st.level].name.replace(/ 👑/, "") + "! Salary $" + st.salary + "k."); }), goto: nextScene }]);
       } },
-    { id: "reorg", cat: "work", weight: 2, cool: 30, when: function (s) { return s.employed && !s.founder; },
+    { id: "perf_review", cat: "work", weight: 2, cool: 30, when: function (s) { return s.employed && !s.founder && s.rep < 35; },
+      build: function (s) {
+        return ev("📋 Performance review",
+          [line(WARN, "Your manager sits you down — your impact hasn't been landing. You're on notice.\n")],
+          [{ label: "Knuckle down and turn it around.", match: ["work", "fix", "prove", "1"],
+              effect: act(4, null, function (st) {
+                if (chance(0.4 + st.rep / 120)) { give(st, { rep: 8, energy: -8, morale: -2 }); log(st, GOOD, "💪 You pulled it back — off the list."); }
+                else { st.employed = false; var sv = Math.round(st.salary * 0.3); st.money += sv; st.project = null; give(st, { morale: -10 }); log(st, WARN, "🪓 It wasn't enough — managed out with $" + sv + "k."); }
+              }), goto: nextScene },
+            { label: "Read the writing on the wall and leave.", match: ["leave", "quit", "go", "2"],
+              effect: act(1, null, function (st) { st.employed = false; st.project = null; give(st, { morale: -5 }); log(st, WARN, "🚪 You jump before you're pushed. Time to job-hunt."); }), goto: nextScene }]);
+      } },
+    { id: "reorg", cat: "work", weight: 3, cool: 22, when: function (s) { return s.employed && !s.founder; },
       build: function (s) {
         return ev("🏢 Reorg",
           [line(WARN, "A reorg lands. Your whole team is 'impacted'.\n")],
@@ -314,7 +433,7 @@
             { label: "Ship it to prod. History is watching. 🎲", match: ["ship", "push", "2"],
               effect: function (st) {
                 if (chance(0.5)) { st.forcedEnd = "end_agi"; }
-                else { give(st, { rep: 20, morale: 15, equity: st.founder ? 400 : 0, money: st.founder ? 0 : 60 }); log(st, GOOD, "🌐 It works and it's SAFE (this time). You're famous."); }
+                else { give(st, { rep: 20, morale: 15, equity: st.founder ? 400 : 0, money: st.founder ? 0 : 30 }); log(st, GOOD, "🌐 It works and it's SAFE (this time). You're famous."); }
               }, goto: nextScene }]);
       } },
     // ---- social (invites: timed) ----
@@ -329,7 +448,7 @@
             (s.love ? { label: "Have a quiet drink and head home.", match: ["quiet", "home", "2"],
               effect: act(1, null, function (st) { give(st, { morale: 5, energy: 2 }); }), goto: nextScene }
               : { label: "See where things go with " + p.name + ".", match: ["flirt", p.name.toLowerCase(), "2"],
-              effect: act(1, null, function (st) { st.love = { name: p.name, w: p.w, close: 46, stage: "dating" }; addFriend(st, p.w ? "w" : "m"); give(st, { morale: 14, energy: -3 }); log(st, GOOD, "💕 You and " + p.name + " start seeing each other."); }), goto: nextScene })]);
+              effect: act(1, null, function (st) { st.love = { name: p.name, w: p.w, close: 46, stage: "dating", since: st.day }; addFriend(st, p.w ? "w" : "m"); give(st, { morale: 14, energy: -3 }); log(st, GOOD, "💕 You and " + p.name + " start seeing each other."); }), goto: nextScene })]);
       } },
     { id: "wedding", cat: "social", weight: 2, cool: 40, invite: true, windowWeeks: 5, when: function (s) { return friends(s) >= 8; },
       inviteLabel: function () { return "💒 A friend's wedding"; },
@@ -356,18 +475,27 @@
             { label: "Let them go.", match: ["drop", "go", "2"], effect: act(0, null, function (st) { loseFriend(st); give(st, { morale: -6 }); log(st, WARN, "🙅 You lost a friend."); }), goto: nextScene }]);
       } },
     // ---- romance ----
-    { id: "love_milestone", cat: "romance", weight: 3, cool: 20, when: function (s) { return s.love && s.love.close >= 70 && s.love.stage !== "married"; },
+    { id: "love_milestone", cat: "romance", weight: 3, cool: 20, when: function (s) { return s.love && s.love.close >= 70 && s.love.stage === "dating"; },
       build: function (s) {
-        var nm = s.love.name, moving = s.love.stage === "dating";
+        var nm = s.love.name;
         return ev("💞 A big step with " + nm,
-          [line(STR, (moving ? nm + " suggests moving in together." : nm + " leaves a ring catalogue open 'by accident'.") + "\n")],
-          [{ label: moving ? "Move in together." : "Propose. 💍", match: ["yes", "propose", "movein", "1"],
-              effect: act(1, null, function (st) {
-                if (moving) { st.love.stage = "partner"; give(st, { morale: 16 }); log(st, GOOD, "🏡 You and " + nm + " move in together."); }
-                else { st.love.stage = "married"; give(st, { morale: 22, money: -25 }); log(st, GOOD, "💍 You married " + nm + "! ($25k wedding, worth it.)"); }
-              }), goto: nextScene },
+          [line(STR, nm + " suggests moving in together.\n")],
+          [{ label: "Move in together.", match: ["yes", "movein", "move", "1"],
+              effect: act(1, null, function (st) { st.love.stage = "partner"; give(st, { morale: 16 }); log(st, GOOD, "🏡 You and " + nm + " move in together."); }), goto: nextScene },
             { label: "Say you're not ready.", match: ["wait", "no", "2"],
               effect: act(0, null, function (st) { st.love.close = clamp(st.love.close - 18); give(st, { morale: -4 }); log(st, INFO, "😬 " + nm + " tried to hide the disappointment."); }), goto: nextScene }]);
+      } },
+    { id: "propose", cat: "romance", weight: 3, cool: 30, when: function (s) { return s.love && s.love.stage !== "married" && relYears(s) >= 1; },
+      build: function (s) { return proposeScene(s, false); } },
+    { id: "children", cat: "romance", weight: 2, cool: 40, when: function (s) { return s.love && s.love.stage === "married" && (s.kids || 0) < 3; },
+      build: function (s) {
+        var nm = s.love.name;
+        return ev("👶 A new arrival?",
+          [line(STR, "You and " + nm + " have been talking about starting a family.\n")],
+          [{ label: "Start a family. 👶", match: ["yes", "child", "kid", "family", "1"],
+              effect: act(2, null, function (st) { st.kids = (st.kids || 0) + 1; give(st, { morale: 20, money: -20, energy: -8 }); log(st, GOOD, "👶 You're a parent! (-$20k up front, and life gets pricier.) You now have " + st.kids + " kid" + (st.kids > 1 ? "s" : "") + "."); }), goto: nextScene },
+            { label: "Not right now.", match: ["no", "wait", "2"],
+              effect: act(0, null, function (st) { give(st, { morale: -2 }); }), goto: nextScene }]);
       } },
     { id: "rough_patch", cat: "romance", weight: 2, cool: 16, when: function (s) { return s.love; },
       build: function (s) {
@@ -435,7 +563,7 @@
               { label: "Let it ride.", match: ["ride", "hold", "2"], effect: act(0, null, function (st) { st.invest = Math.round(st.invest * 1.22); log(st, GOOD, "🚀 Paper gains balloon."); }), goto: nextScene }]);
       } },
     { id: "windfall", cat: "finance", weight: 1, cool: 40, build: function (s) {
-        var amt = 8 + Math.floor(rnd() * 30);
+        var amt = 6 + Math.floor(rnd() * 20);
         return ev("🎁 A windfall",
           [line(GOOD, "A tax refund / forgotten RSUs / a lucky bet comes good: $" + amt + "k.\n")],
           [{ label: "Bank it.", match: ["bank", "save", "1"], effect: act(0, null, function (st) { st.money += amt; }), goto: nextScene },
@@ -448,14 +576,14 @@
           [{ label: "Tell the truth and take the hit.", match: ["honest", "truth", "1"],
               effect: act(0, null, function (st) { give(st, { rep: 4, morale: 5, equity: st.founder ? -100 : 0 }); log(st, NOTE, "🫡 You told the truth. It cost you, but you sleep fine."); }), goto: nextScene },
             { label: "Fudge the numbers. Nobody checks. 🎲", match: ["fake", "fudge", "cook", "2"],
-              effect: act(0, null, function (st) { st.fraudFlag = true; give(st, { money: st.founder ? 0 : 120, equity: st.founder ? 800 : 0, morale: -4 }); log(st, WARN, "🤫 The numbers look great now. You feel a little sick."); }), goto: nextScene }]);
+              effect: act(0, null, function (st) { st.fraudFlag = true; give(st, { money: st.founder ? 0 : 60, equity: st.founder ? 800 : 0, morale: -4 }); log(st, WARN, "🤫 The numbers look great now. You feel a little sick."); }), goto: nextScene }]);
       } },
     { id: "audit", cat: "finance", weight: 2, cool: 20, when: function (s) { return s.fraudFlag; },
       build: function (s) {
         return ev("🕵️ An auditor comes knocking",
           [line(WARN, "Someone's asking pointed questions about those old numbers.\n")],
           [{ label: "Lawyer up and settle quietly.", match: ["settle", "lawyer", "1"],
-              effect: act(1, null, function (st) { st.fraudFlag = false; give(st, { money: -80, morale: -8 }); log(st, WARN, "⚖️ A quiet, expensive settlement. It's behind you."); }), goto: nextScene },
+              effect: act(1, null, function (st) { st.fraudFlag = false; give(st, { money: -45, morale: -8 }); log(st, WARN, "⚖️ A quiet, expensive settlement. It's behind you."); }), goto: nextScene },
             { label: "Brazen it out.", match: ["deny", "lie", "2"],
               effect: function (st) { if (chance(0.5)) { st.forcedEnd = "end_fraud"; } else { st.fraudFlag = false; give(st, { morale: -6 }); log(st, INFO, "😅 You wriggled free. Never again."); } }, goto: nextScene }]);
       } },
@@ -500,9 +628,62 @@
       [line(STR, s.offer.company + " — " + LEVELS[s.offer.level].name + " · $" + s.offer.salary + "k/yr.\n")].concat(
         s.offer.stretch ? [line(WARN, "⚠️ That's above your experience — you'd be in over your head.\n")] : []),
       [{ label: "✅ Take it.", match: ["take", "accept", "yes", "1"],
-          effect: act(2, null, function (st) { st.employed = true; st.founder = false; st.level = st.offer.level; st.salary = st.offer.salary; st.project = null; st.stretchUntil = st.offer.stretch ? careerYears(st) + 3 : 0; give(st, { morale: 10, rep: 3 }); log(st, GOOD, "✅ You joined " + st.offer.company + " as " + LEVELS[st.offer.level].name + (st.offer.stretch ? " — deep end, here you come." : ".")); st.offer = null; }), goto: nextScene },
+          effect: act(2, null, function (st) { st.employed = true; st.founder = false; st.level = st.offer.level; st.salary = st.offer.salary; st.company = makeCompany(st.offer.company); st.project = null; st.stretchUntil = st.offer.stretch ? careerYears(st) + 3 : 0; give(st, { morale: 10, rep: 3 }); log(st, GOOD, "✅ You joined " + st.offer.company + " as " + LEVELS[st.offer.level].name + (st.offer.stretch ? " — deep end, here you come." : ".")); st.offer = null; }), goto: nextScene },
         { label: "🙅 Pass.", match: ["decline", "pass", "no", "2"],
           effect: act(0, null, function (st) { st.offer = null; }), goto: nextScene }]);
+  }
+
+  // ---- marriage: a proposal (random, or offered on holiday). Success is NOT
+  // guaranteed — it's a probability from time-together × relationship strength.
+  function proposeScene(s, onHoliday) {
+    var nm = s.love.name, yrs = relYears(s).toFixed(1);
+    return ev("💍 Popping the question" + (onHoliday ? " 🌅" : ""),
+      [line(STR, (onHoliday ? "A perfect evening away with " + nm + ". " : "") +
+        "You've been together " + yrs + " years (strength " + s.love.close + "). Do you get down on one knee?\n")],
+      [{ label: "Propose. 💍", match: ["propose", "yes", "ring", "1"],
+          effect: act(1, null, function (st) {
+            if (chance(proposeSuccessP(st))) {
+              st.love.stage = "married"; st.love.close = clamp(st.love.close + 14);
+              give(st, { morale: 24, money: -25 });
+              log(st, GOOD, "💍 " + nm + " said YES! You're married. ($25k wedding, worth every penny.)");
+            } else {
+              st.love.close = clamp(st.love.close - 16);
+              give(st, { morale: -14 });
+              log(st, WARN, "😞 " + nm + " said not yet — it wasn't the right time. That stings.");
+            }
+          }), goto: nextScene },
+        { label: "Not yet — hold off.", match: ["wait", "no", "2"],
+          effect: act(0, null, function (st) { give(st, { morale: -1 }); }), goto: nextScene }]);
+  }
+
+  // ---- buy a home on a mortgage. Deposit out of cash; the debt accrues interest
+  // and eats monthly payments (see accrue). Your equity counts toward net worth.
+  function buyHouse(s) {
+    var price = 120 + s.level * 30 + Math.round(rnd() * 40);   // $k
+    var deposit = Math.round(price * 0.12);
+    var rate = 0.04 + rnd() * 0.03;                            // 4–7% APR
+    s.money -= deposit;
+    s.house = { value: price, debt: price - deposit, rate: rate, pay: Math.round(price * 0.075) };
+    log(s, NOTE, "🏠 You bought a home for " + money$(price) + " — " + Math.round(rate * 100) +
+      "% mortgage, " + money$(deposit) + " deposit down. Payments start now.");
+  }
+
+  // ---- a recession: investments crash now, but a downturn is a buying window.
+  // Selling is safe but locks in the loss; buying the dip / holding rides the
+  // recovery (a window of boosted growth — see accrue).
+  function recessionScene(s) {
+    var before = s.invest;
+    s.invest = Math.round(s.invest * (0.55 + rnd() * 0.15));   // −30% … −45%
+    var lost = before - s.invest;
+    return ev("📉 Recession hits",
+      [line(WARN, "Markets crater. Your portfolio drops from " + money$(before) + " to " + money$(s.invest) +
+        (lost > 0 ? " (−" + money$(lost) + ")" : "") + ".\n")],
+      [{ label: "🧊 Pull your money out — go to cash.", match: ["sell", "pull", "out", "cash", "1"],
+          effect: act(1, null, function (st) { st.money += st.invest; log(st, NOTE, "🏦 You move " + money$(st.invest) + " to cash — safe, but you'll miss the rebound."); st.invest = 0; }), goto: nextScene },
+        { label: "🛒 Buy the dip — pile cash in cheap. 🎲", match: ["buy", "dip", "2"],
+          effect: act(1, null, function (st) { var amt = Math.round(Math.max(0, st.money) * 0.7); st.money -= amt; st.invest += amt; st.boostUntil = st.day + Math.round((2 + rnd()) * 365); log(st, GOOD, "🛒 You put " + money$(amt) + " in at the bottom. If it recovers, this pays off big."); }), goto: nextScene },
+        { label: "😐 Hold and ride it out.", match: ["hold", "ride", "wait", "3"],
+          effect: act(1, null, function (st) { st.boostUntil = st.day + Math.round((2 + rnd()) * 365); log(st, INFO, "🫡 You sit tight and wait for the cycle to turn."); }), goto: nextScene }]);
   }
 
   function onCooldown(s, e) { return s.cool && s.cool[e.id] && s.day < s.cool[e.id]; }
@@ -536,10 +717,14 @@
       return "event";
     }
     if (tag === "hunt" && !s.founder) {
-      if (chance(0.6)) {
-        if (makeOffer(s)) { s.ev = offerScene(s, "📨 An offer came in"); return "event"; }
-        log(s, INFO, "🔎 Too early in your career — nobody's biting yet. Keep building.");
-      }
+      // landing something is never guaranteed — skill (side-projects & shipped
+      // work) and reputation are the levers that get you in the door.
+      var p = 0.12 + s.skill / 320 + s.rep / 500;
+      if (chance(p) && makeOffer(s)) { s.ev = offerScene(s, "📨 An offer came in"); return "event"; }
+      log(s, INFO, pickOne([
+        "🔎 No offer this round — but the conversations raised your profile.",
+        "📭 Nothing landed yet; a couple of leads look warm.",
+        "🤝 A few good chats, no offer — your market value crept up, though."]));
       return null;
     }
     if (!chance(0.06)) return null;
@@ -559,12 +744,20 @@
   // Precedence: 🦄 unicorn (your COMPANY made it) → 👑 VP (you got the TITLE, and
   // wealth with it) → 🤫 stealth wealth (top IC, quietly rich, no title) →
   // ordinary graded retirement (flavoured by wealth + relationships).
-  function netWorth(s) { return Math.round(s.money + s.invest); }
+  function netWorth(s) { return Math.round(s.money + s.invest + homeEquity(s)); }
   function retireEnding(s) {
     if (s.exited || (s.founder && s.equity >= 1500)) return "end_unicorn";
     if (s.level >= 6) return "end_vp";
-    if (netWorth(s) >= 2500) return "end_stealth";
+    if (netWorth(s) >= RICH) return "end_stealth";
     return "end_retire";
+  }
+  // Which death you get. The ominous one: you died mid-grind — chasing money or a
+  // startup, senior/rich — with almost no friends and no marriage. Otherwise a
+  // warmer "gone too soon", because you had people around you.
+  function deathEnding(s) {
+    var grinding = s.founder || s.exited || s.level >= 5 || netWorth(s) >= 500;
+    var alone = friends(s) <= 3 && !(s.love && s.love.stage === "married");
+    return (grinding && alone) ? "end_death_hollow" : "end_death";
   }
   function partnerLabel(s) {
     return s.love && s.love.stage === "married" ? "your spouse " + s.love.name
@@ -580,11 +773,11 @@
   function retireOrdinaryText(s) {
     var nw = netWorth(s), partner = partnerLabel(s), social = socialLabel(s), head;
     if (partner && friends(s) >= 20) head = "❤️ RICH IN THE THINGS THAT COUNT";
-    else if (nw >= 1200) head = "🏡 A COMFORTABLE RETIREMENT";
-    else if (nw < 250 && friends(s) < 4 && !partner) head = "🥲 A LONELY, THIN RETIREMENT";
+    else if (nw >= 800) head = "🏡 A COMFORTABLE RETIREMENT";
+    else if (nw < 150 && friends(s) < 4 && !partner) head = "🥲 A LONELY, THIN RETIREMENT";
     else if (partner || friends(s) >= 12) head = "🙂 A GOOD, ORDINARY RETIREMENT";
     else head = "😐 A QUIET, MODEST RETIREMENT";
-    var wealth = nw >= 1200 ? "comfortably off" : nw >= 300 ? "financially fine" : "on a thin pension";
+    var wealth = nw >= 800 ? "comfortably off" : nw >= 200 ? "financially fine" : "on a thin pension";
     return [["tok-out", head + "\n\n"],
       [null, "At " + age(s) + " you hang it up as " + LEVELS[s.level].name.replace(/ [🐣👑]/g, "") + ", " + wealth +
         ", with " + (partner ? partner + " and " : "") + social + ".\n\n"], statLine(s)];
@@ -620,30 +813,41 @@
         c.push({ label: "🎯 Take on a new project.", match: ["project", "new", "pick"],
           effect: act(3, null, function (st) { startProject(st); }), goto: nextScene });
       }
-      c.push({ label: "🔎 Quietly look for a better job.", match: ["hunt", "job", "interview"], effect: act(10, "hunt", function (st) { react(st, RX.hunt); }), goto: nextScene });
+      c.push({ label: "🔎 Quietly look for a better job.", match: ["hunt", "job", "interview"],
+        effect: act(8, "hunt", function (st) { st.marketBump = Math.min(0.6, (st.marketBump || 0) + 0.03 + rnd() * 0.03); log(st, NOTE, "📈 Interviewing sharpens your market value — any offer you land now will be for more."); react(st, RX.hunt); }), goto: nextScene });
     } else {
       c.push({ label: "🔎 Job-hunt hard — you need an income.", match: ["hunt", "job", "interview"],
-        effect: act(10, "hunt", function (st) { give(st, { morale: -3 }); react(st, RX.hunt); }), goto: nextScene });
+        effect: act(8, "hunt", function (st) { give(st, { morale: -3 }); react(st, RX.hunt); }), goto: nextScene });
     }
 
     // universal life actions
     c.push({ label: "🛋️ Rest and recharge.", match: ["rest", "recharge", "sleep"], effect: act(6, null, function (st) { give(st, { energy: 22, morale: 6 }); react(st, RX.rest); }), goto: nextScene });
     c.push({ label: "🧑‍🤝‍🧑 See friends / go out.", match: ["friends", "social", "socialise", "out"],
-      effect: act(8, null, function (st) { addFriend(st); give(st, { morale: 11, energy: 8, money: -4 }); if (!st.love && chance(0.25)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 44, stage: "dating" }; log(st, GOOD, "💕 You met " + pp.name + " — you're seeing each other now."); } else { react(st, RX.social); } }), goto: nextScene });
+      effect: act(8, "social", function (st) { addFriend(st); give(st, { morale: 11, energy: 8, money: -4 }); if (!st.love && chance(0.25)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 44, stage: "dating", since: st.day }; log(st, GOOD, "💕 You met " + pp.name + " — you're seeing each other now."); } else { react(st, RX.social); } }), goto: nextScene });
     c.push({ label: "📚 Upskill — a course / side project.", match: ["upskill", "learn", "study", "course"], effect: act(10, null, function (st) { give(st, { skill: 10, energy: -7, money: -2, morale: -1 }); react(st, RX.upskill); }), goto: nextScene });
     if (s.love) c.push({ label: "💗 Invest in things with " + s.love.name + ".", match: ["love", "relationship", "nurture", "partner"],
-      effect: act(8, null, function (st) { var nm = st.love.name; st.love.close = clamp(st.love.close + 16); give(st, { morale: 10, energy: 6, money: -5 }); react(st, RX.love, { name: nm }); }), goto: nextScene });
+      effect: act(8, "social", function (st) { var nm = st.love.name; st.love.close = clamp(st.love.close + 16); give(st, { morale: 10, energy: 6, money: -5 }); react(st, RX.love, { name: nm }); }), goto: nextScene });
     else c.push({ label: "💘 Put yourself out there (dating).", match: ["date", "dating", "romance"],
-      effect: act(10, null, function (st) { if (chance(0.5)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 42, stage: "dating" }; give(st, { morale: 10, energy: 4 }); log(st, GOOD, "💕 You hit it off with " + pp.name + "."); } else { give(st, { morale: -3 }); react(st, RX.date); } }), goto: nextScene });
+      effect: act(10, "social", function (st) { if (chance(0.5)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 42, stage: "dating", since: st.day }; give(st, { morale: 10, energy: 4 }); log(st, GOOD, "💕 You hit it off with " + pp.name + "."); } else { give(st, { morale: -3 }); react(st, RX.date); } }), goto: nextScene });
     if (s.money > 15) c.push({ label: "💸 Invest your savings.", match: ["invest", "stocks", "market"],
       effect: act(2, null, function (st) { var amt = Math.round((st.money - 10) * 0.7); st.money -= amt; st.invest += amt; log(st, NOTE, "💸 Moved $" + amt + "k into investments."); }), goto: nextScene });
-    if (s.money >= 12) c.push({ label: "🌴 Take a proper holiday.", match: ["holiday", "vacation", "travel"], effect: act(8, null, function (st) { give(st, { energy: 30, morale: 18, money: -14 }); react(st, RX.holiday); }), goto: nextScene });
+    if (!s.house && s.money >= Math.round((160 + s.level * 30) * 0.12) + 5 && (s.employed || s.founder)) c.push({ label: "🏠 Buy a home (with a mortgage).", match: ["house", "buy", "mortgage", "home"],
+      effect: act(2, null, function (st) { buyHouse(st); }), goto: nextScene });
+    if (s.money >= 12) c.push({ label: "🌴 Take a proper holiday.", match: ["holiday", "vacation", "travel"],
+      effect: function (st) {
+        give(st, { energy: 30, morale: 18, money: -14 }); react(st, RX.holiday);
+        advance(st, 8, "social");
+        // a year-plus into a relationship, a holiday can spark a proposal
+        if (!st.route && !st.forcedEnd && st.love && st.love.stage !== "married" && relYears(st) >= 1 && chance(0.6)) {
+          st.ev = proposeScene(st, true); st.route = "event";
+        }
+      }, goto: nextScene });
 
     // coast through quiet time (a big jump; events still interrupt)
     c.push({ label: "⏭️ Let time pass — get on with life.", match: ["coast", "continue", "wait", "pass"], effect: act(104, null, function (st) { react(st, RX.coast); }), goto: nextScene });
 
     // retire when eligible (age, or financially independent → retire early)
-    if (age(s) >= 45 || (s.money + s.invest) >= 2500) c.push({ label: "🏁 Call it a career — retire.", match: ["retire", "finish", "end"], effect: function () {}, goto: function (st) { return retireEnding(st); } });
+    if (age(s) >= 45 || netWorth(s) >= RICH) c.push({ label: "🏁 Call it a career — retire.", match: ["retire", "finish", "end"], effect: function () {}, goto: function (st) { return retireEnding(st); } });
 
     return c;
   }
@@ -654,6 +858,10 @@
     defaultForPlay: true,
     fileLabel: "elias@life — devlife.py",
     statsName: "DEV LIFE",
+    version: "1.02",
+    versions: ["1", "1.01", "1.02"],   // ordered oldest→newest; the record readout shows the last 2
+
+
 
     // Friendly labels for the "your record" readout (see text-game.js
     // statsChunks). Ordered how they should list; MUST stay in sync with the
@@ -665,7 +873,10 @@
       { id: "end_retire",    label: "🏁 Retired" },
       { id: "end_burnout",   label: "🔥 Total burnout" },
       { id: "end_isolation", label: "🕳️ Alone" },
+      { id: "end_fade",      label: "🫥 Faded away" },
       { id: "end_broke",     label: "💸 Bankrupt" },
+      { id: "end_death",        label: "🪦 Gone too soon" },
+      { id: "end_death_hollow", label: "⚰️ Rich and alone" },
       { id: "end_agi",       label: "🤖 Classified" },
       { id: "end_fraud",     label: "⚖️ Federal pocket" }
     ],
@@ -686,11 +897,14 @@
     init: function () {
       return {
         day: 0,
-        employed: true, level: 1, skill: 25, rep: 10, salary: 68,
+        employed: true, level: 1, skill: 25, rep: 10, salary: 30,
+        company: makeCompany(pickOne(COMPANY_NAMES)),
         founder: false, equity: 0,
-        money: 6, invest: 0,
+        money: 6, invest: 0, house: null,
         energy: 75, morale: 70,
-        friendsM: 10, friendsW: 10, love: null,
+        friendsM: 10, friendsW: 10, love: null, kids: 0, noFriendsTurns: 0,
+        marketBump: 0, workFriends: 0, culls: {},
+        recessionDay: (7 + Math.floor(rnd() * 9)) * 365, boostUntil: 0,
         project: null, pending: [], cool: {},
         offer: null, fraudFlag: false, exited: false, stretchUntil: 0, debtWeeks: 0, forcedEnd: null,
         ev: null, log: []
@@ -698,11 +912,11 @@
     },
 
     status: function (s) {
-      var job = s.founder ? "🦄 founder (" + money$(s.equity) + ")" : (s.employed ? LEVELS[s.level].name : "unemployed 😳");
-      var lv = s.love ? " 💕 " + s.love.stage + " " + s.love.name + " (" + s.love.close + ")" : " 💕 single";
+      var job = s.founder ? "🦄 founder (" + money$(s.equity) + ")" : (s.employed ? LEVELS[s.level].name + " " + coTag(s) : "unemployed 😳");
+      var lv = s.love ? " 💕 " + s.love.stage + " " + s.love.name + " (strength " + s.love.close + ")" + (s.kids ? " 👶" + s.kids : "") : " 💕 single";
       var pj = s.project ? " · 🛠️ " + Math.min(100, Math.round(100 * s.project.weeksDone / s.project.weeksNeeded)) + "%" + (s.project.bugs ? " 🐛" + s.project.bugs : "") : "";
       return "📅 " + dateLabel(s) + " · age " + age(s) + " · " + job + pj + "\n" +
-        "💰" + money$(s.money) + " 📊" + money$(s.invest) + " 🔋" + s.energy + " 😀" + s.morale + " 🧠" + s.skill + " ⭐" + s.rep + "\n" +
+        "💰" + money$(s.money) + " 📊" + money$(s.invest) + (s.house ? " 🏠" + money$(homeEquity(s)) : "") + " 🔋" + s.energy + " 😀" + s.morale + " 🧠" + s.skill + " ⭐" + s.rep + "\n" +
         "👥" + friends(s) + " (♂" + s.friendsM + " ♀" + s.friendsW + ")" + lv;
     },
 
@@ -740,7 +954,22 @@
       end_isolation: { end: true, text: function (s) {
         return [["tok-num", "🕳️ ALONE\n\n"], [null, "Somewhere in the grind the people fell away. At " + age(s) + ", the quiet finally wins and you give up on it all.\n\n"], [INFO, "The work was never going to hug you back. 💔"]]; } },
       end_broke: { end: true, text: function (s) {
-        return [["tok-num", "💸 BANKRUPT\n\n"], [null, "Eighteen months underwater and the debt won. Evicted at " + age(s) + ", moving back in with family.\n\n"], [INFO, "The rent, as ever, was undefeated. 🧾"]]; } },
+        return [["tok-num", "💸 BANKRUPT\n\n"], [null, "Eighteen months underwater and the debt won. " + (s.house ? "The bank took the house. " : "") + "Evicted at " + age(s) + ", moving back in with family.\n\n"], [INFO, "The " + (s.house ? "mortgage" : "rent") + ", as ever, was undefeated. 🧾"]]; } },
+      end_fade: { end: true, text: function (s) {
+        return [["tok-num", "🫥 FADED AWAY\n\n"], [null, "No calls, no plans, no one who'd notice if you didn't show. With no friends left, the days blurred into each other until, at " + age(s) + ", you simply faded out of your own life.\n\n"], [INFO, "Nobody makes it alone. You needed people. 👥"]]; } },
+
+      // ---- mortality (from 50 on) ----
+      end_death: { end: true, text: function (s) {
+        var partner = partnerLabel(s);
+        return [["tok-num", "🪦 GONE TOO SOON\n\n"],
+          [null, "It comes without warning at " + age(s) + " — you never made it to the finish line. But the room at the service is full: " + (partner ? partner + " and " : "") + socialLabel(s) + ".\n\n"],
+          [INFO, "You didn't retire rich. You were rich the whole time. ❤️"], statLine(s)]; } },
+      end_death_hollow: { end: true, text: function (s) {
+        var what = (s.founder || s.exited) ? "the company" : "the next rung and the next number";
+        return [["tok-num", "⚰️ RICH AND ALONE\n\n"],
+          [null, "At " + age(s) + " it just stops — mid-sprint, chasing " + what + ". You'd built " + money$(netWorth(s)) + " and a career people admired.\n\n"],
+          [null, "The office sends a big wreath. Almost no one else comes. There was always going to be time for people — later. There wasn't.\n\n"],
+          [INFO, "You won the game you were playing. It was the wrong game. 🥀"], statLine(s)]; } },
 
       // ---- comedic specials ----
       end_agi: { end: true, text: function (s) {

@@ -47,6 +47,89 @@
   var lastFocus = null;       // element to restore focus to on close
   var pushedUrl = false;      // did we push a /play history entry
 
+  /* --------------------------------------------------------- ending stats */
+  // Persist a per-game tally of how many times each ending was reached, so the
+  // arcade gains a light sense of progression across runs. One JSON entry,
+  // shaped { [gameId]: { [endingId]: count } }, mirroring the site's existing
+  // `"theme"` localStorage precedent (always try/catch-guarded so private mode
+  // or disabled storage never breaks the game).
+  var STATS_KEY = "arcadeStats";
+
+  function loadStats() {
+    try {
+      var raw = localStorage.getItem(STATS_KEY);
+      var obj = raw ? JSON.parse(raw) : {};
+      return (obj && typeof obj === "object") ? obj : {};
+    } catch (e) { return {}; }
+  }
+
+  function recordEnding(gameId, endingId) {
+    try {
+      var all = loadStats();
+      var g = all[gameId] || (all[gameId] = {});
+      g[endingId] = (g[endingId] || 0) + 1;
+      localStorage.setItem(STATS_KEY, JSON.stringify(all));
+    } catch (e) { /* storage unavailable — skip silently */ }
+  }
+
+  // Build the "your record" readout for a game as instant-render chunks, or null
+  // if the player has no recorded runs yet. Discovered-only: endings never
+  // reached are omitted. Reuses the terminal's existing tok-* classes so it
+  // recolours for free in dark mode.
+  function statsChunks(def) {
+    if (!def) return null;
+    var counts = loadStats()[def.id] || {};
+    var list = def.endings || [];               // ordered [{id,label}]
+    var rows = [];
+    var total = 0;
+    for (var i = 0; i < list.length; i++) {
+      var n = counts[list[i].id] || 0;
+      if (n > 0) { rows.push({ label: list[i].label || list[i].id, n: n }); total += n; }
+    }
+    // Also count any recorded endings the label list forgot (defensive), so the
+    // run total is always truthful even if `endings` drifts out of sync.
+    var known = {};
+    for (var k = 0; k < list.length; k++) known[list[k].id] = true;
+    for (var key in counts) {
+      if (Object.prototype.hasOwnProperty.call(counts, key) && !known[key]) total += counts[key] || 0;
+    }
+    if (!rows.length) return null;
+
+    var name = def.statsName || (def.id || "").toUpperCase();
+    var runword = total === 1 ? "run" : "runs";
+    var out = [
+      ["tok-kw", "\n" + name + " — your record", true],
+      ["tok-comment", "  ·  " + total + " " + runword + "\n\n", true]
+    ];
+    // Dot-leader alignment: pad each label out to a fixed column with dots.
+    var WIDTH = 26;
+    for (var r = 0; r < rows.length; r++) {
+      var label = rows[r].label;
+      var dots = WIDTH - strWidth(label);
+      if (dots < 1) dots = 1;
+      out.push(["tok-out", "  " + label + " " + repeat(".", dots) + " ", true]);
+      out.push(["tok-num", String(rows[r].n) + "\n", true]);
+    }
+    return out;
+  }
+
+  // Approximate display width so dot-leaders line up despite wide emoji. Most
+  // emoji render ~2 cols in a monospace terminal; treat astral/emoji-range code
+  // points as width 2, everything else as 1.
+  function strWidth(str) {
+    var w = 0;
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      if (c >= 0xD800 && c <= 0xDBFF) { w += 2; i++; continue; }   // surrogate pair (astral, usually emoji)
+      if (c >= 0x2190 && c <= 0x2BFF) { w += 2; continue; }        // arrows/symbols/dingbats often 2-wide
+      if (c === 0xFE0F) { continue; }                              // variation selector: zero width
+      w += 1;
+    }
+    return w;
+  }
+
+  function repeat(ch, n) { var s = ""; for (var i = 0; i < n; i++) s += ch; return s; }
+
   /* ------------------------------------------------------------------ build */
   // The brand mark (logo + wordmark) reused from the site nav, so the game view
   // header reads as part of the same site.
@@ -348,9 +431,13 @@
     var bodyChunks = head.concat(toChunks(scene.text));
 
     if (scene.end) {
+      recordEnding(current.id, id);   // tally this ending BEFORE we render, so the
+                                      // just-finished run is included below.
       typeOut(bodyChunks, function () {
         appendChunk(els.typed, "tok-out", "\n");
-        ask([["tok-out", "play again? ("], ["tok-kw", "y"], ["tok-out", "/"],
+        var stats = statsChunks(current);
+        if (stats) stats.forEach(function (c) { appendChunk(els.typed, c[0], c[1]); });
+        ask([["tok-out", "\nplay again? ("], ["tok-kw", "y"], ["tok-out", "/"],
              ["tok-kw", "n"], ["tok-out", ")\n"]], function (line) {
           var v = line.toLowerCase();
           if (v === "y" || v === "yes" || v === "again" || v === "restart") startGame();
@@ -432,6 +519,10 @@
     (intro.banner || []).forEach(function (row) { chunks.push(["tok-prompt", row + "\n"]); });
     if (intro.tagline) chunks.push(["tok-out", "\n" + intro.tagline + "\n"]);
     if (intro.blurb) chunks.push(["tok-comment", intro.blurb + "\n"]);
+    // Show the player's accumulated record on the start screen (only once they
+    // have one — first-timers instead meet it at the end of their first run).
+    var stats = statsChunks(current);
+    if (stats) chunks = chunks.concat(stats);
     chunks.push(["tok-out", "\n"]);
     chunks.push(["tok-kw", intro.start || "press ENTER to begin"]);
     chunks.push(["tok-out", "\n"]);

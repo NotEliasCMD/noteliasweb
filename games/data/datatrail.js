@@ -80,6 +80,14 @@
   window.TextGame.register({
     id: "datatrail",
     fileLabel: "elias@analysis — datatrail.py",
+    statsName: "THE DATA TRAIL",
+
+    // Friendly labels for the "your record" readout (see text-game.js
+    // statsChunks). MUST stay in sync with the `end: true` scenes below.
+    endings: [
+      { id: "win",  label: "★ Reached production" },
+      { id: "bust", label: "✗ Trail ended" }
+    ],
 
     intro: {
       banner: [

@@ -653,6 +653,22 @@
     id: "devlife",
     defaultForPlay: true,
     fileLabel: "elias@life — devlife.py",
+    statsName: "DEV LIFE",
+
+    // Friendly labels for the "your record" readout (see text-game.js
+    // statsChunks). Ordered how they should list; MUST stay in sync with the
+    // `end: true` scenes below (the coverage test guarantees each is reachable).
+    endings: [
+      { id: "end_unicorn",   label: "🦄 Unicorn exit" },
+      { id: "end_vp",        label: "👑 Retired a VP" },
+      { id: "end_stealth",   label: "🤫 Stealth wealth" },
+      { id: "end_retire",    label: "🏁 Retired" },
+      { id: "end_burnout",   label: "🔥 Total burnout" },
+      { id: "end_isolation", label: "🕳️ Alone" },
+      { id: "end_broke",     label: "💸 Bankrupt" },
+      { id: "end_agi",       label: "🤖 Classified" },
+      { id: "end_fraud",     label: "⚖️ Federal pocket" }
+    ],
 
     intro: {
       banner: [

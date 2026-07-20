@@ -215,6 +215,13 @@
     wireInput();
     els.exit.addEventListener("click", function () { close(false); });
     window.addEventListener("popstate", onPopState);
+    // Re-fit the plane to the visual viewport whenever the soft keyboard opens /
+    // closes or the page is zoomed/scrolled. Guarded by `open`, so inert when the
+    // game isn't showing. Feature-detected: absent on desktop-only engines.
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", fitViewport);
+      window.visualViewport.addEventListener("scroll", fitViewport);
+    }
     built = true;
   }
 
@@ -222,7 +229,7 @@
   function wireInput() {
     // Tap/click the terminal to raise the mobile keyboard and start typing.
     els.terminal.addEventListener("click", function () {
-      if (inputActive) { try { els.kbd.focus({ preventScroll: true }); } catch (e) { els.kbd.focus(); } }
+      if (inputActive) focusKbd();
     });
 
     // Primary path: keystrokes land in the off-screen field; mirror its value
@@ -303,6 +310,39 @@
   }
 
   function scrollToEnd() { els.body.scrollTop = els.body.scrollHeight; }
+
+  // Focus the off-screen field (raising the mobile keyboard) and — mirroring the
+  // hero terminal (script.js enterInputMode) — nudge the live prompt into view on
+  // the next frame. fitViewport() handles the keyboard *opening* via a
+  // visualViewport resize; this covers advancing between prompts while the
+  // keyboard is ALREADY up (no resize fires then, so we must scroll manually).
+  function focusKbd() {
+    try { els.kbd.focus({ preventScroll: true }); } catch (e) { try { els.kbd.focus(); } catch (e2) {} }
+    requestAnimationFrame(function () {
+      scrollToEnd();
+      try { els.input.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch (e) {}
+    });
+  }
+
+  // Keep the game plane pinned to the VISUAL viewport so the soft keyboard never
+  // covers the prompt. No-op without the visualViewport API (desktop/old
+  // browsers) — CSS `100dvh` handles those.
+  function fitViewport() {
+    var vv = window.visualViewport;
+    if (!vv || !open || !els) return;
+    els.plane.style.setProperty("--game-vh", Math.round(vv.height) + "px");
+    els.plane.style.top = Math.round(vv.offsetTop || 0) + "px";   // iOS shifts the visual viewport
+    if (inputActive) {
+      scrollToEnd();
+      try { els.input.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch (e) {}
+    }
+  }
+
+  // Reset the inline overrides so the plane returns to its CSS default height.
+  function clearViewportFit() {
+    if (!els) return;
+    try { els.plane.style.removeProperty("--game-vh"); els.plane.style.top = ""; } catch (e) {}
+  }
 
   function clearScreen() { els.typed.textContent = ""; els.input.textContent = ""; scrollToEnd(); }
 
@@ -403,7 +443,7 @@
       scrollToEnd();
       inputActive = true;
       lineHandler = onLine;
-      try { els.kbd.focus({ preventScroll: true }); } catch (e) {}
+      focusKbd();
     }, opts);
   }
 
@@ -463,7 +503,7 @@
       scrollToEnd();
       inputActive = true;
       lineHandler = function () { go(next); };
-      try { els.kbd.focus({ preventScroll: true }); } catch (e) {}
+      focusKbd();
     });
   }
 
@@ -547,6 +587,7 @@
     void els.plane.offsetWidth;                    // reflow so the transform animates
     els.plane.classList.add("is-open");
     els.body.scrollTop = 0;
+    fitViewport();                                 // pin to the visual viewport from the start
   }
 
   function openGame(id, fromRoute) {
@@ -577,6 +618,7 @@
     els.plane.setAttribute("aria-hidden", "true");
     document.body.classList.remove("is-planed");
     try { els.kbd.blur(); } catch (e) {}
+    clearViewportFit();
 
     var hide = function () { els.plane.hidden = true; };
     if (reduceMotion) hide();

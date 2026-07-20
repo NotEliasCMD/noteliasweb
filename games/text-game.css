@@ -12,6 +12,16 @@
   display: flex;
   flex-direction: column;
   background: var(--cream);
+  /* Size to the VISUAL viewport, not the layout viewport, so the mobile soft
+     keyboard can't hide the prompt: the base .plane is `inset:0` (full layout
+     viewport, which does NOT shrink for the keyboard). We release the bottom
+     pin and take a JS-driven height instead. When the keyboard opens, script
+     sets `--game-vh` to visualViewport.height so the footer + prompt ride just
+     above it; with no JS / no visualViewport support it falls back to 100dvh
+     (then 100vh for old engines) — full screen, unchanged behaviour. */
+  bottom: auto;
+  height: 100vh;
+  height: var(--game-vh, 100dvh);
 }
 
 /* Header reuses .plane__bar; the brand sits where the back button normally is. */

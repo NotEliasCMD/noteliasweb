@@ -188,13 +188,8 @@
             'autocomplete="off" autocapitalize="off" autocorrect="off" ' +
             'spellcheck="false" inputmode="text" enterkeyhint="go" maxlength="60">' +
         '</div>' +
-      '</div>' +
-      '<footer class="footer game__footer">' +
-        '<div class="container footer__base">' +
-          '<span>© <span id="gameYear">2026</span> Saile — the arcade.</span>' +
-          '<span class="footer__note">type <b>exit</b> or press Esc to leave</span>' +
-        '</div>' +
-      '</footer>';
+      '</div>';                    // no footer: the terminal fills the plane so the
+                                   // mobile keyboard can't push a footer over the prompt
 
     planes.appendChild(plane);
 
@@ -207,10 +202,8 @@
       kbd: plane.querySelector("#gameKbd"),
       file: plane.querySelector("#gameFile"),
       terminal: plane.querySelector(".terminal--game"),
-      exit: plane.querySelector(".game__exit"),
-      year: plane.querySelector("#gameYear")
+      exit: plane.querySelector(".game__exit")
     };
-    try { els.year.textContent = new Date().getFullYear(); } catch (e) {}
 
     wireInput();
     els.exit.addEventListener("click", function () { close(false); });
@@ -332,12 +325,6 @@
     if (!vv || !open || !els) return;
     els.plane.style.setProperty("--game-vh", Math.round(vv.height) + "px");
     els.plane.style.top = Math.round(vv.offsetTop || 0) + "px";   // iOS shifts the visual viewport
-    // Soft keyboard up? The layout viewport (clientHeight) doesn't shrink for the
-    // keyboard, so a big gap to the visual viewport means it's open. Flag it so CSS
-    // can hide the footer and give that space back to the terminal. 150px clears
-    // URL-bar jitter and sits well below any real keyboard.
-    var docH = document.documentElement.clientHeight || vv.height;
-    els.plane.classList.toggle("is-kbd", (docH - vv.height) > 150);
     if (inputActive) {
       scrollToEnd();
       try { els.input.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch (e) {}
@@ -350,7 +337,6 @@
     try {
       els.plane.style.removeProperty("--game-vh");
       els.plane.style.top = "";
-      els.plane.classList.remove("is-kbd");
     } catch (e) {}
   }
 

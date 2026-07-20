@@ -62,16 +62,6 @@
   line-height: 1.65;
 }
 
-/* A slim footer echoing the site footer's base row; the .footer padding is
-   trimmed since it's a single line here. */
-.game__footer { flex: none; padding: 1.1rem 0; }
-
-/* While the mobile soft keyboard is up (script adds .is-kbd), collapse the footer
-   so the terminal (.game__stage is flex:1) reclaims that space and the prompt sits
-   just above the keyboard. Only ever set on touch devices with a keyboard open, so
-   desktop keeps its footer. */
-.plane--game.is-kbd .game__footer { display: none; }
-
 /* Reduced motion: the shared styles.css block already zeroes the plane slide
    and the caret blink — nothing extra needed here. */
 

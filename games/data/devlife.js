@@ -92,10 +92,18 @@
     return MONTHS[m] + " " + y;
   }
 
-  // capped 0–100 stats; money/invest/equity are uncapped
+  // capped 0–100 stats; money/invest/equity are uncapped.
+  // A strong circle of friends is a SHOCK ABSORBER: negative morale (and, at half
+  // strength, negative energy) is softened by support(s). Positive deltas are never
+  // damped — friends cushion the falls, they don't cap the highs. A truly big hit
+  // while you're well-supported may queue a "friends rallied round you" rebound
+  // (drained next in accrue). The lonely (support === 0) take every blow at full force.
   function give(s, d) {
-    if (d.energy != null) s.energy = clamp(s.energy + d.energy);
-    if (d.morale != null) s.morale = clamp(s.morale + d.morale);
+    if (d.morale != null && d.morale < 0) {
+      if (d.morale <= -14 && support(s) >= 0.3 && chance(0.4 + support(s))) s.rallyPending = true;
+      s.morale = clamp(s.morale + d.morale * (1 - support(s)));
+    } else if (d.morale != null) s.morale = clamp(s.morale + d.morale);
+    if (d.energy != null) s.energy = clamp(s.energy + (d.energy < 0 ? d.energy * (1 - 0.5 * support(s)) : d.energy));
     if (d.skill != null) s.skill = clamp(s.skill + d.skill);
     if (d.rep != null) s.rep = clamp(s.rep + d.rep);
     if (d.money != null) s.money += d.money;
@@ -103,6 +111,17 @@
     if (d.equity != null) s.equity += d.equity;
   }
   function friends(s) { return s.friendsM + s.friendsW; }
+  // social resilience 0..~0.65: a big, close circle absorbs life's blows, and a
+  // live-in/married partner adds a little more. ZERO when you're truly alone — the
+  // isolated take every hit at full force (and still drain toward burnout/fade).
+  function support(s) {
+    if (friends(s) === 0) return 0;
+    var base = Math.min(0.6, friends(s) / (friends(s) + 14));   // 4→.22, 10→.42, 20→.59
+    var partner = (s.love && s.love.stage !== "dating") ? 0.08 : 0;
+    return Math.min(0.65, base + partner);
+  }
+  // a legible read-out of your safety net for the HUD.
+  function supportTag(s) { var v = support(s); return v >= 0.45 ? "🛡️strong" : v >= 0.25 ? "🛡️ok" : "⚠️thin"; }
   // years spent in the current relationship (0 if none / start day unknown)
   function relYears(s) { return (s.love && s.love.since != null) ? (s.day - s.love.since) / 365 : 0; }
   // marriage odds: driven by TIME together and the relationship STRENGTH (close).
@@ -140,7 +159,6 @@
   var RX = {
     rest:   ["🛋️ You switch off for a while — the fog lifts.", "😴 Proper sleep, no alarms. You feel human again.", "🌿 A slow stretch away from the screen. Recharged."],
     focus:  ["🎯 Heads-down on {proj}. Real progress.", "⌨️ Deep work — {proj} takes shape.", "🧠 A focused sprint on {proj}."],
-    social: ["🍻 A great night out with the crew — just what you needed.", "🧑‍🤝‍🧑 Long lunches and belly-laughs. Good for the soul.", "🎳 A daft evening with friends. Batteries topped up."],
     upskill:["📚 A course clicks — you're sharper.", "🧪 A weekend side-project teaches you plenty.", "🎓 You go deep on something new and come out better."],
     holiday:["🌴 A proper holiday — sun, no Slack. Bliss.", "✈️ Two weeks away and you come back new.", "🏖️ You actually unplug. Rare. Restorative."],
     love:   ["❤️ Quality time with {name} — you both needed it.", "🍷 A lovely evening in with {name}.", "💑 You and {name} just click lately."],
@@ -157,6 +175,210 @@
     "a lawyer", "a chef", "a barista", "a data engineer", "a recruiter", "an artist", "a doctor"];
   var CITIES = ["Berlin", "Austin", "Lisbon", "Singapore", "Toronto", "Dublin", "NYC"];
   function person() { var w = chance(0.5); return { name: pickOne(w ? WNAMES : MNAMES), w: w, trait: pickOne(TRAITS) }; }
+
+  /* ---- friend outings -----------------------------------------------------
+   * "See friends / go out" isn't flavour any more — a night out draws from a big
+   * pool of outcomes that actually SWING your stats (heavier mechanics), most
+   * upside but a real minority of bad nights. Light, transformative homages to
+   * Friends / How I Met Your Mother run through it. `d` is a give() delta; `friend`
+   * ±1 grows/loses your circle; `love:true` can spark a relationship (single only);
+   * `when(s)` gates the context-specific ones. ~1 in 7 outings escalates into a
+   * SOCIAL_BRANCH mini-decision instead. {name} is filled with your partner (or a
+   * new spark) at runtime. */
+  var SOCIAL = [
+    // legendary / great nights (fun, often costly)
+    { t: "🍻 A legen— wait for it —dary night at the pub. You'll be telling this one for years.", d: { morale: 16, energy: -9, money: -6 } },
+    { t: "🎉 The whole crew ended up back at yours till 3am — and nothing good happens after 2am, except this.", d: { morale: 14, energy: -8, money: -6 } },
+    { t: "🕺 A dance floor, terrible decisions, brilliant memories.", d: { morale: 13, energy: -7, money: -8 } },
+    { t: "🍸 Someone yelled 'suit up!' and it became the best night out in months.", d: { morale: 15, energy: -8, money: -7 }, friend: 1 },
+    { t: "🎤 Karaoke went off. Your 'Smelly Cat' genuinely brought the house down.", d: { morale: 12, energy: -6, money: -5 } },
+    { t: "🌃 Rooftop drinks, city lights, your favourite people. Perfect.", d: { morale: 13, energy: -4, money: -9 } },
+    { t: "🍕 3am pizza with the gang, laughing till it hurt.", d: { morale: 11, energy: -3, money: -4 } },
+    { t: "🎳 Bowling night turned into a full tournament. You lost. Gloriously.", d: { morale: 10, energy: -4, money: -6 } },
+    { t: "🏝️ A spontaneous weekend away with mates. Worth every penny.", d: { morale: 15, energy: 4, money: -10 } },
+    { t: "🎸 You crashed a friend's gig and got pulled on stage. Unforgettable.", d: { morale: 12, energy: -5, money: -3 }, friend: 1 },
+    { t: "🎉 An impromptu birthday do that became the night of the year.", d: { morale: 13, energy: -6, money: -9 }, friend: 1 },
+    { t: "🔥 A backyard fire, a guitar, and people you'd take a bullet for.", d: { morale: 12, energy: 3, money: -3 } },
+    { t: "🎿 A group trip you almost skipped turned out unmissable.", d: { morale: 14, energy: 2, money: -9 }, friend: 1 },
+    // good, steady hangs
+    { t: "☕ Hours at the coffee house, putting the world to rights.", d: { morale: 8, energy: 2, money: -3 } },
+    { t: "🍜 A long, laughy dinner where nobody wanted to leave.", d: { morale: 9, energy: 1, money: -6 } },
+    { t: "🧑‍🤝‍🧑 Just the usual crew in the usual booth. Exactly what you needed.", d: { morale: 8, energy: 3, money: -4 } },
+    { t: "🎬 Film night on the sofa, everyone talking over the movie.", d: { morale: 7, energy: 4, money: -2 } },
+    { t: "🥾 A big Sunday walk with friends and a pub at the end of it.", d: { morale: 9, energy: 2, money: -5 } },
+    { t: "🍳 Lazy brunch that ran until dinner. Bliss.", d: { morale: 8, energy: 3, money: -7 } },
+    { t: "🎮 Games night. Someone flipped the board. Order restored, eventually.", d: { morale: 8, energy: 1, money: -2 } },
+    { t: "🌿 A calm evening among people who get you. The fog lifts.", d: { morale: 9, energy: 5 } },
+    { t: "📻 Vinyl, cheap wine, old stories. A good, gentle night.", d: { morale: 8, energy: 2, money: -3 } },
+    { t: "🍺 One quiet pint that fixed a whole rough week.", d: { morale: 10, energy: 4, money: -3 } },
+    { t: "🌮 Taco night at a friend's — you laughed so hard you forgot every deadline.", d: { morale: 10, energy: 1, money: -4 } },
+    { t: "🧉 A slow, sunny afternoon in a beer garden. No phones, just people.", d: { morale: 10, energy: 5, money: -5 } },
+    // set-piece homages
+    { t: "🛋️ You claimed the good couch at the coffee house before anyone else. Small victories.", d: { morale: 7, energy: 3, money: -3 } },
+    { t: "🦞 A friend insists you two are 'each other's lobsters'. You don't hate it.", d: { morale: 9, energy: 1 } },
+    { t: "🐐 A friend's story about a goat at a birthday goes on for two hours. Somehow, worth it.", d: { morale: 8, energy: -2, money: -4 } },
+    { t: "☂️ You shared a yellow umbrella through the rain — felt oddly like the start of something.", d: { morale: 10, energy: 1 } },
+    { t: "📊 A friend brought actual charts to explain their weekend. You're a little in awe.", d: { morale: 8, energy: 1 } },
+    { t: "🍍 The night's a blur and there's a pineapple on your counter. Nobody knows why. Great night, though.", d: { morale: 12, energy: -9, money: -7 } },
+    { t: "🍗 Someone got a turkey stuck on their head at dinner. You cried laughing.", d: { morale: 11, energy: -2, money: -5 } },
+    { t: "🃏 A friend runs their 'playbook' of chat-up lines — all disasters. You're crying.", d: { morale: 9, energy: -2, money: -4 } },
+    { t: "🚕 Your usual driver got you all home safe after another big one.", d: { morale: 8, energy: 2, money: -6 } },
+    { t: "🎽 A friend swears the new plan is always better than the old plan. Tonight, they were right.", d: { morale: 10, energy: -3, money: -5 }, friend: 1 },
+    { t: "🤷 A whole argument about whether something counts as a 'moo point'. You've never laughed harder.", d: { morale: 8 } },
+    // new friend made
+    { t: "🤝 A friend introduced you to someone great — 'have you met…?' — and you clicked instantly.", d: { morale: 9, energy: -2, money: -4 }, friend: 1 },
+    { t: "🍻 You bonded with a stranger over a shared hatred of stand-ups. New friend unlocked.", d: { morale: 8, money: -3 }, friend: 1 },
+    { t: "🎲 A board-game café, and you ended up adopting a whole new friend group.", d: { morale: 10, energy: -3, money: -5 }, friend: 1 },
+    { t: "🧗 A friend dragged you to their climbing gym. Terrifying. You made a mate.", d: { morale: 7, energy: -6 }, friend: 1 },
+    { t: "🐶 A dog-park chat turned into a proper friendship. The dog approved.", d: { morale: 8, energy: 2 }, friend: 1 },
+    { t: "🍷 A dinner party sat you next to someone brilliant. You're already planning the next one.", d: { morale: 9, money: -5 }, friend: 1 },
+    { t: "⚽ Five-a-side with a new crew. You're rubbish, but you're in.", d: { morale: 8, energy: -5 }, friend: 1 },
+    { t: "🎨 A pottery class you got peer-pressured into. Made a bowl, made a friend.", d: { morale: 7, energy: -3, money: -6 }, friend: 1 },
+    // showing up for people (the heart of it)
+    { t: "🛠️ You spent the day helping a mate fix their flat. Knackering, but you're closer for it.", d: { morale: 9, energy: -7 }, friend: 1 },
+    { t: "📦 You helped a friend move house. Your back hates you; your heart doesn't.", d: { morale: 8, energy: -9 } },
+    { t: "💬 A friend needed to talk till 2am. You showed up. That's what it's for.", d: { morale: 6, energy: -5 } },
+    { t: "🚗 The 5am airport run for a friend. No questions asked. That's the deal.", d: { morale: 7, energy: -6 } },
+    { t: "🍲 You cooked for a friend having a hard week. They needed it — so did you.", d: { morale: 8, energy: -2, money: -4 } },
+    { t: "🧳 You talked a friend down off a bad decision. They'll thank you eventually.", d: { morale: 6, energy: -3 } },
+    // fun but costly / hangover
+    { t: "🥴 Rough one. Big fun, bigger hangover. Worth it? Ask you tomorrow.", d: { morale: 9, energy: -11, money: -9 } },
+    { t: "💸 You insisted on getting the round in. All the rounds, actually.", d: { morale: 8, energy: -5, money: -9 } },
+    { t: "🎰 A casino detour on the way home. You know how this ends.", d: { morale: 4, energy: -4, money: -8 } },
+    { t: "🍔 A blur of a night and a receipt you're afraid to read.", d: { morale: 7, energy: -8, money: -7 } },
+    { t: "🎡 Someone's 'great idea' of a funfair at midnight. Chaos. Joy. Nausea.", d: { morale: 8, energy: -7, money: -8 } },
+    { t: "🕶️ You said 'just one'. It was not just one.", d: { morale: 7, energy: -9, money: -7 } },
+    // learning / a quiet leg-up from friends
+    { t: "🧠 A friend in the field talked shop all night — you picked up a genuinely useful trick.", d: { morale: 6, skill: 3, energy: -2, money: -4 } },
+    { t: "💼 A mate put in a good word for you somewhere. Nice to be thought of.", d: { morale: 7, rep: 3, money: -3 } },
+    { t: "📚 Book club — if 'book club' means wine and gossip. You even discussed the book. Briefly.", d: { morale: 7, money: -4 } },
+    { t: "🎧 A friend made you a playlist and a case for their favourite band. Converted.", d: { morale: 8, energy: 1 } },
+    { t: "🍳 A friend taught you their signature dish. You'll ruin it at home, but still.", d: { morale: 7, energy: -2, money: -3 } },
+    // quiet / neutral
+    { t: "😌 A quiet catch-up. Nothing dramatic, and that's fine.", d: { morale: 4, energy: 2 } },
+    { t: "📱 Half the group flaked, but the ones who came were the right ones.", d: { morale: 5, energy: 1, money: -3 } },
+    { t: "🚪 An early night — you showed your face and slipped off. No harm done.", d: { morale: 3, energy: 3 } },
+    { t: "☕ A short coffee that was mostly logistics for the next thing.", d: { morale: 3, money: -2 } },
+    { t: "🧋 A wander round town with a mate, nowhere to be.", d: { morale: 5, energy: 1, money: -3 } },
+    { t: "🌦️ Plans got rained off; you sheltered in a pub and made the best of it.", d: { morale: 5, energy: 1, money: -4 } },
+    // bad nights
+    { t: "😬 A friend picked a fight over nothing and soured the whole evening.", d: { morale: -7, energy: -3, money: -4 } },
+    { t: "🧾 You got stuck with the whole bill. Again. It stings.", d: { morale: -5, money: -8 } },
+    { t: "🙄 An hour of a friend humble-bragging. You left flat.", d: { morale: -6, energy: -2, money: -3 } },
+    { t: "😷 You caught something doing the rounds. The night — and the next week — are a write-off.", d: { morale: -5, energy: -10, money: -3 } },
+    { t: "📵 Everyone was on their phones. You might as well have stayed in.", d: { morale: -6, energy: -2, money: -4 } },
+    { t: "🚕 A miserable, expensive scramble home in the rain.", d: { morale: -4, energy: -4, money: -8 } },
+    { t: "🍸 You bumped into someone you'd rather not have. Awkward all round.", d: { morale: -6, energy: -2 } },
+    { t: "😤 A political row erupted at dinner. No winners. Cold pasta.", d: { morale: -7, money: -5 } },
+    // cringe (comedic small hits)
+    { t: "😳 You told a long story with a big finish. Nobody laughed. Nobody will forget.", d: { morale: -5, energy: -2 } },
+    { t: "👖 You wore the wrong thing, got too warm, and could not get back out of it. A whole saga.", d: { morale: -4 } },
+    { t: "🤦 You called a friend's new partner by completely the wrong name. Oof.", d: { morale: -6 } },
+    { t: "🍽️ You reached for a chip off a friend's plate. Turns out they REALLY don't share food.", d: { morale: -3, energy: 1 } },
+    // fall-outs (lose a friend)
+    { t: "💥 An old tension finally blew up. You both said too much. One friend, gone.", d: { morale: -9, energy: -3 }, friend: -1 },
+    { t: "🧊 A friend's been distant for months; tonight it quietly became official.", d: { morale: -7 }, friend: -1 },
+    { t: "🗣️ You found out a friend had been talking behind your back. That's that.", d: { morale: -8 }, friend: -1 },
+    // love sparks (single only)
+    { t: "💕 A friend introduced you to {name} — and you couldn't stop smiling. You're seeing each other now.", d: { morale: 10, energy: -2, money: -4 }, love: true, when: function (s) { return !s.love; } },
+    { t: "💘 You and {name} kept finding each other at the bar all night. Numbers exchanged. You're dating.", d: { morale: 9, money: -4 }, love: true, when: function (s) { return !s.love; } },
+    { t: "🌧️ You shared an umbrella with {name} on the walk home. Something clicked. You're an item.", d: { morale: 11 }, love: true, when: function (s) { return !s.love; } },
+    // partner-present variants
+    { t: "💑 You brought {name} along and your friends adore them. Best of both worlds.", d: { morale: 11, energy: -2, money: -6 }, when: function (s) { return !!s.love; } },
+    { t: "🍷 A double date with friends and {name}. Easy, warm, lovely.", d: { morale: 9, money: -7 }, when: function (s) { return !!s.love; } },
+    { t: "😅 {name} and a friend clashed a bit tonight — nothing fatal, but you played referee.", d: { morale: -3, energy: -2 }, when: function (s) { return !!s.love; } },
+    // founder-flavour
+    { t: "🚀 The founder friends came out and swapped war stories. You feel less alone in it.", d: { morale: 9, energy: -2, money: -5 }, when: function (s) { return !!s.founder; } },
+    { t: "🧑‍💻 A founder mate talked you off a ledge about the company. Cheaper than therapy.", d: { morale: 8 }, when: function (s) { return !!s.founder; } },
+    // later-life flavour
+    { t: "👶 Half the group brought kids; it was carnage, and somehow the best kind.", d: { morale: 8, energy: -4, money: -4 }, when: function (s) { return age(s) >= 40; } },
+    { t: "🍷 A grown-up dinner with the old crowd. You've all changed; the bond hasn't.", d: { morale: 9, money: -6 }, when: function (s) { return age(s) >= 40; } }
+  ];
+
+  // ~1 in 7 outings turns into a proper story you have to make a call on.
+  var SOCIAL_BRANCH = [
+    { f: function (s) {
+        return ev("🖐️ The Slap Bet",
+          [line(STR, "A friend is dead certain about something daft and slaps down a bet — loser takes a slap. The whole pub is watching.\n")],
+          [{ label: "Take the slap bet.", match: ["take", "bet", "yes", "1"],
+              effect: act(0, "social", function (st) { if (chance(0.5)) { give(st, { morale: 12, energy: -2 }); log(st, GOOD, "🖐️ You were RIGHT — the slap echoes into legend. Best night in ages."); } else { give(st, { morale: -6, energy: -2 }); log(st, WARN, "🖐️ You were wrong. That one stung — cheek AND pride."); } }), goto: nextScene },
+           { label: "Wave it off, buy a round instead.", match: ["decline", "no", "round", "2"],
+              effect: act(0, "social", function (st) { give(st, { morale: 4, money: -6 }); log(st, NOTE, "🍻 No slaps, just a round. A quieter kind of win."); }), goto: nextScene }]);
+      } },
+    { f: function (s) {
+        var pot = 8 + Math.floor(rnd() * 10);
+        return ev("🎲 There's a pool running",
+          [line(null, "The group's got a bet going and everyone's chucked in ~$" + pot + "k. Winner takes the pot.\n")],
+          [{ label: "Get in on it.", match: ["in", "bet", "yes", "1"],
+              effect: act(0, "social", function (st) { st.money -= pot; if (chance(0.45)) { var win = pot * 3; st.money += win; give(st, { morale: 12 }); log(st, GOOD, "🏆 You cleaned up — $" + win + "k and eternal bragging rights."); } else { give(st, { morale: -4 }); log(st, WARN, "🙃 Lost your $" + pot + "k stake. Someone else is buying, at least."); } }), goto: nextScene },
+           { label: "Keep your money in your pocket.", match: ["out", "no", "2"],
+              effect: act(0, "social", function (st) { give(st, { morale: 2 }); log(st, NOTE, "😌 You sat it out and watched the carnage. Wise."); }), goto: nextScene }]);
+      } },
+    { f: function (s) {
+        return ev("🌃 'Tonight is going to be legen—'",
+          [line(STR, "A friend stands on a chair and promises tonight will be legendary. It's a school night. There's an early meeting. The crew is looking at you.\n")],
+          [{ label: "Wait for it… commit to the night.", match: ["commit", "wait", "yes", "in", "1"],
+              effect: act(1, "social", function (st) { if (chance(0.7)) { give(st, { morale: 18, energy: -13, money: -8 }); log(st, GOOD, "🌟 …DARY. An all-timer — you'll dine out on this for a decade."); } else { give(st, { morale: 6, energy: -14, money: -7 }); log(st, WARN, "🥴 Legendary in ambition, brutal in execution. The morning was a war crime."); } }), goto: nextScene },
+           { label: "Call it early and get your sleep.", match: ["early", "home", "no", "2"],
+              effect: act(0, "social", function (st) { give(st, { morale: 4, energy: 6, money: -3 }); log(st, NOTE, "😴 One drink, then home. The meeting will be glad."); }), goto: nextScene }]);
+      } },
+    { f: function (s) {
+        return ev("🛋️ 'PIVOT!'",
+          [line(null, "A friend is wrestling a sofa up a narrow stairwell and needs a second pair of hands. It's 33 degrees, and there's a lot of shouting about angles.\n")],
+          [{ label: "Grab the other end.", match: ["help", "grab", "yes", "1"],
+              effect: act(0, "social", function (st) { addFriend(st); give(st, { morale: 8, energy: -8 }); log(st, GOOD, "🛋️ 'PIVOT! PI-VOT!' You got it up, somehow. A friend for life."); }), goto: nextScene },
+           { label: "Suddenly remember you have plans.", match: ["beg", "no", "leave", "2"],
+              effect: act(0, "social", function (st) { give(st, { morale: -3 }); log(st, INFO, "🚪 You slipped away. The sofa, and the guilt, remain."); }), goto: nextScene }]);
+      } },
+    { when: function (s) { return !s.love; }, f: function (s) {
+        var p = person();
+        return ev("😏 'Have you met " + p.name + "?'",
+          [line(STR, "Classic move — a friend physically deposits you next to " + p.name + " (" + p.trait + ") and vanishes. The ball's in your court.\n")],
+          [{ label: "Say hi and see where it goes.", match: ["hi", "yes", "go", "1"],
+              effect: act(1, "social", function (st) { if (chance(0.55)) { st.love = { name: p.name, w: p.w, close: 44, stage: "dating", since: st.day }; give(st, { morale: 12 }); log(st, GOOD, "💕 You and " + p.name + " hit it off — you're seeing each other now."); } else { addFriend(st, p.w ? "w" : "m"); give(st, { morale: 4 }); log(st, NOTE, "🙂 No spark, but " + p.name + " turned out to be a great new friend."); } }), goto: nextScene },
+           { label: "Not tonight — happy with the crew.", match: ["no", "later", "2"],
+              effect: act(0, "social", function (st) { give(st, { morale: 3 }); }), goto: nextScene }]);
+      } },
+    { f: function (s) {
+        return ev("❓ A ferocious pub quiz",
+          [line(null, "Your team is neck-and-neck into the final round, and a friend wants to gamble all your points on a sudden-death question.\n")],
+          [{ label: "Go all in on the wager.", match: ["allin", "gamble", "yes", "1"],
+              effect: act(0, "social", function (st) { if (chance(0.5)) { give(st, { morale: 12, skill: 1 }); log(st, GOOD, "🏆 Nailed it. The team erupts. Bar tab's on the house."); } else { give(st, { morale: -6 }); log(st, WARN, "😵 So close. The other team will not let you forget it."); } }), goto: nextScene },
+           { label: "Play it safe and hold your lead.", match: ["safe", "hold", "no", "2"],
+              effect: act(0, "social", function (st) { if (chance(0.55)) { give(st, { morale: 7 }); log(st, GOOD, "🥈 You held on for the win. Unglamorous, effective."); } else { give(st, { morale: 1 }); log(st, NOTE, "🤷 Pipped at the post, but a good night regardless."); } }), goto: nextScene }]);
+      } },
+    { f: function (s) {
+        return ev("🎤 Open-mic night",
+          [line(null, "A friend has signed you up for the open mic 'as a bit'. The list has your name on it. People are clapping expectantly.\n")],
+          [{ label: "Get up there and go for it.", match: ["sing", "go", "yes", "1"],
+              effect: act(0, "social", function (st) { if (chance(0.5)) { addFriend(st); give(st, { morale: 14, energy: -3 }); log(st, GOOD, "🌟 You brought the house down — strangers bought you drinks. A star is (briefly) born."); } else { give(st, { morale: -5, energy: -2 }); log(st, WARN, "😬 Rough. 'Smelly Cat' has never sounded worse. The crew loved it, mercifully."); } }), goto: nextScene },
+           { label: "Hide in the bathroom until it passes.", match: ["hide", "no", "2"],
+              effect: act(0, "social", function (st) { give(st, { morale: 2 }); log(st, INFO, "🚻 You dodged it. Your dignity, and your dreams, intact."); }), goto: nextScene }]);
+      } },
+    { f: function (s) {
+        return ev("🦃 Friendsgiving",
+          [line(STR, "The group wants a big Friendsgiving, and someone needs to host. All eyes turn, slowly, to you.\n")],
+          [{ label: "Host the whole thing.", match: ["host", "yes", "1"],
+              effect: act(2, "social", function (st) { addFriend(st); give(st, { morale: 15, energy: -8, money: -7 }); log(st, GOOD, "🦃 Chaos, a near-disaster with the turkey, and the best night of the year. You're the glue of this group."); }), goto: nextScene },
+           { label: "Happily just show up with wine.", match: ["show", "attend", "no", "2"],
+              effect: act(1, "social", function (st) { give(st, { morale: 9, money: -5 }); log(st, NOTE, "🍷 You rocked up with two bottles and zero responsibility. Perfect."); }), goto: nextScene }]);
+      } }
+  ];
+
+  // Resolve one outing. Returns a branch event to inject (rendered after the clock
+  // advances, so it never stomps an event rolled by advance), or null for a one-shot.
+  function socialOuting(s) {
+    if (chance(0.14)) { var brs = SOCIAL_BRANCH.filter(function (b) { return !b.when || b.when(s); }); if (brs.length) return pickOne(brs).f(s); }
+    var o = pickOne(SOCIAL.filter(function (x) { return !x.when || x.when(s); }));
+    var name = s.love ? s.love.name : null;
+    if (o.love && !s.love) { var pp = person(); s.love = { name: pp.name, w: pp.w, close: 44, stage: "dating", since: s.day }; name = pp.name; }
+    if (o.d) give(s, o.d);
+    if (o.friend) { if (o.friend > 0) addFriend(s); else loseFriend(s); }
+    var t = o.t.split("{name}").join(name || "them");
+    var neg = !o.love && o.d && ((o.d.morale || 0) < 0 || (o.d.money || 0) <= -8);
+    log(s, o.love ? GOOD : (neg ? WARN : GOOD), t);
+    return null;
+  }
 
   var PROJECTS = [
     { name: "a fraud-detection model", tech: "XGBoost" },
@@ -264,6 +486,9 @@
 
   /* ---- the passing of time ------------------------------------------------- */
   function accrue(s, weeks) {
+    // a beat after a hard knock, your people show up — the rebound only the
+    // well-supported get (queued by give() when a big morale hit lands).
+    if (s.rallyPending) { s.rallyPending = false; give(s, { morale: Math.round(6 + rnd() * 4), energy: 4 }); log(s, GOOD, "🤝 Your friends rallied round you — you're not carrying this alone."); }
     var yr = weeks / 52;
     var living = 13 + s.level * 3 + (s.love && s.love.stage !== "dating" ? 8 : 0) + (s.kids || 0) * 10;  // kids cost you
     var take = 0;
@@ -342,6 +567,7 @@
     // out of your own life — you need people to survive.
     if (friends(s) === 0) {
       s.noFriendsTurns = (s.noFriendsTurns || 0) + 1;
+      log(s, WARN, "🕳️ You've no one left to lean on — energy and spirit drain fast, and nobody makes it alone for long. Go and see people.");
       if (s.noFriendsTurns >= 10) { s.forcedEnd = "end_fade"; return; }
     } else { s.noFriendsTurns = 0; }
     ageFriendship(s, tag);
@@ -905,7 +1131,12 @@
     // universal life actions
     c.push({ label: "🛋️ Rest and recharge.", match: ["rest", "recharge", "sleep"], effect: act(6, null, function (st) { give(st, { energy: 22, morale: 6 }); react(st, RX.rest); }), goto: nextScene });
     c.push({ label: "🧑‍🤝‍🧑 See friends / go out.", match: ["friends", "social", "socialise", "out"],
-      effect: act(8, "social", function (st) { addFriend(st); give(st, { morale: 11, energy: 8, money: -4 }); if (!st.love && chance(0.25)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 44, stage: "dating", since: st.day }; log(st, GOOD, "💕 You met " + pp.name + " — you're seeing each other now."); } else { react(st, RX.social); } }), goto: nextScene });
+      effect: function (st) {
+        give(st, { morale: 4, energy: 3, money: -3 });      // a night among people is a break in itself
+        var branch = socialOuting(st);                       // then the night takes its own turn
+        advance(st, 8, "social");
+        if (branch && !st.route && !st.forcedEnd) { st.ev = branch; st.route = "event"; }   // holiday pattern: inject after the clock, never stomping a rolled event
+      }, goto: nextScene });
     c.push({ label: "📚 Upskill — a course / side project.", match: ["upskill", "learn", "study", "course"], effect: act(10, null, function (st) { give(st, { skill: 10, energy: -7, money: -2, morale: -1 }); if (!st.founder && !st.idea && chance(0.22)) { st.idea = pickOne(IDEAS); log(st, GOOD, "💡 Tinkering sparked an idea: " + st.idea.name + " — could be a company one day…"); } else { react(st, RX.upskill); } }), goto: nextScene });
     if (s.love) c.push({ label: "💗 Invest in things with " + s.love.name + ".", match: ["love", "relationship", "nurture", "partner"],
       effect: act(8, "social", function (st) { var nm = st.love.name; st.love.close = clamp(st.love.close + 16); give(st, { morale: 10, energy: 6, money: -5 }); react(st, RX.love, { name: nm }); }), goto: nextScene });
@@ -940,8 +1171,8 @@
     defaultForPlay: true,
     fileLabel: "elias@life — devlife.py",
     statsName: "DEV LIFE",
-    version: "1.04",
-    versions: ["1", "1.01", "1.02", "1.03", "1.04"],   // ordered oldest→newest; the record readout shows the last 2
+    version: "1.05",
+    versions: ["1", "1.01", "1.02", "1.03", "1.04", "1.05"],   // ordered oldest→newest; the record readout shows the last 2
 
 
 
@@ -985,7 +1216,7 @@
         founder: false, equity: 0, co: null, idea: null,
         money: 6, invest: 0, house: null,
         energy: 75, morale: 70,
-        friendsM: 10, friendsW: 10, love: null, kids: 0, noFriendsTurns: 0,
+        friendsM: 10, friendsW: 10, love: null, kids: 0, noFriendsTurns: 0, rallyPending: false,
         marketBump: 0, workFriends: 0, culls: {},
         recessionDay: (7 + Math.floor(rnd() * 9)) * 365, boostUntil: 0,
         project: null, pending: [], cool: {},
@@ -1001,7 +1232,7 @@
       var pj = s.project ? " · 🛠️ " + Math.min(100, Math.round(100 * s.project.weeksDone / s.project.weeksNeeded)) + "%" + (s.project.bugs ? " 🐛" + s.project.bugs : "") : "";
       return "📅 " + dateLabel(s) + " · age " + age(s) + " · " + job + pj + "\n" +
         "💰" + money$(s.money) + " 📊" + money$(s.invest) + (s.house ? " 🏠" + money$(homeEquity(s)) : "") + " 🔋" + s.energy + " 😀" + s.morale + " 🧠" + s.skill + " ⭐" + s.rep + "\n" +
-        "👥" + friends(s) + " (♂" + s.friendsM + " ♀" + s.friendsW + ")" + lv;
+        "👥" + friends(s) + " (♂" + s.friendsM + " ♀" + s.friendsW + ") " + supportTag(s) + lv;
     },
 
     start: "hub",

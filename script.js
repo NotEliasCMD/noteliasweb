@@ -129,6 +129,19 @@
       ],
       sound: () => playLockin(),   // streams the prefetched mp3, not the chime
     },
+    {
+      // Discoverability: unknown commands nudge "(try 'help')"; help lists the
+      // real commands but only *hints* at the secret rather than naming its
+      // trigger word (which would spoil the footer's treasure hunt).
+      trigger: "help",
+      reaction: () => [
+        ["tok-out", "commands:\n"],
+        ["tok-cmd", "  play"], ["tok-out", "      launch the arcade\n"],
+        ["tok-cmd", "  lock in"], ["tok-out", "   …you'll see\n"],
+        ["tok-comment", "and yes — there's a secret. keep looking.\n"],
+      ],
+      sound: false,
+    },
   ];
 
   // Each tab is { id, script } where script is an array of [className, text]
@@ -395,6 +408,14 @@
     const cmd = raw.trim().toLowerCase();
     if (raw.length) appendChunk(typedEl, "tok-cmd", raw + "\n");
     inputEl.textContent = "";
+    // `play` launches the full-screen text-game arcade (see games/text-game.js).
+    if (cmd === "play" && window.TextGame) {
+      exitInputMode();
+      appendChunk(typedEl, "tok-out", "booting the arcade…\n");
+      appendChunk(typedEl, "tok-prompt", ">>> ");        // leave a clean prompt behind
+      window.TextGame.open();
+      return;
+    }
     const egg = EASTER_EGGS.find((e) => e.trigger === cmd);
     if (egg) {
       egg.reaction().forEach(([cls, text]) => appendChunk(typedEl, cls, text));
@@ -403,7 +424,7 @@
         else playChime();
       }
     } else if (cmd) {
-      appendChunk(typedEl, "tok-comment", "command not found: " + cmd + "\n");
+      appendChunk(typedEl, "tok-comment", "command not found: " + cmd + " (try 'help')\n");
     }
     appendChunk(typedEl, "tok-prompt", ">>> ");
     typedEl.parentElement.scrollTop = typedEl.parentElement.scrollHeight;

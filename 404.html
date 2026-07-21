@@ -46,7 +46,9 @@
         "triage": 1, "cpm": 1, "auto-pricing": 1, "black-swan": 1, "car-damage": 1,
         "propensity": 1, "minim": 1, "health-propensity": 1, "rare-disease": 1, "health-fraud": 1,
         // Personal works (pw- prefix dropped)
-        "chess": 1, "f1": 1, "ram": 1, "moneyball": 1, "markets": 1, "books": 1, "pokedex": 1, "consoles": 1
+        "chess": 1, "f1": 1, "ram": 1, "moneyball": 1, "markets": 1, "books": 1, "pokedex": 1, "consoles": 1,
+        // Text-game arcade (games/text-game.js opens this on load)
+        "play": 1
       };
       var seg = location.pathname.replace(/^\/+|\/+$/g, "").split("/")[0];
       if (seg && KNOWN[seg]) {

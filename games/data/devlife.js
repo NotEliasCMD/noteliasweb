@@ -399,41 +399,76 @@
       name: p.name, tech: p.tech, weeksNeeded: weeks, weeksDone: 0,
       bugs: 0, quality: 82, deadlineDay: s.day + (weeks + 4 + Math.floor(rnd() * 8)) * 7
     };
+    s.noProjTurns = 0;   // you're working on something again
     log(s, NOTE, "🛠️ New project: " + p.name + " (" + p.tech + "), ~" + weeks + " weeks.");
+  }
+  // productivity rusts if you haven't taken a holiday in 3+ years (silent; not
+  // shown). 0 at ≤3yr, rising to a 0.4 cap. Founders are exempt.
+  function holidayRust(s) {
+    if (s.founder) return 0;
+    var y = (s.day - (s.lastHolidayDay || 0)) / 365;
+    return y <= 3 ? 0 : Math.min(0.4, (y - 3) * 0.08);
+  }
+  // a shipped/built project occasionally sparks a startup idea you can found later
+  function spawnIdea(s) {
+    if (s.founder) return;
+    var fresh = IDEAS.filter(function (i) { return !(s.ideas || []).some(function (x) { return x.name === i.name; }); });
+    if (!fresh.length) return;
+    (s.ideas = s.ideas || []).push(pickOne(fresh));
+    log(s, GOOD, "💡 Working on this sparked a startup idea: " + s.ideas[s.ideas.length - 1].name + ".");
   }
   function focusProject(s, weeks) {
     var m = coMods(s);
-    var eff = weeks * (0.5 + s.skill / 130);      // skill speeds delivery (slower base than before)
+    var rust = holidayRust(s);
+    var eff = weeks * (0.5 + s.skill / 130) * (1 - rust);        // skill speeds delivery; stale (no-holiday) slows it
     s.project.weeksDone += eff;
-    give(s, { energy: -(6 + weeks) * m.energyMult, skill: m.skillGain });
+    give(s, { energy: -(6 + weeks) * m.energyMult * (1 - s.skill / 250) * (1 + rust), skill: m.skillGain });  // skill cheapens work; staleness taxes it
     if (chance(0.14)) { addFriend(s); s.workFriends = (s.workFriends || 0) + 1; log(s, GOOD, "🤝 You clicked with a colleague — a new work friend."); }
     if ((s.workFriends || 0) > 0 && friends(s) > 0) give(s, { morale: 3 });   // work friends = social time (but no recharge)
+    if (chance(0.1)) spawnIdea(s);
   }
   function shipProject(s) {
     var p = s.project; s.project = null;
     var m = coMods(s);
-    var onTime = s.day <= p.deadlineDay;
+    var complete = p.weeksDone >= p.weeksNeeded;
+    var lateWeeks = Math.max(0, (s.day - p.deadlineDay) / 7);
     var q = p.quality - p.bugs * 9;
     function repUp(n) { return Math.round(n * m.repMult); }   // positive rep gated by employer (0 at a blue-chip)
-    if (q >= 78 && onTime && chance(0.5)) {                    // 🌟 breakout
-      var big = Math.round(s.salary * 0.15);
-      give(s, { skill: 6, rep: repUp(14), morale: 14, money: big });
-      log(s, GOOD, "🌟 Breakout launch! " + p.name + " is a hit — $" + big + "k bonus" + (m.repMult ? ", reputation soars" : "") + ".");
-      maybePromote(s);
-    } else if (q >= 60 && onTime) {                            // 🚀 clean
-      var bonus = Math.round(s.salary * 0.08);
-      give(s, { skill: 5, rep: repUp(9), morale: 8, money: bonus });
-      log(s, GOOD, "🚀 Shipped " + p.name + " clean and on time! $" + bonus + "k bonus.");
-      maybePromote(s);
-    } else if (q >= 60) {                                      // 🐢 late but works
-      give(s, { rep: repUp(3), morale: 3 });
-      log(s, NOTE, "🐢 Shipped " + p.name + " — late, but it works. Small win.");
-    } else if (q >= 40) {                                      // 😕 underwhelming
-      give(s, { rep: -6, morale: -6 });
-      log(s, WARN, "😕 Shipped " + p.name + " rough — bugs in prod, a lukewarm reception.");
-    } else {                                                   // 🧨 disaster
-      give(s, { rep: -13, morale: -11, energy: -4 });
-      log(s, WARN, "🧨 " + p.name + " flopped hard — rolled back after launch. Reputation took a real hit.");
+    if (chance(0.1)) spawnIdea(s);
+    if (!complete) {                                           // 🏃 speed-run: shipped before it was done
+      var prog = p.weeksDone / p.weeksNeeded;
+      if (chance(0.25 + 0.5 * prog)) {
+        give(s, { rep: repUp(6), morale: 6 });
+        log(s, GOOD, "🏃 You rushed " + p.name + " out early — and somehow it landed. +rep.");
+      } else {
+        s.shakyRep = true;
+        give(s, { rep: -14, morale: -10, energy: -3 });
+        log(s, WARN, "🧨 You shipped " + p.name + " half-baked — it blew up in prod. Reputation hit, and you're on thin ice at the next cut.");
+      }
+    } else if (lateWeeks <= 2) {                               // on time
+      if (q >= 78 && chance(0.5)) {                            // 🌟 breakout
+        var big = Math.round(s.salary * 0.15);
+        give(s, { skill: 6, rep: repUp(14), morale: 14, money: big });
+        log(s, GOOD, "🌟 Breakout launch! " + p.name + " is a hit — $" + big + "k bonus" + (m.repMult ? ", reputation soars" : "") + ".");
+        maybePromote(s);
+      } else if (q >= 60) {                                    // 🚀 clean
+        var bonus = Math.round(s.salary * 0.08);
+        give(s, { skill: 5, rep: repUp(9), morale: 8, money: bonus });
+        log(s, GOOD, "🚀 Shipped " + p.name + " clean and on time! $" + bonus + "k bonus.");
+        maybePromote(s);
+      } else if (q >= 40) {                                    // 😕 shaky
+        give(s, { rep: -6, morale: -6 });
+        log(s, WARN, "😕 Shipped " + p.name + " on time but rough — bugs in prod, a lukewarm reception.");
+      } else {                                                 // 🧨 disaster
+        give(s, { rep: -13, morale: -11, energy: -4 });
+        log(s, WARN, "🧨 " + p.name + " flopped hard — rolled back after launch. Reputation took a real hit.");
+      }
+    } else if (lateWeeks <= 10) {                              // ~1 turn late
+      give(s, { rep: -4, morale: -2 });
+      log(s, NOTE, "🐢 Shipped " + p.name + " a bit late. A few grumbles, nothing major.");
+    } else {                                                   // badly late
+      give(s, { rep: -9, morale: -6 });
+      log(s, WARN, "🕰️ Shipped " + p.name + " badly late. That cost you.");
     }
   }
   function maybePromote(s) {
@@ -444,9 +479,10 @@
     if (expLevel(careerYears(s)) < s.level + 1) return;   // not enough years on the clock for the next rung yet
     var needSkill = 12 + s.level * 9, needRep = 10 + s.level * 8;
     if (s.skill >= needSkill && s.rep >= needRep && chance(Math.max(0.35, 0.6 - s.level * 0.05))) {
-      s.level++; s.salary = LEVELS[s.level].sal + Math.round(rnd() * 20);
+      s.level++; s.salary = Math.round(s.salary * (1.20 + rnd() * 0.15));   // a promotion nets +20–35%
+      s.lastLevelUpDay = s.day;
       give(s, { morale: 12, rep: -3 });
-      log(s, GOOD, "📈 Promoted to " + LEVELS[s.level].name + "! Salary now $" + s.salary + "k.");
+      log(s, GOOD, "📈 Promoted to " + LEVELS[s.level].name + "! Salary now $" + s.salary + "k (+20–35%).");
     }
   }
 
@@ -471,17 +507,25 @@
   function syncEquity(s) { s.equity = s.co ? Math.round(s.co.valuation * s.co.ownership) : 0; }
   function foundCompany(s, ideaName) {
     s.founder = true; s.employed = false; s.project = null; s.company = null;
+    var seed = Math.max(0, Math.min(s.money, 80));   // a startup is worth nothing yet — you bootstrap it with your own cash
+    s.money -= seed;
     s.co = { name: ideaName || "your startup", foundedDay: s.day, stage: "build",
-      product: 8, revenue: 0, cash: 80, employees: 0, equityStaff: 0,
-      valuation: 500, ownership: 0.9, rounds: 0, lastRaiseDay: s.day };
+      product: 8, revenue: 0, cash: seed, employees: 0, equityStaff: 0,
+      valuation: 150, ownership: 1.0, rounds: 0, lastRaiseDay: s.day };
     syncEquity(s);
     give(s, { morale: 16, energy: -6 });
-    log(s, GOOD, "🦄 You founded " + s.co.name + "! You own 90% of a company worth ~" + money$(s.co.valuation) + ".");
+    log(s, GOOD, "🦄 You founded " + s.co.name + " with " + money$(seed) + " of your own money. You own 100% of a company worth almost nothing — yet.");
   }
   function companyFold(s) {
     s.founder = false; s.employed = false; s.co = null; s.equity = 0;
     give(s, { morale: -18 });
     log(s, WARN, "🪫 Out of runway — the company folded and your stake is worth nothing. Back to the job market.");
+  }
+  function fireEmployee(s, msg) {
+    s.employed = false; s.project = null; s.noProjTurns = 0;
+    var sev = Math.round(s.salary * 0.25); s.money += sev;
+    give(s, { morale: -12 });
+    log(s, WARN, msg + " ($" + sev + "k severance — time to job-hunt.)");
   }
 
   /* ---- the passing of time ------------------------------------------------- */
@@ -490,7 +534,7 @@
     // well-supported get (queued by give() when a big morale hit lands).
     if (s.rallyPending) { s.rallyPending = false; give(s, { morale: Math.round(6 + rnd() * 4), energy: 4 }); log(s, GOOD, "🤝 Your friends rallied round you — you're not carrying this alone."); }
     var yr = weeks / 52;
-    var living = 13 + s.level * 3 + (s.love && s.love.stage !== "dating" ? 8 : 0) + (s.kids || 0) * 10;  // kids cost you
+    var living = 13 + s.level * 3 + (s.love && s.love.stage !== "dating" ? 8 : 0) + (s.kids || 0) * 10 + (s.renting ? 12 : 0);  // kids cost you; renting (sold the house) adds rent
     var take = 0;
     if (s.employed && !s.founder) take = s.salary * 0.72;
     else if (s.founder && s.co) {
@@ -528,7 +572,15 @@
     if (friends(s) === 0) give(s, { energy: -2.5 * (weeks / 4), morale: -0.8 * (weeks / 4) });  // no support network → the battery drains FAST
     if (s.love) {
       s.love.close = clamp(s.love.close - 0.9 * (weeks / 4));
-      if (s.love.close < 22 && chance(0.35)) {
+      if (s.love.stage === "married") {
+        // a bad marriage (strength < 25) risks divorce — expensive; the settlement takes a chunk of your wealth
+        if (s.love.close < 25 && chance(0.3)) {
+          var exnm = s.love.name; s.love = null;
+          s.money = Math.round(s.money * 0.6); s.invest = Math.round(s.invest * 0.6);
+          give(s, { morale: -25 });
+          log(s, WARN, "💔 You and " + exnm + " divorced. The settlement took ~40% of your wealth. Brutal.");
+        }
+      } else if (s.love.close < 22 && chance(0.35)) {
         log(s, WARN, "💔 Things fizzled with " + s.love.name + ".");
         s.love = null; give(s, { morale: -12 });
       }
@@ -570,6 +622,11 @@
       log(s, WARN, "🕳️ You've no one left to lean on — energy and spirit drain fast, and nobody makes it alone for long. Go and see people.");
       if (s.noFriendsTurns >= 10) { s.forcedEnd = "end_fade"; return; }
     } else { s.noFriendsTurns = 0; }
+    // land a job and dawdle without starting a project → you're managed out fast
+    if (s.employed && !s.founder && !s.project) {
+      s.noProjTurns = (s.noProjTurns || 0) + 1;
+      if (s.noProjTurns >= 3) fireEmployee(s, "🪓 Three turns in the new role with nothing shipped or even started — they cut you loose.");
+    } else { s.noProjTurns = 0; }
     ageFriendship(s, tag);
     var elapsed = 0, step = 8;
     while (elapsed < weeks) {
@@ -577,6 +634,9 @@
       s.day += w * 7; elapsed += w;
       accrue(s, w);
       if (s.pending && s.pending.length) s.pending = s.pending.filter(function (p) { return p.expiresDay >= s.day; });
+      // sit on an overdue project too long → fired; five years without a level-up → high random fire risk
+      if (s.employed && !s.founder && s.project && s.day > s.project.deadlineDay + 140) fireEmployee(s, "🪓 You sat on " + s.project.name + " long past its deadline.");
+      if (s.employed && !s.founder && s.level < 5 && (s.day - (s.lastLevelUpDay || 0)) > 5 * 365 && chance((0.22 + (s.shakyRep ? 0.15 : 0)) * w / 52)) fireEmployee(s, "🪓 Five years stuck at " + LEVELS[s.level].name + " — a reorg finally caught up with you.");
       if (s.founder && s.co && s.co.valuation > GREED_CAP) { s.forcedEnd = "end_greed"; return; }   // too greedy → removed
       if (age(s) >= 50 && chance(mortalityP(s) * w / 52)) { s.forcedEnd = deathEnding(s); return; }  // it can happen to anyone
       if (age(s) >= 65) { s.forcedEnd = retireEnding(s); return; }
@@ -613,16 +673,20 @@
   // biting yet (employed with < 2 YoE). ~15% chance of a lucky "stretch" offer
   // one tier above your experience — flagged so you know you'd be in deep.
   function makeOffer(s) {
-    var y = careerYears(s), cap = offerTierCap(y);
+    var y = careerYears(s);
     if (s.employed && y < 1) { s.offer = null; return false; }       // too green to be poached in year one
-    var lucky = s.skill >= 55 && chance(0.10);                       // a rare stretch offer — only if you're genuinely sharp
-    var maxLvl = Math.min(5, cap + (lucky ? 1 : 0));
-    var lvl = Math.min(maxLvl, Math.max(1, 1 + Math.floor(s.skill / 18)));  // skill decides how high they'll pitch you
-    if (s.employed) lvl = Math.min(maxLvl, Math.max(lvl, s.level));  // at least a lateral move
+    // job changes are SEQUENTIAL: you're offered your current rung (a lateral, paid
+    // at market) or exactly one level up — never a skip. Climbing the ladder is
+    // one hop at a time. A rare "stretch" gives the next rung before your years
+    // strictly support it (only if you're genuinely sharp).
+    var cur = s.level;
+    var expOk = expLevel(y) > cur;
+    var lucky = !expOk && s.skill >= 55 && chance(0.12);
+    var lvl = Math.min(7, cur + ((expOk || lucky) ? 1 : 0));
     var co = pickOne(COMPANY_NAMES);
     var sal = Math.round(LEVELS[lvl].sal * (1 + rnd() * 0.35) * (1 + (s.marketBump || 0)));  // hunting lifts future offers
     if (s.employed) sal = Math.max(sal, Math.round(s.salary * 1.05));  // a move is always at least a small raise
-    s.offer = { level: lvl, company: co, salary: sal, stretch: lvl > expLevel(y) };
+    s.offer = { level: lvl, company: co, salary: sal, stretch: lucky };
     return true;
   }
 
@@ -673,7 +737,7 @@
           [{ label: "Stay hands-on — the code is where the joy is.", match: ["stay", "decline", "ic", "no", "1"],
               effect: act(1, null, function (st) { give(st, { morale: 4 }); log(st, NOTE, "🛠️ You turn it down and stay a builder."); }), goto: nextScene },
             { label: "Take the seat — climb into management. 👔", match: ["step", "exec", "lead", "climb", "seat", "2"],
-              effect: act(1, null, function (st) { st.level++; st.salary = LEVELS[st.level].sal + Math.round(rnd() * 30); give(st, { morale: 8, energy: -6, rep: -3 }); log(st, GOOD, "👔 You're now " + LEVELS[st.level].name.replace(/ 👑/, "") + "! Salary $" + st.salary + "k."); }), goto: nextScene }]);
+              effect: act(1, null, function (st) { st.level++; st.salary = LEVELS[st.level].sal + Math.round(rnd() * 30); st.lastLevelUpDay = st.day; give(st, { morale: 8, energy: -6, rep: -3 }); log(st, GOOD, "👔 You're now " + LEVELS[st.level].name.replace(/ 👑/, "") + "! Salary $" + st.salary + "k."); }), goto: nextScene }]);
       } },
     { id: "perf_review", cat: "work", weight: 2, cool: 30, when: function (s) { return s.employed && !s.founder && s.rep < 35; },
       build: function (s) {
@@ -681,8 +745,8 @@
           [line(WARN, "Your manager sits you down — your impact hasn't been landing. You're on notice.\n")],
           [{ label: "Knuckle down and turn it around.", match: ["work", "fix", "prove", "1"],
               effect: act(4, null, function (st) {
-                if (chance(0.4 + st.rep / 120)) { give(st, { rep: 8, energy: -8, morale: -2 }); log(st, GOOD, "💪 You pulled it back — off the list."); }
-                else { st.employed = false; var sv = Math.round(st.salary * 0.3); st.money += sv; st.project = null; give(st, { morale: -10 }); log(st, WARN, "🪓 It wasn't enough — managed out with $" + sv + "k."); }
+                if (chance(0.4 + st.rep / 120 - (st.shakyRep ? 0.2 : 0))) { give(st, { rep: 8, energy: -8, morale: -2 }); st.shakyRep = false; log(st, GOOD, "💪 You pulled it back — off the list."); }
+                else { st.employed = false; var sv = Math.round(st.salary * 0.3); st.money += sv; st.project = null; st.shakyRep = false; give(st, { morale: -10 }); log(st, WARN, "🪓 It wasn't enough — managed out with $" + sv + "k."); }
               }), goto: nextScene },
             { label: "Read the writing on the wall and leave.", match: ["leave", "quit", "go", "2"],
               effect: act(1, null, function (st) { st.employed = false; st.project = null; give(st, { morale: -5 }); log(st, WARN, "🚪 You jump before you're pushed. Time to job-hunt."); }), goto: nextScene }]);
@@ -693,8 +757,8 @@
           [line(WARN, "A reorg lands. Your whole team is 'impacted'.\n")],
           [{ label: "Fight to keep your seat.", match: ["fight", "stay", "1"],
               effect: act(2, null, function (st) {
-                if (chance(0.45 + st.rep / 200)) { give(st, { rep: 3, energy: -8 }); log(st, GOOD, "🛡️ You survived the cut."); }
-                else { st.employed = false; var sv = Math.round(st.salary * 0.35); st.money += sv; st.project = null; give(st, { morale: -8 }); log(st, WARN, "🪓 You lost anyway. $" + sv + "k severance."); }
+                if (chance(0.45 + st.rep / 200 - (st.shakyRep ? 0.2 : 0))) { give(st, { rep: 3, energy: -8 }); give(st, {}); log(st, GOOD, "🛡️ You survived the cut."); }
+                else { st.employed = false; var sv = Math.round(st.salary * 0.35); st.money += sv; st.project = null; st.shakyRep = false; give(st, { morale: -8 }); log(st, WARN, "🪓 You lost anyway. $" + sv + "k severance."); }
               }), goto: nextScene },
             { label: "Read the room and take the package.", match: ["ok", "leave", "package", "2"],
               effect: act(1, null, function (st) {
@@ -774,6 +838,16 @@
               effect: act(2, null, function (st) { st.kids = (st.kids || 0) + 1; give(st, { morale: 20, money: -20, energy: -8 }); log(st, GOOD, "👶 You're a parent! (-$20k up front, and life gets pricier.) You now have " + st.kids + " kid" + (st.kids > 1 ? "s" : "") + "."); }), goto: nextScene },
             { label: "Not right now.", match: ["no", "wait", "2"],
               effect: act(0, null, function (st) { give(st, { morale: -2 }); }), goto: nextScene }]);
+      } },
+    { id: "marriage_trouble", cat: "romance", weight: 2, cool: 20, when: function (s) { return s.love && s.love.stage === "married" && s.love.close < 40; },
+      build: function (s) {
+        var nm = s.love.name;
+        return ev("⚠️ Your marriage is in trouble",
+          [line(WARN, "You and " + nm + " are barely talking. If this doesn't turn around, it's heading for divorce.\n")],
+          [{ label: "Go all-in to save it — counselling, real time, the lot.", match: ["save", "counsel", "work", "1"],
+              effect: act(3, null, function (st) { st.love.close = clamp(st.love.close + 30); give(st, { morale: 6, energy: -6, money: -10 }); log(st, GOOD, "❤️ You put the work in — real effort, real change. You and " + nm + " find your way back."); }), goto: nextScene },
+            { label: "Let it drift and hope it passes.", match: ["drift", "ignore", "no", "2"],
+              effect: act(1, null, function (st) { st.love.close = clamp(st.love.close - 12); give(st, { morale: -6 }); log(st, WARN, "🧊 You avoid it. Things get colder with " + nm + " — divorce is closer now."); }), goto: nextScene }]);
       } },
     { id: "rough_patch", cat: "romance", weight: 2, cool: 16, when: function (s) { return s.love; },
       build: function (s) {
@@ -899,13 +973,13 @@
               effect: act(1, null, function (st) { foundCompany(st, "your startup"); }), goto: nextScene },
             { label: "Keep the salary. Stay sane.", match: ["stay", "no", "2"], effect: act(0, null, function (st) { give(st, { morale: -2 }); }), goto: nextScene }]);
       } },
-    { id: "found_idea", cat: "work", weight: 2, cool: 24, when: function (s) { return !s.founder && s.employed && s.idea && s.money >= 25; },
+    { id: "found_idea", cat: "work", weight: 2, cool: 24, when: function (s) { return !s.founder && s.employed && s.ideas && s.ideas.length && s.money >= 25; },
       build: function (s) {
-        var nm = s.idea.name;
+        var idea = s.ideas[0], nm = idea.name;
         return ev("💡 That side project won't leave you alone",
-          [line(STR, "Your side project — " + nm + " (" + s.idea.tech + ") — has legs. Quit your job and build it for real?\n")],
+          [line(STR, "Your side project — " + nm + " (" + idea.tech + ") — has legs" + (s.ideas.length > 1 ? " (you've got " + s.ideas.length + " ideas kicking around now)" : "") + ". Quit your job and build it for real?\n")],
           [{ label: "Go all-in on " + nm + ". 🎲", match: ["found", "quit", "yes", "1"],
-              effect: act(1, null, function (st) { var n = st.idea.name; st.idea = null; foundCompany(st, n); }), goto: nextScene },
+              effect: act(1, null, function (st) { var n = st.ideas.shift().name; foundCompany(st, n); }), goto: nextScene },
             { label: "Not yet — keep it a hobby.", match: ["stay", "no", "2"],
               effect: act(0, null, function (st) { give(st, { morale: -1 }); log(st, INFO, "🔧 You shelve the idea for now — it'll nag at you again."); }), goto: nextScene }]);
       } },
@@ -926,7 +1000,7 @@
       [line(STR, s.offer.company + " — " + LEVELS[s.offer.level].name + " · $" + s.offer.salary + "k/yr.\n")].concat(
         s.offer.stretch ? [line(WARN, "⚠️ That's above your experience — you'd be in over your head.\n")] : []),
       [{ label: "✅ Take it.", match: ["take", "accept", "yes", "1"],
-          effect: act(2, null, function (st) { st.employed = true; st.founder = false; st.level = st.offer.level; st.salary = st.offer.salary; st.company = makeCompany(st.offer.company); st.project = null; st.stretchUntil = st.offer.stretch ? careerYears(st) + 3 : 0; give(st, { morale: 10, rep: 3 }); log(st, GOOD, "✅ You joined " + st.offer.company + " as " + LEVELS[st.offer.level].name + (st.offer.stretch ? " — deep end, here you come." : ".")); st.offer = null; }), goto: nextScene },
+          effect: act(2, null, function (st) { var up = st.offer.level > st.level; st.employed = true; st.founder = false; st.level = st.offer.level; st.salary = st.offer.salary; st.company = makeCompany(st.offer.company); st.project = null; st.stretchUntil = st.offer.stretch ? careerYears(st) + 3 : 0; if (up) st.lastLevelUpDay = st.day; st.shakyRep = false; st.noProjTurns = 0; give(st, { morale: 10, rep: 3 }); log(st, GOOD, "✅ You joined " + st.offer.company + " as " + LEVELS[st.offer.level].name + (st.offer.stretch ? " — deep end, here you come." : ".")); st.offer = null; }), goto: nextScene },
         { label: "🙅 Pass.", match: ["decline", "pass", "no", "2"],
           effect: act(0, null, function (st) { st.offer = null; }), goto: nextScene }]);
   }
@@ -1111,11 +1185,17 @@
       if (co.rounds >= 3 && (s.day - co.foundedDay) >= 5 * 365 && co.valuation >= UNICORN_VAL && co.revenue >= 200)
         c.push({ label: "🔔 IPO the company (worth " + money$(co.valuation) + ")! 🎉", match: ["ipo", "exit", "float", "public"],
           effect: act(2, null, function (st) { var cash = Math.round(st.equity * 0.85), nm = st.co.name; st.money += cash; st.exitValue = st.co.valuation; st.exited = true; st.founder = false; st.co = null; st.equity = 0; st.employed = false; log(st, GOOD, "🏦 You took " + nm + " public and cashed out " + money$(cash) + "! " + (st.money >= BILLIONAIRE_NW ? "You're a billionaire. 🤑" : "You never have to work again.")); }), goto: nextScene });
+      // rescue a company that's running out of runway with your OWN money / your house
+      if (co.cash < 30 && s.money >= 100) c.push({ label: "💵 Inject $100k of your own savings to keep it alive.", match: ["inject", "save", "own", "prop"],
+        effect: act(1, null, function (st) { st.money -= 100; st.co.cash += 100; log(st, NOTE, "💵 You wired $100k of your own money into the company. Runway extended."); }), goto: nextScene });
+      if (co.cash < 30 && s.house) c.push({ label: "🏠 Remortgage the house into the company (you lose it).", match: ["house", "remortgage", "sell", "home"],
+        effect: act(1, null, function (st) { var eq = homeEquity(st); st.co.cash += eq; st.house = null; st.renting = true; log(st, WARN, "🏠 You put the house in — " + money$(eq) + " of runway. It's gone, and you're renting now."); }), goto: nextScene });
     } else if (s.employed) {
       if (s.project) {
         c.push({ label: "🎯 Focus on " + s.project.name + ".", match: ["focus", "work", "grind"],
           effect: act(10, "focus", function (st) { var nm = st.project.name; focusProject(st, 10); react(st, RX.focus, { proj: nm }); }), goto: nextScene });
-        if (s.project.weeksDone >= s.project.weeksNeeded) c.push({ label: "🚀 Ship " + s.project.name + "!", match: ["ship", "release", "launch"],
+        var done = s.project.weeksDone >= s.project.weeksNeeded;
+        c.push({ label: done ? "🚀 Ship " + s.project.name + "!" : "🚀 Ship " + s.project.name + " early (risky). 🎲", match: ["ship", "release", "launch"],
           effect: act(2, null, function (st) { shipProject(st); }), goto: nextScene });
       } else {
         c.push({ label: "🎯 Take on a new project.", match: ["project", "new", "pick"],
@@ -1126,6 +1206,8 @@
     } else {
       c.push({ label: "🔎 Job-hunt hard — you need an income.", match: ["hunt", "job", "interview"],
         effect: act(8, "hunt", function (st) { give(st, { morale: -3 }); react(st, RX.hunt); }), goto: nextScene });
+      c.push({ label: (s.ideas && s.ideas.length ? "🚀 Found your own startup (" + s.ideas[0].name + ")." : "🚀 Found your own startup."), match: ["found", "startup", "company"],
+        effect: act(1, null, function (st) { var n = (st.ideas && st.ideas.length) ? st.ideas.shift().name : null; foundCompany(st, n); }), goto: nextScene });
     }
 
     // universal life actions
@@ -1137,7 +1219,7 @@
         advance(st, 8, "social");
         if (branch && !st.route && !st.forcedEnd) { st.ev = branch; st.route = "event"; }   // holiday pattern: inject after the clock, never stomping a rolled event
       }, goto: nextScene });
-    c.push({ label: "📚 Upskill — a course / side project.", match: ["upskill", "learn", "study", "course"], effect: act(10, null, function (st) { give(st, { skill: 10, energy: -7, money: -2, morale: -1 }); if (!st.founder && !st.idea && chance(0.22)) { st.idea = pickOne(IDEAS); log(st, GOOD, "💡 Tinkering sparked an idea: " + st.idea.name + " — could be a company one day…"); } else { react(st, RX.upskill); } }), goto: nextScene });
+    c.push({ label: "📚 Upskill — a course / side project.", match: ["upskill", "learn", "study", "course"], effect: act(10, null, function (st) { give(st, { skill: 10, energy: -7, money: -2, morale: -1 }); if (!st.founder && chance(0.22)) { spawnIdea(st); } else { react(st, RX.upskill); } }), goto: nextScene });
     if (s.love) c.push({ label: "💗 Invest in things with " + s.love.name + ".", match: ["love", "relationship", "nurture", "partner"],
       effect: act(8, "social", function (st) { var nm = st.love.name; st.love.close = clamp(st.love.close + 16); give(st, { morale: 10, energy: 6, money: -5 }); react(st, RX.love, { name: nm }); }), goto: nextScene });
     else c.push({ label: "💘 Put yourself out there (dating).", match: ["date", "dating", "romance"],
@@ -1148,7 +1230,7 @@
       effect: act(2, null, function (st) { buyHouse(st); }), goto: nextScene });
     if (s.money >= 12) c.push({ label: "🌴 Take a proper holiday.", match: ["holiday", "vacation", "travel"],
       effect: function (st) {
-        give(st, { energy: 30, morale: 18, money: -14 }); react(st, RX.holiday);
+        st.energy = 100; give(st, { morale: 18, money: -14 }); st.lastHolidayDay = st.day; react(st, RX.holiday);   // a real holiday fully recharges you
         advance(st, 8, "social");
         // a year-plus into a relationship, a holiday can spark a proposal
         if (!st.route && !st.forcedEnd && st.love && st.love.stage !== "married" && relYears(st) >= 1 && chance(0.6)) {
@@ -1171,8 +1253,8 @@
     defaultForPlay: true,
     fileLabel: "elias@life — devlife.py",
     statsName: "DEV LIFE",
-    version: "1.05",
-    versions: ["1", "1.01", "1.02", "1.03", "1.04", "1.05"],   // ordered oldest→newest; the record readout shows the last 2
+    version: "1.06",
+    versions: ["1", "1.01", "1.02", "1.03", "1.04", "1.05", "1.06"],   // ordered oldest→newest; the record readout shows the last 2
 
 
 
@@ -1191,6 +1273,7 @@
       { id: "end_broke",     label: "💸 Bankrupt" },
       { id: "end_death",        label: "🪦 Gone too soon" },
       { id: "end_death_hollow", label: "⚰️ Rich and alone" },
+      { id: "end_greed",     label: "🔫 Too greedy" },
       { id: "end_agi",       label: "🤖 Classified" },
       { id: "end_fraud",     label: "⚖️ Federal pocket" }
     ],
@@ -1213,12 +1296,13 @@
         day: 0,
         employed: true, level: 1, skill: 25, rep: 10, salary: 30,
         company: makeCompany(pickOne(COMPANY_NAMES)),
-        founder: false, equity: 0, co: null, idea: null,
-        money: 6, invest: 0, house: null,
+        founder: false, equity: 0, co: null, ideas: [],
+        money: 6, invest: 0, house: null, renting: false,
         energy: 75, morale: 70,
         friendsM: 10, friendsW: 10, love: null, kids: 0, noFriendsTurns: 0, rallyPending: false,
         marketBump: 0, workFriends: 0, culls: {},
         recessionDay: (7 + Math.floor(rnd() * 9)) * 365, boostUntil: 0,
+        lastHolidayDay: 0, lastLevelUpDay: 0, shakyRep: false, noProjTurns: 0,
         project: null, pending: [], cool: {},
         offer: null, fraudFlag: false, exited: false, exitValue: 0, stretchUntil: 0, debtWeeks: 0, forcedEnd: null,
         ev: null, log: []
@@ -1229,7 +1313,12 @@
       var job = (s.founder && s.co) ? "🦄 founder · " + s.co.stage + " · 🧪" + Math.round(s.co.product) + "% · rev $" + Math.round(s.co.revenue) + "k · 🏦co " + money$(Math.round(s.co.cash)) + " · 👤" + s.co.employees + (s.co.equityStaff ? "(" + s.co.equityStaff + " eq)" : "") + " · you own " + Math.round(s.co.ownership * 100) + "% (stake " + money$(s.equity) + ")"
         : (s.employed ? LEVELS[s.level].name + " " + coTag(s) : "unemployed 😳");
       var lv = s.love ? " 💕 " + s.love.stage + " " + s.love.name + " (strength " + s.love.close + ")" + (s.kids ? " 👶" + s.kids : "") : " 💕 single";
-      var pj = s.project ? " · 🛠️ " + Math.min(100, Math.round(100 * s.project.weeksDone / s.project.weeksNeeded)) + "%" + (s.project.bugs ? " 🐛" + s.project.bugs : "") : "";
+      var pj = "";
+      if (s.project) {
+        var left = Math.max(0, Math.ceil(s.project.weeksNeeded - s.project.weeksDone));
+        var over = Math.ceil((s.day - s.project.deadlineDay) / 7);
+        pj = " · 🛠️ " + s.project.name + " — " + (left > 0 ? left + "u left" : "ready") + (over > 0 ? " · ⏰OVERDUE " + over + "w" : " · due ~" + Math.max(0, -over) + "w") + (s.project.bugs ? " 🐛" + s.project.bugs : "");
+      }
       return "📅 " + dateLabel(s) + " · age " + age(s) + " · " + job + pj + "\n" +
         "💰" + money$(s.money) + " 📊" + money$(s.invest) + (s.house ? " 🏠" + money$(homeEquity(s)) : "") + " 🔋" + s.energy + " 😀" + s.morale + " 🧠" + s.skill + " ⭐" + s.rep + "\n" +
         "👥" + friends(s) + " (♂" + s.friendsM + " ♀" + s.friendsW + ") " + supportTag(s) + lv;

@@ -225,9 +225,55 @@
     }
   }
 
+  /* ---- the startup you might found ---------------------------------------- */
+  // Founding replaces the bare `equity` number with a company (`s.co`): you build
+  // a product, hire (for salary or equity), earn revenue, raise gated rounds and —
+  // 5–10 years in — IPO or take an acquisition. `s.equity` is your derived paper
+  // stake (valuation × your ownership). Company cash/valuation are the COMPANY's
+  // wealth; `s.money`/`s.invest` are YOURS.
+  var IDEAS = [
+    { name: "an ML fraud-detection API", tech: "gradient boosting" },
+    { name: "a dev-tools copilot", tech: "LLMs" },
+    { name: "a healthcare triage assistant", tech: "RAG" },
+    { name: "a demand-forecasting platform", tech: "time-series" },
+    { name: "a retail personalisation engine", tech: "recommenders" },
+    { name: "a climate-risk analytics tool", tech: "geospatial ML" },
+    { name: "an autonomous data-cleaning service", tech: "LLM agents" }
+  ];
+  var ROUND_NAMES = ["a seed", "a Series A", "a Series B", "a Series C", "a Series D"];
+  function roundName(r) { return ROUND_NAMES[Math.min(r, ROUND_NAMES.length - 1)]; }
+  function raiseReq(r) { return [20, 80, 180, 350, 550][Math.min(r, 4)]; }   // revenue needed for the next round
+  function syncEquity(s) { s.equity = s.co ? Math.round(s.co.valuation * s.co.ownership) : 0; }
+  function foundCompany(s, ideaName) {
+    s.founder = true; s.employed = false; s.project = null; s.company = null;
+    s.co = { name: ideaName || "your startup", foundedDay: s.day, stage: "build",
+      product: 8, revenue: 0, cash: 80, employees: 0, equityStaff: 0,
+      valuation: 180, ownership: 0.9, rounds: 0, lastRaiseDay: s.day };
+    syncEquity(s);
+    give(s, { morale: 16, energy: -6 });
+    log(s, GOOD, "🦄 You founded " + s.co.name + "! You own 90% of a company worth ~" + money$(s.co.valuation) + ".");
+  }
+  function companyFold(s) {
+    s.founder = false; s.employed = false; s.co = null; s.equity = 0;
+    give(s, { morale: -18 });
+    log(s, WARN, "🪫 Out of runway — the company folded and your stake is worth nothing. Back to the job market.");
+  }
+
   /* ---- the passing of time ------------------------------------------------- */
   function accrue(s, weeks) {
-    var take = (s.employed && !s.founder) ? s.salary * 0.72 : 0;
+    var yr = weeks / 52;
+    var take = 0;
+    if (s.employed && !s.founder) take = s.salary * 0.72;
+    else if (s.founder && s.co) {
+      var co = s.co;
+      var draw = co.cash > 0 ? 30 : 0;                                         // the modest salary you pay yourself
+      var burn = draw + (co.employees - co.equityStaff) * 70 + co.equityStaff * 30 + 12;
+      co.cash += (co.revenue - burn) * yr;
+      co.valuation = Math.max(co.valuation, Math.round(co.revenue * 8 + co.product * 3));
+      take = draw * 0.72;
+      syncEquity(s);
+      if (co.cash < -8) companyFold(s);                                        // ran out of runway → company dies
+    }
     var living = 13 + s.level * 3 + (s.love && s.love.stage !== "dating" ? 8 : 0) + (s.kids || 0) * 10;  // kids cost you
     s.money += (take - living) * (weeks / 52);
     // investments grow ~5%/yr, or ~17%/yr inside a post-recession recovery window
@@ -433,7 +479,7 @@
             { label: "Ship it to prod. History is watching. 🎲", match: ["ship", "push", "2"],
               effect: function (st) {
                 if (chance(0.5)) { st.forcedEnd = "end_agi"; }
-                else { give(st, { rep: 20, morale: 15, equity: st.founder ? 400 : 0, money: st.founder ? 0 : 30 }); log(st, GOOD, "🌐 It works and it's SAFE (this time). You're famous."); }
+                else { give(st, { rep: 20, morale: 15, money: st.founder ? 0 : 30 }); if (st.founder && st.co) { st.co.valuation = Math.round(st.co.valuation * 1.4); syncEquity(st); } log(st, GOOD, "🌐 It works and it's SAFE (this time). You're famous."); }
               }, goto: nextScene }]);
       } },
     // ---- social (invites: timed) ----
@@ -574,9 +620,9 @@
         return ev("🧾 Cook the numbers?",
           [line(WARN, "The round/board review is close but the growth curve is short. You could... massage the metrics.\n")],
           [{ label: "Tell the truth and take the hit.", match: ["honest", "truth", "1"],
-              effect: act(0, null, function (st) { give(st, { rep: 4, morale: 5, equity: st.founder ? -100 : 0 }); log(st, NOTE, "🫡 You told the truth. It cost you, but you sleep fine."); }), goto: nextScene },
+              effect: act(0, null, function (st) { give(st, { rep: 4, morale: 5 }); if (st.founder && st.co) { st.co.valuation = Math.round(st.co.valuation * 0.9); syncEquity(st); } log(st, NOTE, "🫡 You told the truth. It cost you, but you sleep fine."); }), goto: nextScene },
             { label: "Fudge the numbers. Nobody checks. 🎲", match: ["fake", "fudge", "cook", "2"],
-              effect: act(0, null, function (st) { st.fraudFlag = true; give(st, { money: st.founder ? 0 : 60, equity: st.founder ? 800 : 0, morale: -4 }); log(st, WARN, "🤫 The numbers look great now. You feel a little sick."); }), goto: nextScene }]);
+              effect: act(0, null, function (st) { st.fraudFlag = true; give(st, { money: st.founder ? 0 : 60, morale: -4 }); if (st.founder && st.co) { st.co.valuation = Math.round(st.co.valuation * 1.3); syncEquity(st); } log(st, WARN, "🤫 The numbers look great now. You feel a little sick."); }), goto: nextScene }]);
       } },
     { id: "audit", cat: "finance", weight: 2, cool: 20, when: function (s) { return s.fraudFlag; },
       build: function (s) {
@@ -616,10 +662,30 @@
     { id: "pitch_startup", cat: "work", weight: 1, cool: 50, when: function (s) { return !s.founder && s.employed && s.skill >= 45 && s.money >= 25; },
       build: function (s) {
         return ev("💡 A startup idea that won't let go",
-          [line(STR, "You've got an idea and a co-founder in your DMs. Quit and go all-in?\n")],
+          [line(STR, "A co-founder in your DMs has an idea and wants you in. Quit and go all-in?\n")],
           [{ label: "Quit and found it. 🎲", match: ["found", "quit", "1"],
-              effect: act(1, null, function (st) { st.founder = true; st.employed = false; st.project = null; st.equity = 40 + st.skill * 2; give(st, { morale: 16, energy: -6 }); log(st, GOOD, "🦄 You founded a company! Equity ~" + money$(st.equity) + "."); }), goto: nextScene },
+              effect: act(1, null, function (st) { foundCompany(st, "your startup"); }), goto: nextScene },
             { label: "Keep the salary. Stay sane.", match: ["stay", "no", "2"], effect: act(0, null, function (st) { give(st, { morale: -2 }); }), goto: nextScene }]);
+      } },
+    { id: "found_idea", cat: "work", weight: 2, cool: 24, when: function (s) { return !s.founder && s.employed && s.idea && s.money >= 25; },
+      build: function (s) {
+        var nm = s.idea.name;
+        return ev("💡 That side project won't leave you alone",
+          [line(STR, "Your side project — " + nm + " (" + s.idea.tech + ") — has legs. Quit your job and build it for real?\n")],
+          [{ label: "Go all-in on " + nm + ". 🎲", match: ["found", "quit", "yes", "1"],
+              effect: act(1, null, function (st) { var n = st.idea.name; st.idea = null; foundCompany(st, n); }), goto: nextScene },
+            { label: "Not yet — keep it a hobby.", match: ["stay", "no", "2"],
+              effect: act(0, null, function (st) { give(st, { morale: -1 }); log(st, INFO, "🔧 You shelve the idea for now — it'll nag at you again."); }), goto: nextScene }]);
+      } },
+    { id: "acquisition", cat: "work", weight: 2, cool: 20, when: function (s) { return s.founder && s.co && s.co.product >= 45 && (s.co.revenue > 0 || s.co.rounds >= 1); },
+      build: function (s) {
+        var offer = Math.max(1, Math.round(s.equity * (0.6 + rnd() * 0.35)));
+        return ev("🤝 An acquisition offer",
+          [line(STR, "A bigger company wants to buy " + s.co.name + " for " + money$(offer) + " cash. Not every startup makes it to IPO — take the sure thing?\n")],
+          [{ label: "Sell — take the " + money$(offer) + ". 💰", match: ["sell", "accept", "buyout", "cash", "1"],
+              effect: act(1, null, function (st) { st.money += offer; if (offer >= 1000) st.exited = true; st.founder = false; st.co = null; st.equity = 0; st.employed = false; log(st, GOOD, "🏦 Acquired for " + money$(offer) + "!" + (offer >= 1000 ? " You built something that mattered." : " A solid exit — now what?")); }), goto: nextScene },
+            { label: "Hold out — go for the big one. 🎲", match: ["hold", "keep", "decline", "no", "2"],
+              effect: act(0, null, function (st) { give(st, { morale: 2 }); log(st, INFO, "🎯 You bet on yourself and keep building."); }), goto: nextScene }]);
       } }
   ];
 
@@ -793,16 +859,25 @@
         effect: function (st) { st.ev = p.ev; st.pending = st.pending.filter(function (x) { return x !== p; }); }, goto: "event" });
     });
 
-    if (s.founder) {
-      c.push({ label: "🚀 Build the product.", match: ["build", "grind", "work"],
-        effect: act(8, null, function (st) { st.equity = Math.round(st.equity * (1.12 + st.skill / 400) + 5); give(st, { energy: -10, skill: 2 }); react(st, RX.build); }), goto: nextScene });
-      c.push({ label: "📈 Raise a round.", match: ["raise", "round", "fund"],
-        effect: act(5, null, function (st) {
-          if (chance(0.7)) { st.equity = Math.round(st.equity * (1.8 + rnd() * 1.6)); st.money += 60; give(st, { morale: 6 }); log(st, GOOD, "🤝 Round closed. Equity ~" + money$(st.equity) + ", +$60k salary."); }
-          else { st.equity = Math.round(st.equity * 0.7); give(st, { morale: -12 }); log(st, WARN, "🧊 Down round. Equity ~" + money$(st.equity) + "."); }
-        }), goto: nextScene });
-      if (s.equity >= 1500) c.push({ label: "🔔 Exit — sell / IPO the company! 🎉", match: ["exit", "ipo", "sell", "cash"],
-        effect: act(1, null, function (st) { var cash = Math.round(st.equity * 0.6); st.money += cash; st.exited = true; log(st, GOOD, "🏦 You exit for " + money$(cash) + "! Now what?"); st.founder = false; st.equity = 0; st.employed = false; }), goto: nextScene });
+    if (s.founder && s.co) {
+      var co = s.co;
+      c.push({ label: "🛠️ Build " + co.name + ".", match: ["build", "grind", "work"],
+        effect: act(8, null, function (st) { var m = st.co; m.product = Math.min(100, m.product + Math.round((8 + m.employees * 5) * (0.6 + st.skill / 150))); give(st, { energy: -10, skill: 1 }); syncEquity(st); react(st, RX.build); }), goto: nextScene });
+      if (co.cash >= 60) c.push({ label: "🧑‍💻 Hire an engineer (salary).", match: ["hire", "staff", "recruit"],
+        effect: act(4, null, function (st) { st.co.employees++; st.co.cash -= 20; log(st, NOTE, "🧑‍💻 You hired an engineer on salary — headcount " + st.co.employees + ". The burn just went up."); }), goto: nextScene });
+      c.push({ label: (friends(s) >= 1 ? "🤝 Bring a friend on board (equity)." : "🎟️ Bring someone on for equity."), match: ["equity", "friend", "cofound"],
+        effect: act(4, null, function (st) { var hadFriend = friends(st) >= 1; st.co.employees++; st.co.equityStaff++; st.co.cash -= 5; st.co.ownership *= 0.975; if (hadFriend) { loseFriend(st); log(st, NOTE, "🤝 A friend joined for equity — cheap on cash, but your stake shrinks a little."); } else { log(st, NOTE, "🎟️ A hire took stock over salary — lighter burn now, a little more dilution."); } syncEquity(st); }), goto: nextScene });
+      if (co.product >= 40) c.push({ label: "📣 Go to market — chase revenue.", match: ["grow", "revenue", "market", "gtm"],
+        effect: act(8, null, function (st) { var m = st.co; var cap = m.product * (1.5 + m.employees); m.revenue = Math.min(cap, m.revenue + 4 + m.employees * 3 + Math.round(m.product / 12)); if (m.stage === "build") m.stage = "revenue"; give(st, { energy: -8 }); syncEquity(st); log(st, GOOD, "📣 " + (m.revenue >= cap ? "Revenue's maxed for this product/team — $" : "Traction! Revenue up to $") + Math.round(m.revenue) + "k/yr" + (m.revenue >= cap ? " (build more / hire to grow it)." : ".")); }), goto: nextScene });
+      if (co.product >= 50 && co.revenue >= raiseReq(co.rounds) && (s.day - co.lastRaiseDay) >= 365 && co.rounds < 5)
+        c.push({ label: "💰 Raise " + roundName(co.rounds) + " round.", match: ["raise", "round", "fund"],
+          effect: act(3, null, function (st) { var m = st.co;
+            if (chance(0.55 + m.revenue / 600)) { m.valuation = Math.round(m.valuation * (2.0 + rnd() * 0.8)); m.cash += Math.round(m.valuation * 0.15); m.ownership *= 0.85; m.rounds++; m.lastRaiseDay = st.day; m.stage = m.rounds >= 2 ? "scaling" : "growth"; give(st, { morale: 8 }); syncEquity(st); log(st, GOOD, "🤝 " + roundName(m.rounds - 1).replace(/^a /, "").replace(/^an /, "") + " round closed! Valuation ~" + money$(m.valuation) + ", you own " + Math.round(m.ownership * 100) + "%."); }
+            else { m.valuation = Math.round(m.valuation * 0.8); m.lastRaiseDay = st.day; give(st, { morale: -12 }); syncEquity(st); log(st, WARN, "🧊 The round fell through — a down mark. Valuation ~" + money$(m.valuation) + "."); }
+          }), goto: nextScene });
+      if (co.rounds >= 2 && (s.day - co.foundedDay) >= 5 * 365 && s.equity >= 1500 && co.revenue >= 300)
+        c.push({ label: "🔔 IPO the company! 🎉", match: ["ipo", "exit", "float", "public"],
+          effect: act(2, null, function (st) { var cash = Math.round(st.equity * 0.6); st.money += cash; st.exited = true; st.founder = false; st.co = null; st.equity = 0; st.employed = false; log(st, GOOD, "🏦 You took it public for " + money$(cash) + "! You never have to work again."); }), goto: nextScene });
     } else if (s.employed) {
       if (s.project) {
         c.push({ label: "🎯 Focus on " + s.project.name + ".", match: ["focus", "work", "grind"],
@@ -824,7 +899,7 @@
     c.push({ label: "🛋️ Rest and recharge.", match: ["rest", "recharge", "sleep"], effect: act(6, null, function (st) { give(st, { energy: 22, morale: 6 }); react(st, RX.rest); }), goto: nextScene });
     c.push({ label: "🧑‍🤝‍🧑 See friends / go out.", match: ["friends", "social", "socialise", "out"],
       effect: act(8, "social", function (st) { addFriend(st); give(st, { morale: 11, energy: 8, money: -4 }); if (!st.love && chance(0.25)) { var pp = person(); st.love = { name: pp.name, w: pp.w, close: 44, stage: "dating", since: st.day }; log(st, GOOD, "💕 You met " + pp.name + " — you're seeing each other now."); } else { react(st, RX.social); } }), goto: nextScene });
-    c.push({ label: "📚 Upskill — a course / side project.", match: ["upskill", "learn", "study", "course"], effect: act(10, null, function (st) { give(st, { skill: 10, energy: -7, money: -2, morale: -1 }); react(st, RX.upskill); }), goto: nextScene });
+    c.push({ label: "📚 Upskill — a course / side project.", match: ["upskill", "learn", "study", "course"], effect: act(10, null, function (st) { give(st, { skill: 10, energy: -7, money: -2, morale: -1 }); if (!st.founder && !st.idea && chance(0.22)) { st.idea = pickOne(IDEAS); log(st, GOOD, "💡 Tinkering sparked an idea: " + st.idea.name + " — could be a company one day…"); } else { react(st, RX.upskill); } }), goto: nextScene });
     if (s.love) c.push({ label: "💗 Invest in things with " + s.love.name + ".", match: ["love", "relationship", "nurture", "partner"],
       effect: act(8, "social", function (st) { var nm = st.love.name; st.love.close = clamp(st.love.close + 16); give(st, { morale: 10, energy: 6, money: -5 }); react(st, RX.love, { name: nm }); }), goto: nextScene });
     else c.push({ label: "💘 Put yourself out there (dating).", match: ["date", "dating", "romance"],
@@ -858,8 +933,8 @@
     defaultForPlay: true,
     fileLabel: "elias@life — devlife.py",
     statsName: "DEV LIFE",
-    version: "1.02",
-    versions: ["1", "1.01", "1.02"],   // ordered oldest→newest; the record readout shows the last 2
+    version: "1.03",
+    versions: ["1", "1.01", "1.02", "1.03"],   // ordered oldest→newest; the record readout shows the last 2
 
 
 
@@ -899,7 +974,7 @@
         day: 0,
         employed: true, level: 1, skill: 25, rep: 10, salary: 30,
         company: makeCompany(pickOne(COMPANY_NAMES)),
-        founder: false, equity: 0,
+        founder: false, equity: 0, co: null, idea: null,
         money: 6, invest: 0, house: null,
         energy: 75, morale: 70,
         friendsM: 10, friendsW: 10, love: null, kids: 0, noFriendsTurns: 0,
@@ -912,7 +987,8 @@
     },
 
     status: function (s) {
-      var job = s.founder ? "🦄 founder (" + money$(s.equity) + ")" : (s.employed ? LEVELS[s.level].name + " " + coTag(s) : "unemployed 😳");
+      var job = (s.founder && s.co) ? "🦄 founder · " + s.co.stage + " · 🧪" + Math.round(s.co.product) + "% · rev $" + Math.round(s.co.revenue) + "k · 🏦co " + money$(Math.round(s.co.cash)) + " · 👤" + s.co.employees + (s.co.equityStaff ? "(" + s.co.equityStaff + " eq)" : "") + " · you own " + Math.round(s.co.ownership * 100) + "% (stake " + money$(s.equity) + ")"
+        : (s.employed ? LEVELS[s.level].name + " " + coTag(s) : "unemployed 😳");
       var lv = s.love ? " 💕 " + s.love.stage + " " + s.love.name + " (strength " + s.love.close + ")" + (s.kids ? " 👶" + s.kids : "") : " 💕 single";
       var pj = s.project ? " · 🛠️ " + Math.min(100, Math.round(100 * s.project.weeksDone / s.project.weeksNeeded)) + "%" + (s.project.bugs ? " 🐛" + s.project.bugs : "") : "";
       return "📅 " + dateLabel(s) + " · age " + age(s) + " · " + job + pj + "\n" +
